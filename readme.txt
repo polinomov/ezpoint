@@ -23,3 +23,6 @@ http://127.0.0.1:8000/
 "C:\Program Files\Google\Chrome\Application\chrome.exe" --profile-directory="Default enable-features=SharedArrayBuffer
 
 setx GIT_SSH "C:\Program Files\Git\usr\bin\ssh.exe"
+
+complie sdl2 :  <- will generate sample.html
+emcc hello-world-sdl.cpp -o sample.html -s USE_SDL=2
