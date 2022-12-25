@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+
+<html>
+   <head>
+      <style>
+          .btn-group button {
+            background-color: #808080;
+            border: 1px solid black;
+            color: white; 
+            padding: 10px 24px;
+            cursor: pointer;
+            float: left; 
+           }
+          .btn-group button:not(:last-child) {
+             border-right: none; /* Prevent double borders */
+           }
+          .btn-group:after {
+            content: "";
+            clear: both;
+            display: table;
+           }
+
+
+          menudiv{
+            text-align:right;
+          }
+          canvdiv{
+            text-align:center;
+          }
+
+          body{
+             overflow: hidden;
+          }
+          canvas{ 
+            border: 1px solid black; 
+            height : 100%;
+          }
+      </style>
+      <script src="js_main.js"></script>
+   </head>
+   
+   <body>
+       <div class="btn-group">
+            <input type="file" class="file" id="attachment" style="display: none;" onchange="OnFileSelected(this)"/>
+            <button type="button"  onclick="OnFileOpen()">FileOpen</button>
+            <button onclick = "TestMe()"> Test </button>
+            <button> Help </button>
+            <button> Info </button>
+            <button> PointSize </button>
+        </div>
+       <div class="canvdiv">
+        <canvas id = "myPics" width = "100" height = "100"> </canvas>
+        <button> BLAH4 </button>
+ 
+        </div>
+   </body>
+</html>
