@@ -1,3 +1,4 @@
+$ eval "$(ssh-agent -s)"
 
 
 Run python:
