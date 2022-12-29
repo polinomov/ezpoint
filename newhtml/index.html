@@ -5,12 +5,14 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <style>
         .btn-group button {
-            background-color: #808080;
+            background-color: #000000;
             border: 1px solid black;
             color: white;
             padding: 10px 24px;
             cursor: pointer;
             float: left;
+            font-size: 10px;
+            /*display: block;*/
         }
 
         .btn-group button:not(:last-child) {
@@ -38,21 +40,23 @@
     <div class="btn-group">
         <input type="file" class="file" id="attachment" style="display: none;" onchange="OnFileSelected(this)" />
         <button type="button" onclick="OnFileOpen()">File</button>
-        <button onclick="TestMe()"> Test </button>
+        <button onclick="Blah()"> TestA </button>
         <button> Help </button>
         <button> Info </button>
         <button> PointSize </button>
     </div>
- 
-    <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>   
-    <script type='text/javascript'>
-        var Module = {
-                canvas: (function () { return document.getElementById('canvas'); })()
-        };
-     </script>
-    
-    <script src="index.js"></script>
-    <script src="js_main.js"></script>
-    <p>last line</p>
+        <div>
+            <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+            <script type='text/javascript'>
+                var Module = {
+                    canvas: (function () { return document.getElementById('canvas'); })()
+                };
+            </script>
+        </div>
+
+        <script src="index.js"></script>
+        <script src="js_helpers.js"></script>
+        <p>last line</p>
+
 </body>
 </html>

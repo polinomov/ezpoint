@@ -10,22 +10,6 @@ class GlobVars {
 }
 var gv = new GlobVars();
 
-/*
-var importObject = { imports: { i: arg => console.log(arg) } };
-
-function instantiate(bytes, imports) {
-    return WebAssembly.compile(bytes).then(m => new WebAssembly.Instance(m, imports));
-}
-
-
-function LoadWasm() {
-    fetch("simple.wasm")
-        .then(bytes => bytes.arrayBuffer())
-        .then(bytes => instantiate(bytes, importObject))
-        .then(instance => instance.exports.e());
-}
-*/
-
 function callWasm1() {
     console.log("CallWasm");
     Module['canvas'] = document.getElementById('myPics');
@@ -37,14 +21,10 @@ function Blah() {
     //context.fillStyle = "red";
     //context.fillRect(100, 100, 100, 100);
     //callWasm1();
-    toggleFullScreen();
+    //toggleFullScreen();
 }
 
 function OnDraw() {
-   // htmlCanvas = document.getElementById('canvas');
-   // context = htmlCanvas.getContext('bitmaprenderer');
-   // context.fillStyle = "black";
-   // context.fillText("text", 30, 60);
 }
 
 function OnMouseMove(e) {
@@ -84,7 +64,6 @@ function resizeCanvas() {
     console.log("Resize w=" + window.innerWidth + " h=" + window.innerHeight);
     resize_cb = Module.cwrap('CallCFunc', 'number', ['number','number']);
     resize_cb(window.innerWidth, window.innerHeight);
-   // const result = Module.ccall('CallCFunc', 'number');
 }
 
 function OnLoaded() {  
@@ -96,15 +75,9 @@ function OnLoaded() {
 
 function OnStart()
 {
-    console.log("--OnStart---\n");
-    //htmlCanvas = document.getElementById('canvas');
-    //context = htmlCanvas.getContext('2d');
-    console.log("w=" + window.innerWidth + " h=" + window.innerHeight);
+    console.log("-OnStart-\n");
     resizeCanvas();
-
-   // window.addEventListener('mousemove', (e) => { OnMouseMove(e) });
-   window.addEventListener('resize', resizeCanvas, false);
-   // window.addEventListener('DOMContentLoaded', (e) => { OnLoaded() });
+    window.addEventListener('resize', resizeCanvas, false);
 }
 
 //OnStart();
