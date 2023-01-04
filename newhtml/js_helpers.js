@@ -42,12 +42,23 @@ function OnFileSelected(input) {
         return;
     }
     console.log("YES FILE size=" + input.files[0].size);
+    var fz = input.files[0].size;
     var reader = new FileReader();
     reader.onload = function (e) {
         // binary data
-        //console.log(e.target.result);
-        console.log("done  reading");
+       console.log("-reader-onload-");
+       var data = reader.result;
+       var array = new Uint8Array(data);
+       var res_ptr = Module._malloc(fz);
+       Module.HEAPU8.set(array, res_ptr);
+       file_cb = Module.cwrap('FileBinData', 'number', ['arrayPointer', 'number']);
+       file_cb(res_ptr, fz);
+       // console.log("done  reading");
     };
+    reader.onloadend = function (e) {
+       console.log("load done");
+    }
+
     reader.onerror = function (e) {
         // error occurred
         console.log('Error : ' + e.type);
@@ -61,7 +72,7 @@ function OnFileOpen() {
 
 
 function resizeCanvas() {
-    console.log("Resize w=" + window.innerWidth + " h=" + window.innerHeight);
+    // console.log("Resize w=" + window.innerWidth + " h=" + window.innerHeight);
     resize_cb = Module.cwrap('CallCFunc', 'number', ['number','number']);
     resize_cb(window.innerWidth, window.innerHeight);
 }

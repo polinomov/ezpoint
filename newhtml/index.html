@@ -38,12 +38,14 @@
 </head>
 <body>
     <div class="btn-group">
-        <input type="file" class="file" id="attachment" style="display: none;" onchange="OnFileSelected(this)" />
+        <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
         <button type="button" onclick="OnFileOpen()">File</button>
-        <button onclick="Blah()"> TestA </button>
+        <button onclick="Blah()"> Test </button>
         <button> Help </button>
         <button> Info </button>
         <button> PointSize </button>
+        <input type="checkbox" id="example1"/>
+
     </div>
         <div>
             <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
