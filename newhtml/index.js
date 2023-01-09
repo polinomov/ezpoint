@@ -8520,6 +8520,9 @@ var asm = createWasm();
 var ___wasm_call_ctors = Module["___wasm_call_ctors"] = createExportWrapper("__wasm_call_ctors");
 
 /** @type {function(...*):?} */
+var __Z8OnRenderPjiiii = Module["__Z8OnRenderPjiiii"] = createExportWrapper("_Z8OnRenderPjiiii");
+
+/** @type {function(...*):?} */
 var _CallCFunc = Module["_CallCFunc"] = createExportWrapper("CallCFunc");
 
 /** @type {function(...*):?} */
@@ -8527,6 +8530,12 @@ var _FileBinData = Module["_FileBinData"] = createExportWrapper("FileBinData");
 
 /** @type {function(...*):?} */
 var _main = Module["_main"] = createExportWrapper("main");
+
+/** @type {function(...*):?} */
+var __Z10RenderInitii = Module["__Z10RenderInitii"] = createExportWrapper("_Z10RenderInitii");
+
+/** @type {function(...*):?} */
+var __Z12RenderDestoyv = Module["__Z12RenderDestoyv"] = createExportWrapper("_Z12RenderDestoyv");
 
 /** @type {function(...*):?} */
 var _free = Module["_free"] = createExportWrapper("free");

@@ -5,10 +5,9 @@
 #include <SDL2\SDL.h>
 #include <emscripten.h>
 
+extern void OnRender(unsigned int *pBuff, int winW, int winH, int buffW, int buffH );
 
-
-
-//extern "C" {
+extern "C" {
 
 	SDL_Window* window;
 	SDL_Renderer* renderer;
@@ -50,11 +49,12 @@
 		Uint8* pixels = (Uint8*)surface->pixels;
 
 		Uint32* pDst = (Uint32*)pixels; 
-#if 1
+		OnRender(pDst, gWinW, gWinH, gCanvasW, gCanvasH);
+#if 0
 		int shiftY = 0;// gCanvasH - gWinH;
 		if (shiftY < 0) shiftY = 0;
-		for (int y = shiftY; y < gCanvasH; y++) {
-			for (int x = 0; x < gCanvasW; x++) {
+		for (int y = shiftY; y < gWinH; y++) {
+			for (int x = 0; x < gWinW; x++) {
 				int dst = x + y * gCanvasW;
 				int sy = y - shiftY;
 				int sx = x;
@@ -74,7 +74,6 @@
 			}
 		}
 #endif
-
 		if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
 		SDL_Texture* screenTexture = SDL_CreateTextureFromSurface(renderer, surface);
 		SDL_RenderClear(renderer);
@@ -93,7 +92,7 @@
 	}
 
 	void InitSDL() {
-		printf("init sdl\n");
+		printf("--- init sdl ---\n");
 		SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
 		SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &renderer);
 		surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
@@ -111,7 +110,7 @@
 
 	int FileBinData(void* pData, int sz) 
 	{
-		printf("-----FileBinData----- %d\n", sz);
+		printf("-FileBinData-%d\n", sz);
 		unsigned char* p8 = (unsigned char*)pData;
 		printf("%c %c %c %c\n", p8[0], p8[1], p8[2], p8[3]);
 		float* pF = (float*)pData;
@@ -127,4 +126,4 @@
 		SDL_Quit();
 		return 0;
 	}
-//}
+}
