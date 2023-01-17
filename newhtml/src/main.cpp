@@ -2,10 +2,12 @@
 //#include <iostream>
 //#include <chrono>
 //#include <thread>
+#include "ezpoint.h"
 #include <SDL2\SDL.h>
+#include <iostream>
 #include <emscripten.h>
 
-extern void OnRender(unsigned int *pBuff, int winW, int winH, int buffW, int buffH );
+// extern void OnRender(unsigned int *pBuff, int winW, int winH, int buffW, int buffH );
 
 extern "C" {
 
@@ -14,6 +16,8 @@ extern "C" {
 	SDL_Surface* surface;
 	int gCanvasW = 2048, gCanvasH = 2048;
 	int gWinW = 2048, gWinH = 2048;
+	int gRenderEvent = 1;
+	std::function<void (const char *msg)> gWriteLine;
 	
 	void PollEvents() {
 		SDL_Event event;
@@ -38,57 +42,49 @@ extern "C" {
 		emscripten_run_script(strw);
 	}
 
+	static void OutLine(const char *txt){
+		static char strw[1024];
+		sprintf(strw, "%s'%s'", "document.getElementById('GFG').innerHTML=", txt);
+		emscripten_run_script(strw);
+	}
+
 	void MainLoop() {
 		static unsigned char cnt = 0;
 		SDL_Rect srcRect, dstRect;
 
 		PollEvents();
 		ResetCanvasSize(gWinW, gWinH);
-		if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
-
-		Uint8* pixels = (Uint8*)surface->pixels;
-
-		Uint32* pDst = (Uint32*)pixels; 
-		OnRender(pDst, gWinW, gWinH, gCanvasW, gCanvasH);
-#if 0
-		int shiftY = 0;// gCanvasH - gWinH;
-		if (shiftY < 0) shiftY = 0;
-		for (int y = shiftY; y < gWinH; y++) {
-			for (int x = 0; x < gWinW; x++) {
-				int dst = x + y * gCanvasW;
-				int sy = y - shiftY;
-				int sx = x;
-				pDst[dst] = ((x < 64) && (y < 64)) ? 0xFFFFFF : cnt;
-				if ( (x % 64) ==0) {
-					pDst[dst] = 0xFFFFFF;
-				}
-				else if ((sy % 64) == 0) {
-					pDst[dst] = 0xFFFFFF;
-				}
-				else {
-					//pDst[dst] = cnt ;// (256.0f / (float)gWinHy)* sy;
-					if ( (sy < 10)||(sy>gWinH-10)||(sx<10)||(sx>gWinW-20)) {
-						pDst[dst] = 0x808080;
-					}
-				}
-			}
+		{
+		  static char ttt[128];
+		  sprintf(ttt,"BB %d",cnt);
+		  //OutLine(ttt);
 		}
-#endif
-		if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
-		SDL_Texture* screenTexture = SDL_CreateTextureFromSurface(renderer, surface);
-		SDL_RenderClear(renderer);
-		srcRect.x = 0;
-		srcRect.y = 0;
-		srcRect.w = gWinW;
-		srcRect.h = gWinH;
-		dstRect.x = 0;
-		dstRect.y = gCanvasH - gWinH;
-		dstRect.w = gWinW;
-		dstRect.h = gWinH;
-		SDL_RenderCopy(renderer, screenTexture, &srcRect, &dstRect);
-		SDL_RenderPresent(renderer);
-		SDL_DestroyTexture(screenTexture);
-		cnt++;
+		if(gRenderEvent)
+		{
+			if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
+
+			Uint8* pixels = (Uint8*)surface->pixels;
+			Uint32* pDst = (Uint32*)pixels; 
+		
+			ezp::Renderer::Get()->Render(pDst, gWinW, gWinH);
+
+			if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
+			SDL_Texture* screenTexture = SDL_CreateTextureFromSurface(renderer, surface);
+			SDL_RenderClear(renderer);
+			srcRect.x = 0;
+			srcRect.y = 0;
+			srcRect.w = gWinW;
+			srcRect.h = gWinH;
+			dstRect.x = 0;
+			dstRect.y = gCanvasH - gWinH;
+			dstRect.w = gWinW;
+			dstRect.h = gWinH;
+			SDL_RenderCopy(renderer, screenTexture, &srcRect, &dstRect);
+			SDL_RenderPresent(renderer);
+			SDL_DestroyTexture(screenTexture);
+			gRenderEvent = 0;
+			cnt++;
+		}
 	}
 
 	void InitSDL() {
@@ -96,25 +92,33 @@ extern "C" {
 		SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
 		SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &renderer);
 		surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
+		gWriteLine =  OutLine;
+		ezp::Renderer::Get()->Init(gCanvasW, gCanvasH);
 		emscripten_run_script("OnStart()");
 		emscripten_set_main_loop(MainLoop, 0, 1);
 	}
-
+ 
+    // Resize call from JS
 	int CallCFunc(int w, int h) 
 	{
 		//printf("HelloC w=%d h=%d\n",w,h);
-		gWinW = w > gCanvasW ? gCanvasW : w;
-		gWinH = h-100 > gCanvasH ? gCanvasH : h -100;
+		gWinW = w > gCanvasW ? gCanvasW : w-15;
+		gWinH = h-100 > gCanvasH ? gCanvasH : h - 75;
+		gRenderEvent = 1;
 		return 0;
 	}
 
 	int FileBinData(void* pData, int sz) 
 	{
-		printf("-FileBinData-%d\n", sz);
+		static char ts[1024];
+		//OutLine("--OpenFile--");
+		//printf("-FileBinData-%d\n", sz);
 		unsigned char* p8 = (unsigned char*)pData;
-		printf("%c %c %c %c\n", p8[0], p8[1], p8[2], p8[3]);
+		//printf("%c %c %c %c\n", p8[0], p8[1], p8[2], p8[3]);
 		float* pF = (float*)pData;
-		printf("%f %f %f %f \n", pF[0], pF[1], pF[2], pF[3]);
+		int numFloats = sz/sizeof(float);
+		sprintf(ts,"Done Reading123 sz= %d %f",numFloats,pF[numFloats-2]);
+		OutLine(ts);
 		return 0;
 	}
 

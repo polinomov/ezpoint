@@ -36,6 +36,7 @@ function OnMouseMove(e) {
 
 function OnFileSelected(input) {
     console.log("---fileSelected-- " + input.files[0].name);
+    //document.getElementById('GFG').innerHTML='File Selected'
     var file = input.files[0];
     if (!file) {
         console.log("NO FILE");
@@ -46,6 +47,7 @@ function OnFileSelected(input) {
     var reader = new FileReader();
     reader.onload = function (e) {
         // binary data
+       
        console.log("-reader-onload-");
        var data = reader.result;
        var array = new Uint8Array(data);
@@ -53,7 +55,8 @@ function OnFileSelected(input) {
        Module.HEAPU8.set(array, res_ptr);
        file_cb = Module.cwrap('FileBinData', 'number', ['arrayPointer', 'number']);
        file_cb(res_ptr, fz);
-       // console.log("done  reading");
+       Module._free(res_ptr);
+        // console.log("done  reading");
     };
     reader.onloadend = function (e) {
        console.log("load done");
@@ -63,7 +66,9 @@ function OnFileSelected(input) {
         // error occurred
         console.log('Error : ' + e.type);
     };
+   // document.getElementById('GFG1').innerHTML='-JSStart'
     reader.readAsArrayBuffer(input.files[0]);  
+   // document.getElementById('GFG1').innerHTML='-JSDone'
 }
 
 function OnFileOpen() {
