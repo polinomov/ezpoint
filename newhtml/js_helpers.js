@@ -17,15 +17,32 @@ function callWasm1() {
 }
 
 function Blah() {
-    console.log("Hello TestMe5\n");
-    //context.fillStyle = "red";
-    //context.fillRect(100, 100, 100, 100);
-    //callWasm1();
-    //toggleFullScreen();
+    console.log("Hello TestMe ----JS-\n");
+    resize_cb = Module.cwrap('CallCFunc2', 'number', ['number','number'] , { async: true });
+    resize_cb(window.innerWidth, window.innerHeight);
+    /*
+    let promise = new Promise(function(resolve, reject) {
+        console.log("--Exe promise---");
+        setTimeout(() => {
+            console.log("Delayed for 1 second.");
+          }, "10000")
+          
+        console.log("--Exe promise 2" );
+         resolve();
+    });
+ 
+    console.log("---here--------");
+    
+    promise.then(
+        result => alert(result), 
+        error => alert(error) 
+    );
+    */
+    
 }
 
-function OnDraw() {
-}
+//function OnDraw() {
+//}
 
 function OnMouseMove(e) {
     
@@ -35,8 +52,8 @@ function OnMouseMove(e) {
 }
 
 function OnFileSelected(input) {
-    console.log("---fileSelected-- " + input.files[0].name);
-    //document.getElementById('GFG').innerHTML='File Selected'
+    //console.log("---fileSelected-- " + input.files[0].name);
+    document.getElementById('GFG').innerHTML='Reading: ' + input.files[0].name;
     var file = input.files[0];
     if (!file) {
         console.log("NO FILE");
@@ -53,7 +70,7 @@ function OnFileSelected(input) {
        var array = new Uint8Array(data);
        var res_ptr = Module._malloc(fz);
        Module.HEAPU8.set(array, res_ptr);
-       file_cb = Module.cwrap('FileBinData', 'number', ['arrayPointer', 'number']);
+       file_cb = Module.cwrap('FileBinData', 'number', ['arrayPointer', 'number'],{ async: true });
        file_cb(res_ptr, fz);
        Module._free(res_ptr);
         // console.log("done  reading");
@@ -80,6 +97,10 @@ function resizeCanvas() {
     // console.log("Resize w=" + window.innerWidth + " h=" + window.innerHeight);
     resize_cb = Module.cwrap('CallCFunc', 'number', ['number','number']);
     resize_cb(window.innerWidth, window.innerHeight);
+}
+
+function OnTestButton(){
+
 }
 
 function OnLoaded() {  

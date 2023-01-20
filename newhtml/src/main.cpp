@@ -5,6 +5,7 @@
 #include "ezpoint.h"
 #include <SDL2\SDL.h>
 #include <iostream>
+#include <thread>
 #include <emscripten.h>
 
 // extern void OnRender(unsigned int *pBuff, int winW, int winH, int buffW, int buffH );
@@ -52,7 +53,7 @@ extern "C" {
 		static unsigned char cnt = 0;
 		SDL_Rect srcRect, dstRect;
 
-		PollEvents();
+		//PollEvents();
 		ResetCanvasSize(gWinW, gWinH);
 		{
 		  static char ttt[128];
@@ -61,6 +62,7 @@ extern "C" {
 		}
 		if(gRenderEvent)
 		{
+
 			if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
 
 			Uint8* pixels = (Uint8*)surface->pixels;
@@ -88,7 +90,9 @@ extern "C" {
 	}
 
 	void InitSDL() {
-		printf("--- init sdl ---\n");
+		int sw = 0, sh = 0;
+		emscripten_get_screen_size(&sw, &sh);
+		printf("--- init sdl --- %d %d\n",sw,sh);
 		SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
 		SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &renderer);
 		surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
@@ -104,6 +108,7 @@ extern "C" {
 		//printf("HelloC w=%d h=%d\n",w,h);
 		gWinW = w > gCanvasW ? gCanvasW : w-15;
 		gWinH = h-100 > gCanvasH ? gCanvasH : h - 75;
+		ResetCanvasSize(gWinW, gWinH);
 		gRenderEvent = 1;
 		return 0;
 	}
@@ -111,14 +116,38 @@ extern "C" {
 	int FileBinData(void* pData, int sz) 
 	{
 		static char ts[1024];
-		//OutLine("--OpenFile--");
-		//printf("-FileBinData-%d\n", sz);
-		unsigned char* p8 = (unsigned char*)pData;
-		//printf("%c %c %c %c\n", p8[0], p8[1], p8[2], p8[3]);
+		unsigned char* p8 = (unsigned char*)pData;		
 		float* pF = (float*)pData;
 		int numFloats = sz/sizeof(float);
 		sprintf(ts,"Done Reading123 sz= %d %f",numFloats,pF[numFloats-2]);
 		OutLine(ts);
+
+        int numVerts = numFloats/4;
+		float x_min = pF[0];
+		for(int k = 0;k<numVerts;k+=4){
+			//std::cout <<"here---------"<<std::endl;
+			float x_min = std::min(x_min,pF[k]);
+			sprintf(ts,"processing %d from %d",k,numVerts);
+			if(( k& 0xFFFF) ==0 ){
+				OutLine(ts);
+				emscripten_sleep(1);
+			}
+			//break;
+		}
+		return 0;
+	}
+
+
+    void foo()
+	{
+      std::cout<<"OnThread"<<std::endl;
+	}
+
+    int CallCFunc2(int w, int h) 
+	{
+		std::thread::id this_id = std::this_thread::get_id();
+		std::cout << "thread " << this_id << " sleeping...\n";
+		std::cout <<"here..."<<std::endl;
 		return 0;
 	}
 
