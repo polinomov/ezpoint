@@ -62,7 +62,6 @@ extern "C" {
 		}
 		if(gRenderEvent)
 		{
-
 			if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
 
 			Uint8* pixels = (Uint8*)surface->pixels;
@@ -121,7 +120,9 @@ extern "C" {
 		int numFloats = sz/sizeof(float);
 		sprintf(ts,"Done Reading123 sz= %d %f",numFloats,pF[numFloats-2]);
 		OutLine(ts);
-
+		ezp::Scene *pSc = ezp::Scene::Get();
+		pSc->SetFileImage(pData, sz, 0);
+#if 0
         int numVerts = numFloats/4;
 		float x_min = pF[0];
 		for(int k = 0;k<numVerts;k+=4){
@@ -134,6 +135,7 @@ extern "C" {
 			}
 			//break;
 		}
+#endif
 		return 0;
 	}
 
@@ -160,3 +162,29 @@ extern "C" {
 		return 0;
 	}
 }
+
+namespace ezp 
+{
+	struct UIImpl : public UI{
+
+		void PrintMessage( const char *pMsg){
+			//printf("MESSAGE\n");
+			OutLine(pMsg);
+		}
+		void PrintMessage( const char *pMsg,int val){
+			static char strw[1024];
+			sprintf(strw, "%s'%s %d'", "document.getElementById('GFG').innerHTML=", pMsg,val);
+			emscripten_run_script(strw);
+		}
+
+		void SetRenderEvent(){
+			gRenderEvent = 1;
+		}
+	};
+	
+	UI* UI::Get(){
+		static UIImpl theUIImpl;
+		return &theUIImpl;
+	}
+
+}// namespace ezp

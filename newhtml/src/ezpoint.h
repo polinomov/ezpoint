@@ -1,8 +1,20 @@
 #ifndef _EZPOINT_H
 #define _EZPOINT_H
 
+#include <cstddef>
+#include <vector>
+#include <memory>
+
 namespace ezp 
 {
+	struct UI
+	{
+		virtual void PrintMessage( const char *pMsg) = 0;
+		virtual void PrintMessage( const char *pMsg,int val) = 0;
+		virtual void SetRenderEvent()  = 0;
+        static UI *Get();
+	};
+
 	struct Camera
 	{
 		static Camera *Get();
@@ -10,7 +22,17 @@ namespace ezp
 
 	struct Scene
 	{
-		virtual void AddPoint(float x, float y, float z, unsigned int c)  = 0;
+		struct Chunk{
+			float xMin,xMax,yMin,yMax,zMin,zMax;
+			int numVerts;
+			float *pVert;
+			unsigned int *pColors;
+		};
+
+        virtual bool IsLoading() = 0;
+		virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
+		virtual const std::vector<std::shared_ptr<Chunk>>& GetChunks() = 0;
+		static Scene *Get();
 	};
 
 	struct Renderer
