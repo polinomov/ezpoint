@@ -72,7 +72,7 @@ function OnFileSelected(input) {
        Module.HEAPU8.set(array, res_ptr);
        file_cb = Module.cwrap('FileBinData', 'number', ['arrayPointer', 'number'],{ async: true });
        file_cb(res_ptr, fz);
-       Module._free(res_ptr);
+      // Module._free(res_ptr);
         // console.log("done  reading");
     };
     reader.onloadend = function (e) {

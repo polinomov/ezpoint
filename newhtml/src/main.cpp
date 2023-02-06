@@ -60,7 +60,7 @@ extern "C" {
 		  sprintf(ttt,"BB %d",cnt);
 		  //OutLine(ttt);
 		}
-		if(gRenderEvent)
+		if(gRenderEvent>0)
 		{
 			if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
 
@@ -83,15 +83,15 @@ extern "C" {
 			SDL_RenderCopy(renderer, screenTexture, &srcRect, &dstRect);
 			SDL_RenderPresent(renderer);
 			SDL_DestroyTexture(screenTexture);
-			gRenderEvent = 0;
+			gRenderEvent--;
 			cnt++;
 		}
 	}
 
 	void InitSDL() {
 		int sw = 0, sh = 0;
-		emscripten_get_screen_size(&sw, &sh);
-		printf("--- init sdl --- %d %d\n",sw,sh);
+		emscripten_get_screen_size(&gCanvasW, &gCanvasH);
+		//printf("--- init sdl --- %d %d\n",sw,sh);
 		SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
 		SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &renderer);
 		surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
@@ -108,7 +108,7 @@ extern "C" {
 		gWinW = w > gCanvasW ? gCanvasW : w-15;
 		gWinH = h-100 > gCanvasH ? gCanvasH : h - 75;
 		ResetCanvasSize(gWinW, gWinH);
-		gRenderEvent = 1;
+		gRenderEvent = gWinW;
 		return 0;
 	}
 
@@ -177,8 +177,8 @@ namespace ezp
 			emscripten_run_script(strw);
 		}
 
-		void SetRenderEvent(){
-			gRenderEvent = 1;
+		void SetRenderEvent(int num){
+			gRenderEvent = num;
 		}
 	};
 	

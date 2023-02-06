@@ -11,13 +11,20 @@ namespace ezp
 	{
 		virtual void PrintMessage( const char *pMsg) = 0;
 		virtual void PrintMessage( const char *pMsg,int val) = 0;
-		virtual void SetRenderEvent()  = 0;
+		virtual void SetRenderEvent(int num)  = 0;
         static UI *Get();
 	};
 
 	struct Camera
 	{
-		static Camera *Get();
+		virtual float* GetPos() = 0;
+		virtual float* GetDir() = 0;
+		virtual float* GetUp() = 0;
+		virtual float* GetRight() = 0; 
+		virtual void SetPos(float *v) = 0;
+		virtual void SetDir(float *v) = 0;
+		virtual void SetUp(float *v) = 0;
+		static std::shared_ptr<Camera> Get();
 	};
 
 	struct Scene
