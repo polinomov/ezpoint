@@ -18,6 +18,7 @@ extern "C" {
 	int gCanvasW = 2048, gCanvasH = 2048;
 	int gWinW = 2048, gWinH = 2048;
 	int gRenderEvent = 1;
+	int gAlwaysRender = 0;
 	std::function<void (const char *msg)> gWriteLine;
 	
 	void PollEvents() {
@@ -60,7 +61,7 @@ extern "C" {
 		  sprintf(ttt,"BB %d",cnt);
 		  //OutLine(ttt);
 		}
-		if(gRenderEvent>0)
+		if((gRenderEvent>0) || ( gAlwaysRender==1))
 		{
 			if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
 
@@ -108,7 +109,7 @@ extern "C" {
 		gWinW = w > gCanvasW ? gCanvasW : w-15;
 		gWinH = h-100 > gCanvasH ? gCanvasH : h - 75;
 		ResetCanvasSize(gWinW, gWinH);
-		gRenderEvent = gWinW;
+		gRenderEvent = 2;
 		return 0;
 	}
 
@@ -150,6 +151,12 @@ extern "C" {
 		std::thread::id this_id = std::this_thread::get_id();
 		std::cout << "thread " << this_id << " sleeping...\n";
 		std::cout <<"here..."<<std::endl;
+		return 0;
+	}
+
+	int OnDebugCheckBox( int val){
+		gAlwaysRender = val;
+		//std::cout <<"Check:"<<val<<std::endl;
 		return 0;
 	}
 

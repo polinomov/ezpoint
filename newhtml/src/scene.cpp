@@ -58,7 +58,7 @@ namespace ezp
            	std::cout<<mainCh->zMin<<":::"<<mainCh->zMax<<std::endl;
 			SetCamera(mainCh);
 			m_isLoading = false;
-			UI::Get()->SetRenderEvent(1000);
+			UI::Get()->SetRenderEvent(2);
 		}
 
 		const std::vector<std::shared_ptr<Chunk>>&  GetChunks() {

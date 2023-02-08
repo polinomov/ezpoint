@@ -99,6 +99,15 @@ function resizeCanvas() {
     resize_cb(window.innerWidth, window.innerHeight);
 }
 
+function onTestCheckClick(cb){
+    ch_cb = Module.cwrap('OnDebugCheckBox', 'number', ['number']);
+    if(cb.checked){
+         ch_cb(1);
+    }else{
+        ch_cb(0);
+    }
+ }
+
 function OnTestButton(){
 
 }
