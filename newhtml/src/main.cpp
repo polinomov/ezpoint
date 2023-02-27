@@ -26,11 +26,29 @@ extern "C" {
 		while (SDL_PollEvent(&event)) {
 
 			if (event.type == SDL_WINDOWEVENT) {
-				printf("WIN-event--\n");
+				//printf("WIN-event--\n");
 			}
 			SDL_Keycode key = event.key.keysym.sym;
 			if (event.key.type == SDL_KEYDOWN) {
-				printf("KEY_DOWN\n");
+
+				//printf("KEY_DOWN-- %d \n",event.key.keysym.sym);
+				ezp::Camera *pCam = ezp::Camera::Get();
+				switch(event.key.keysym.sym)
+				{
+					case SDLK_RIGHT:
+						pCam->RotRight(1.0f);
+					break;
+					case SDLK_LEFT:
+						pCam->RotLeft(1.0f);
+					break;
+					case SDLK_UP:
+						pCam->RotUp(1.0f);
+					break;
+					case SDLK_DOWN:
+						pCam->RotDown(1.0f);
+					break;
+				}	
+				gRenderEvent = 1;			
 			}
 		}
 	}
@@ -54,7 +72,7 @@ extern "C" {
 		static unsigned char cnt = 0;
 		SDL_Rect srcRect, dstRect;
 
-		//PollEvents();
+		PollEvents();
 		ResetCanvasSize(gWinW, gWinH);
 		{
 		  static char ttt[128];

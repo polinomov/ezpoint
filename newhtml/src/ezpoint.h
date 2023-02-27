@@ -17,14 +17,21 @@ namespace ezp
 
 	struct Camera
 	{
-		virtual float* GetPos() = 0;
-		virtual float* GetDir() = 0;
-		virtual float* GetUp() = 0;
-		virtual float* GetRight() = 0; 
+		virtual void GetPos( float &x, float &y, float &z) = 0;
+		virtual void GetDir( float &x, float &y, float &z) = 0;
+		virtual void GetUp( float &x, float &y, float &z) = 0;
+		virtual void GetRight( float &x, float &y, float &z) = 0;
+
 		virtual void SetPos(float *v) = 0;
 		virtual void SetDir(float *v) = 0;
 		virtual void SetUp(float *v) = 0;
-		static std::shared_ptr<Camera> Get();
+		virtual void SetWorldUpAxis(float x, float y, float  z) = 0;
+		virtual void SetPivot(float x, float y, float  z)  = 0;
+		virtual void RotRight( float val) = 0;
+		virtual void RotLeft( float val) = 0;
+		virtual void RotUp( float val) = 0;
+		virtual void RotDown( float val) = 0;
+		static Camera  *Get();
 	};
 
 	struct Scene

@@ -23,12 +23,15 @@ namespace ezp
 			else{
 				ndx_min = (dim[1] < dim[2])? 1:2;
 			}
- 			std::shared_ptr<Camera> cam = Camera::Get();
+ 			Camera *pCam = Camera::Get();
 			pos[0]= (ch->xMax + ch->xMin) *0.5f;
 			pos[1]= (ch->yMax + ch->yMin) *0.5f;
 			pos[2]= (ch->zMax + ch->zMin) *0.5f;
+			pCam->SetPivot(pos[0],pos[1],pos[2]);
 			//std::cout<<"pos="<<pos[0]<<","<<pos[1]<<","<<pos[2]<<std::endl;
-			cam->SetPos(pos);
+			pos[2] += std::max(dim[0],dim[1]);
+			pCam->SetPos(pos);
+			pCam->SetWorldUpAxis(0.0f,0.0f,1.0f);
 		}
 
 		void SetFileImage( void *pData, std::size_t sz,int fType) {

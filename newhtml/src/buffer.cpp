@@ -30,20 +30,21 @@ namespace ezp
         }
 
         void RenderChunk(std::shared_ptr<Scene::Chunk> chunk,unsigned int *pBuff,int sw, int sh){
-            std::shared_ptr<Camera> cam = Camera::Get();
-            float *pP = cam->GetPos();
-            float *pD = cam->GetDir();
-            float *pU = cam->GetUp();
-            float *pR = cam->GetRight();
+            Camera *pCam = Camera::Get();
+            float pP[3],pD[3],pU[3],pR[3];
+            pCam->GetPos(pP[0],pP[1],pP[2]);
+            pCam->GetDir(pD[0],pD[1],pD[2]);
+            pCam->GetUp(pU[0],pU[1],pU[2]);
+            pCam->GetRight(pR[0],pR[1],pR[2]);
             std::cout<<"ppp="<<pP[0]<<","<<pP[1]<<","<<pP[2]<<std::endl;
             float *pV = chunk->pVert;
             for( int i = 0; i<chunk->numVerts; i++){
                 float dx = pV[0] - pP[0];
                 float dy = pV[1] - pP[1];
                 float dz = pV[2] - pP[2];
-                float xf = dx*pR[0] + dy*pR[1] + dx*pR[2];
-                float yf = dx*pU[0] + dy*pU[1] + dx*pU[2];
-                float zf = dx*pD[0] + dy*pD[1] + dx*pD[2];
+                float xf = dx*pR[0] + dy*pR[1] + dz*pR[2];
+                float yf = dx*pU[0] + dy*pU[1] + dz*pU[2];
+                float zf = dx*pD[0] + dy*pD[1] + dz*pD[2];
                 int x = (int) xf + sw/2;
                 int y = (int) yf + sh/2;
                 unsigned int *pCol = (unsigned int*)(pV+3);
