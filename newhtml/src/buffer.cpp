@@ -36,7 +36,8 @@ namespace ezp
             pCam->GetDir(pD[0],pD[1],pD[2]);
             pCam->GetUp(pU[0],pU[1],pU[2]);
             pCam->GetRight(pR[0],pR[1],pR[2]);
-            std::cout<<"ppp="<<pP[0]<<","<<pP[1]<<","<<pP[2]<<std::endl;
+            //std::cout<<"ppp="<<pP[0]<<","<<pP[1]<<","<<pP[2]<<std::endl;
+            float pixSize = 0.5f * (float)std::min(sw,sh);
             float *pV = chunk->pVert;
             for( int i = 0; i<chunk->numVerts; i++){
                 float dx = pV[0] - pP[0];
@@ -45,15 +46,17 @@ namespace ezp
                 float xf = dx*pR[0] + dy*pR[1] + dz*pR[2];
                 float yf = dx*pU[0] + dy*pU[1] + dz*pU[2];
                 float zf = dx*pD[0] + dy*pD[1] + dz*pD[2];
-                int x = (int) xf + sw/2;
-                int y = (int) yf + sh/2;
-                unsigned int *pCol = (unsigned int*)(pV+3);
-                if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
-                    int dst = x + y * m_canvasW;
-                    float zb = m_pzb[dst];
-                    if(zf < zb){
-                        pBuff[dst] = pCol[0];//0x00FFFF00;
-                        m_pzb[dst] = zf;
+                if(zf>0.001f){
+                    int x = sw/2 + (int) (xf * 1.5f * pixSize/zf);
+                    int y = sh/2 + (int) (yf * 1.5f * pixSize/zf);                 
+                    unsigned int *pCol = (unsigned int*)(pV+3);
+                    if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
+                        int dst = x + y * m_canvasW;
+                        float zb = m_pzb[dst];
+                        if(zf < zb){
+                            pBuff[dst] = pCol[0];//0x00FFFF00;
+                            m_pzb[dst] = zf;
+                        }
                     }
                 }
                 pV+=4;

@@ -1,14 +1,21 @@
 #include <stdlib.h>
 #include <iostream>
 #include "ezpoint.h"
+#include "readers\readers.h"
+
 namespace ezp 
 {
 	struct SceneImpl : public Scene
 	{
 		std::vector<std::shared_ptr<Chunk>> m_chunks;
+		FPoint4 *m_modelData;
 		bool m_isLoading;
 
-        bool IsLoading() { return m_isLoading;}
+		bool IsLoading() { return m_isLoading;}
+
+        SceneImpl(){
+			m_modelData = NULL;
+		}
 
 		void SetCamera(std::shared_ptr<Chunk> ch)
 		{
@@ -28,8 +35,9 @@ namespace ezp
 			pos[1]= (ch->yMax + ch->yMin) *0.5f;
 			pos[2]= (ch->zMax + ch->zMin) *0.5f;
 			pCam->SetPivot(pos[0],pos[1],pos[2]);
-			//std::cout<<"pos="<<pos[0]<<","<<pos[1]<<","<<pos[2]<<std::endl;
+
 			pos[2] += std::max(dim[0],dim[1]);
+			pCam->ReSet();
 			pCam->SetPos(pos);
 			pCam->SetWorldUpAxis(0.0f,0.0f,1.0f);
 		}
@@ -68,12 +76,20 @@ namespace ezp
 			return m_chunks;
 		}
 
+		void BuildTest( int n) {
+			int dataSize = 0;
+			if(m_modelData != NULL)	{
+				delete [] m_modelData;
+			}
+			m_chunks.clear();		
+			m_modelData = BuildTestScene(dataSize);
+			SetFileImage( m_modelData,dataSize,0);
+		}
 
 	}; //SceneImpl
 
 	Scene* Scene::Get(){
 		static SceneImpl SceneImpl;
-		SceneImpl.m_isLoading = false;
 		return &SceneImpl;
 	}
 

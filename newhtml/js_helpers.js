@@ -16,10 +16,12 @@ function callWasm1() {
     const result = Module.ccall('CallCFunc', 'number');
 }
 
-function Blah() {
-    console.log("Hello TestMe ----JS-\n");
-    resize_cb = Module.cwrap('CallCFunc2', 'number', ['number','number'] , { async: true });
-    resize_cb(window.innerWidth, window.innerHeight);
+function OnTest() {
+    console.log("Hello TestMe JS-\n");
+    test_cb = Module.cwrap('OnTestJS', 'number', ['number']);
+    test_cb(4);
+    //resize_cb = Module.cwrap('CallCFunc2', 'number', ['number','number'] , { async: true });
+    //resize_cb(window.innerWidth, window.innerHeight);
     /*
     let promise = new Promise(function(resolve, reject) {
         console.log("--Exe promise---");
@@ -73,7 +75,6 @@ function OnFileSelected(input) {
        file_cb = Module.cwrap('FileBinData', 'number', ['arrayPointer', 'number'],{ async: true });
        file_cb(res_ptr, fz);
       // Module._free(res_ptr);
-        // console.log("done  reading");
     };
     reader.onloadend = function (e) {
        console.log("load done");

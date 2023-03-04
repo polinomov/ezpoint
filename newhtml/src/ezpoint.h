@@ -22,6 +22,7 @@ namespace ezp
 		virtual void GetUp( float &x, float &y, float &z) = 0;
 		virtual void GetRight( float &x, float &y, float &z) = 0;
 
+		virtual void ReSet() = 0;
 		virtual void SetPos(float *v) = 0;
 		virtual void SetDir(float *v) = 0;
 		virtual void SetUp(float *v) = 0;
@@ -31,6 +32,8 @@ namespace ezp
 		virtual void RotLeft( float val) = 0;
 		virtual void RotUp( float val) = 0;
 		virtual void RotDown( float val) = 0;
+		virtual void ZoomIn( float val) = 0;
+		virtual void ZoomOut( float val) = 0;
 		static Camera  *Get();
 	};
 
@@ -44,6 +47,7 @@ namespace ezp
 		};
 
         virtual bool IsLoading() = 0;
+		virtual void BuildTest( int n) = 0;
 		virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
 		virtual const std::vector<std::shared_ptr<Chunk>>& GetChunks() = 0;
 		static Scene *Get();

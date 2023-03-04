@@ -31,8 +31,13 @@ extern "C" {
 			SDL_Keycode key = event.key.keysym.sym;
 			if (event.key.type == SDL_KEYDOWN) {
 
-				//printf("KEY_DOWN-- %d \n",event.key.keysym.sym);
 				ezp::Camera *pCam = ezp::Camera::Get();
+				bool isShift = false;
+
+				if( event.key.keysym.mod & KMOD_CTRL){
+					isShift = 1;
+				}
+
 				switch(event.key.keysym.sym)
 				{
 					case SDLK_RIGHT:
@@ -42,10 +47,12 @@ extern "C" {
 						pCam->RotLeft(1.0f);
 					break;
 					case SDLK_UP:
-						pCam->RotUp(1.0f);
+						if(isShift) pCam->ZoomIn(1.0f);
+						else pCam->RotUp(1.0f);
 					break;
 					case SDLK_DOWN:
-						pCam->RotDown(1.0f);
+						if(isShift) pCam->ZoomOut(1.0f);
+						else pCam->RotDown(1.0f);
 					break;
 				}	
 				gRenderEvent = 1;			
@@ -131,7 +138,7 @@ extern "C" {
 		return 0;
 	}
 
-	int FileBinData(void* pData, int sz) 
+	int FileBinData(void* pData, int sz) // JS call
 	{
 		static char ts[1024];
 		unsigned char* p8 = (unsigned char*)pData;		
@@ -172,9 +179,15 @@ extern "C" {
 		return 0;
 	}
 
-	int OnDebugCheckBox( int val){
+	int OnDebugCheckBox( int val){ //JS call
 		gAlwaysRender = val;
-		//std::cout <<"Check:"<<val<<std::endl;
+		return 0;
+	}
+
+	int OnTestJS(int val){ //JS call
+		std::cout<<"onTest"<<std::endl;
+		ezp::Scene *pSc = ezp::Scene::Get();
+		pSc->BuildTest(val);
 		return 0;
 	}
 

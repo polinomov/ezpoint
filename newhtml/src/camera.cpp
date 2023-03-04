@@ -70,7 +70,11 @@ namespace ezp
 		vector3 m_worldUp;
 		float m_zNear, m_zFar, m_Fov;
 
-        CameraImpl(){
+		CameraImpl(){
+			ReSet();
+		}
+
+		void ReSet(){
 			m_P[0] = 0.0f;
 			m_P[1] = 0.0f;
 			m_P[2] = 0.0f;
@@ -98,15 +102,13 @@ namespace ezp
 			x = m_R[0]; y = m_R[1]; z = m_R[2];
 		}
 
-    	void SetWorldUpAxis(float x, float y, float  z) 
-		{
+    	void SetWorldUpAxis(float x, float y, float  z) {
 			m_worldUp[0] = x;
 			m_worldUp[1] = y;
 			m_worldUp[2] = z;
 		}
 
-		void SetPivot(float x, float y, float  z) 
-		{
+		void SetPivot(float x, float y, float  z) {
 			m_L[0] = x;
 			m_L[1] = y;
 			m_L[2] = z;
@@ -121,7 +123,7 @@ namespace ezp
 		void SetDir(float *v){}
 		void SetUp(float *v){}
 		void RotAroudWorldUp( float val){
-			printf("Cam-rot-right---- %f\n",val);
+			//printf("----Cam-rot-right---- %f\n",val);
 			vector3 ZZ(0.0f, 0.0f, 0.0f);
 			m_P = rotate(m_P, m_L, m_worldUp, val*0.01f);
 			m_D = rotate(m_D, ZZ, m_worldUp, val*0.01f);
@@ -146,10 +148,17 @@ namespace ezp
 		}
 
 		void RotUp( float val) {
- 			RotAroudHor(val*0.01f);
+ 			RotAroudHor(val*0.05f);
 		}
 		void RotDown( float val) {
-			RotAroudHor(-val*0.01f);
+			RotAroudHor(-val*0.05f);
+		}
+
+		virtual void ZoomIn( float val){
+			m_P = m_P + (m_D * val);
+		}
+		virtual void ZoomOut( float val){
+			m_P = m_P - (m_D * val);
 		}
 	};
 
