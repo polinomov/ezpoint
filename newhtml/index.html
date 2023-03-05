@@ -3,28 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-        .btn-group button {
-            background-color: #000000;
-            border: 1px solid white;
-            color: white;
-            padding: 10px 24px;
-            cursor: pointer;
-            float: left;
-            font-size: 10px;
-            /*display: block;*/
-        }
-
-        .btn-group button:not(:last-child) {
-            border-right: none; /* Prevent double borders */
-        }
-
-        .btn-group:after {
-            content: "";
-            clear: both;
-            display: table;
-        }
-
+    <style>   
         .canvdiv {
             height: 100px;
             width: 100px;
@@ -35,28 +14,136 @@
             border-left-style: none;
         }
 
-     </style>
+        .thebutton {
+            border: none;
+            background-color: #333;
+        }
+
+        .navbar {
+            overflow: hidden;
+            background-color: #333;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .navbar a {
+            float: left;
+            font-size: 16px;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        .dropdown {
+            float: left;
+            overflow: hidden;
+        }
+
+        .dropdown .dropbtn {
+            cursor: pointer;
+            font-size: 16px;  
+             border: none;
+             outline: none;
+             color: white;
+            padding: 14px 16px;
+            background-color: inherit;
+            font-family: inherit;
+            margin: 0;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 16px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            float: none;
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .dropdown-content button {
+            float: none;
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        .show {
+             display: block;
+        }        
+    </style>
 </head>
 <body>
-    <div class="btn-group">
-        <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
-        <button type="button" onclick="OnFileOpen()">File</button>
-        <button onclick="OnTest()"> Test </button>
-        <button> Help </button>
-        <button id="Info"> Info </button>
-        <button> PointSize </button>
-        <label><input type='checkbox' onclick='onTestCheckClick(this);'>T</label>
+    <div class="navbar">
+        <div class="dropdown">
+            <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
+            <button type="button" class="dropbtn" onclick="OnFileOpen()"class="thebutton">File</button>
+            <button class="dropbtn" onclick="OnTest()">Test</button>
 
+            <button class="dropbtn" id="camBtn" onclick="myFunction()">Camera</button>
+            <div class="dropdown-content" id="myDropdown">
+                <button class="thebutton">Click1 </button>
+                <button class="thebutton">Click2 </button>
+            </div>
+        </div> 
     </div>
-        <div>
-            <canvas id="canvas" oncontextmenu="event.preventDefault()" style="border-left-style: none;"></canvas>
-            <script type='text/javascript'>
-                var Module = {
-                    canvas: (function () { return document.getElementById('canvas'); })()
-                };
-            </script>
-        </div>
-
+    <!--
+    <div>
+        <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
+        <button type="button" onclick="OnFileOpen()"class="thebutton">File</button>
+        <button onclick="OnTest()"class="thebutton"> Test </button>
+        <button class="thebutton"> Aaa </button>
+        <button class="thebutton"> Bbb </button>
+        <button class="thebutton"> Ccc </button>
+        <button class="thebutton"> Color </button>
+        <button onclick="myFunction1()" class="thebutton" id="camMenuId">Camera</button>       
+        <button class="thebutton"> Help </button>
+    </div> 
+-->
+    <div>
+        <canvas id="canvas" oncontextmenu="event.preventDefault()" style="border-left-style: none;"></canvas>
+        <script type='text/javascript'>
+            var Module = {
+                canvas: (function () { return document.getElementById('canvas'); })()
+            };
+        </script>
+        <script>
+            /* When the user clicks on the button, 
+            toggle between hiding and showing the dropdown content */
+            function myFunction() {
+                parEl = document.getElementById("camBtn");
+                viewportOffset = parEl.getBoundingClientRect();
+                myEl  = document.getElementById("myDropdown");
+                lpos = viewportOffset.left + 10;
+                myEl.style.left = lpos + "px";
+                document.getElementById("myDropdown").classList.toggle("show");
+            }
+            
+            // Close the dropdown if the user clicks outside of it
+            window.onclick = function(e) {
+              if (!e.target.matches('.dropbtn')) {
+              var myDropdown = document.getElementById("myDropdown");
+                if (myDropdown.classList.contains('show')) {
+                  myDropdown.classList.remove('show');
+                }
+              }
+            }
+        </script>
+    </div>
         <script src="index.js"></script>
         <script src="js_helpers.js"></script>
         <div id="GFG" style="background-color: black;font-size:12px; color:white; height:15px;" >

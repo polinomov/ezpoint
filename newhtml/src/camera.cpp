@@ -102,7 +102,7 @@ namespace ezp
 			x = m_R[0]; y = m_R[1]; z = m_R[2];
 		}
 
-    	void SetWorldUpAxis(float x, float y, float  z) {
+		void SetWorldUpAxis(float x, float y, float  z) {
 			m_worldUp[0] = x;
 			m_worldUp[1] = y;
 			m_worldUp[2] = z;

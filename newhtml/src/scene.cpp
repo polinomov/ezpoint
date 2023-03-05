@@ -10,15 +10,13 @@ namespace ezp
 		std::vector<std::shared_ptr<Chunk>> m_chunks;
 		FPoint4 *m_modelData;
 		bool m_isLoading;
-
 		bool IsLoading() { return m_isLoading;}
 
-        SceneImpl(){
+		SceneImpl(){
 			m_modelData = NULL;
 		}
 
-		void SetCamera(std::shared_ptr<Chunk> ch)
-		{
+		void SetCamera(std::shared_ptr<Chunk> ch){
 			float pos[3],dim[3];
 			dim[0] = ch->xMax - ch->xMin;
 			dim[1] = ch->yMax - ch->yMin;
@@ -64,9 +62,9 @@ namespace ezp
 				pv+=4;
 			}
 			std::cout<<"numverts="<<numVerts<<std::endl;
-            std::cout<<mainCh->xMin<<":"<<mainCh->xMax<<std::endl;
-           	std::cout<<mainCh->yMin<<"::"<<mainCh->yMax<<std::endl;
-           	std::cout<<mainCh->zMin<<":::"<<mainCh->zMax<<std::endl;
+			std::cout<<mainCh->xMin<<":"<<mainCh->xMax<<std::endl;
+			std::cout<<mainCh->yMin<<"::"<<mainCh->yMax<<std::endl;
+			std::cout<<mainCh->zMin<<":::"<<mainCh->zMax<<std::endl;
 			SetCamera(mainCh);
 			m_isLoading = false;
 			UI::Get()->SetRenderEvent(2);
@@ -92,7 +90,6 @@ namespace ezp
 		static SceneImpl SceneImpl;
 		return &SceneImpl;
 	}
-
 }//namespace ezp
 
 

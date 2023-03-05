@@ -8,8 +8,7 @@
 
 namespace ezp 
 {
-    static void Sphere(FPoint4* pDst, int rad, float cx, float cy, float cz, unsigned int color,int numV) {
-
+    static void Sphere(FPoint4* pDst, int rad, float cx, float cy, float cz, unsigned int color,int numV){
         FPoint4* pv = pDst;
         for (int k = 0; k < numV; k++,pv++)
         {
@@ -32,25 +31,22 @@ namespace ezp
         }
     }
 
-    FPoint4* BuildTestScene(int &numPoints)
-    {
+    FPoint4* BuildTestScene(int &dataSize){
         int numVertsInSphere = 1024 * 1024;
         int numSh = 4;
         int sz = numVertsInSphere * numSh;
-        float rad = 100.0f;
-
+        float rad = 1000.0f;
         srand(time(NULL));
         FPoint4* pData = new FPoint4[sz];
         FPoint4* pF = pData;
         Sphere(pF, rad, -rad, -rad, 0.0f,0xFFFFFFFF, numVertsInSphere); 
-        pF += numVertsInSphere ;
+        pF += numVertsInSphere;
         Sphere(pF, rad, rad,  rad, 0.0f, 0x00FF0000, numVertsInSphere); 
-        pF += numVertsInSphere ;
+        pF += numVertsInSphere;
         Sphere(pF, rad, rad, -rad, 0.0f, 0x0000FF00, numVertsInSphere); 
         pF += numVertsInSphere;
         Sphere(pF, rad, -rad, rad, 0.0f, 0x000000FF, numVertsInSphere); 
-
-        numPoints = sz*sizeof(FPoint4);
+        dataSize = sz*sizeof(FPoint4);
         return pData;
     }
 }
