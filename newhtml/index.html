@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="styleshit.css">
     <style>   
         .canvdiv {
             height: 100px;
@@ -14,7 +15,11 @@
             border-left-style: none;
         }
 
-        .thebutton {
+        .slidecontainer {
+            width: 100%; 
+        }
+
+        .thebutton1 {
             border: none;
             background-color: #333;
         }
@@ -88,62 +93,87 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
+   <div class="navbar">
         <div class="dropdown">
             <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
             <button type="button" class="dropbtn" onclick="OnFileOpen()"class="thebutton">File</button>
             <button class="dropbtn" onclick="OnTest()">Test</button>
-
-            <button class="dropbtn" id="camBtn" onclick="myFunction()">Camera</button>
-            <div class="dropdown-content" id="myDropdown">
-                <button class="thebutton">Click1 </button>
-                <button class="thebutton">Click2 </button>
+            
+            <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
+            <div class="dropdown-content" id="cameraDropdown">
+                <button class="thebutton">------+-------------------------</button>
+                <button class="thebutton">------+-------------------------</button>
+                <button class="thebutton">------+-------------------------</button>
+                
+                <div class="horgrp">
+                    <button class="thebutton">Fov</button>
+                    <input class="thebutton" type="number" min="10" max="80"/> 
+                </div>
+            
+           </div>
+        
+            <button class="dropbtn" id="viewBtn" onclick="myFunction('viewBtn','viewDropdown')">View</button>
+            <div class="dropdown-content" id="viewDropdown">
+                <button class="thebutton">Item1 </button>
+                <button class="thebutton">Item2 </button>
             </div>
+ 
+            <button class="dropbtn" id="helpBtn">Help</button>
         </div> 
-    </div>
-    <!--
-    <div>
-        <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
-        <button type="button" onclick="OnFileOpen()"class="thebutton">File</button>
-        <button onclick="OnTest()"class="thebutton"> Test </button>
-        <button class="thebutton"> Aaa </button>
-        <button class="thebutton"> Bbb </button>
-        <button class="thebutton"> Ccc </button>
-        <button class="thebutton"> Color </button>
-        <button onclick="myFunction1()" class="thebutton" id="camMenuId">Camera</button>       
-        <button class="thebutton"> Help </button>
-    </div> 
--->
+     </div>
+ 
     <div>
         <canvas id="canvas" oncontextmenu="event.preventDefault()" style="border-left-style: none;"></canvas>
-        <script type='text/javascript'>
-            var Module = {
-                canvas: (function () { return document.getElementById('canvas'); })()
-            };
-        </script>
+    </div>
+    
+    <script type='text/javascript'>
+        var Module = {
+            canvas: (function () { return document.getElementById('canvas'); })()
+        };
+    </script>
+
+
         <script>
-            /* When the user clicks on the button, 
-            toggle between hiding and showing the dropdown content */
-            function myFunction() {
-                parEl = document.getElementById("camBtn");
+            var openedDropDownid;
+            function myFunction(parButton,dropId) {
+                if(openedDropDownid != dropId){
+                    elToClose = document.getElementById(openedDropDownid);
+                     if(elToClose != null){
+                        if (elToClose.classList.contains('show')) {
+                            elToClose.classList.remove('show');
+                        }
+                    }
+                }
+                parEl = document.getElementById(parButton);
                 viewportOffset = parEl.getBoundingClientRect();
-                myEl  = document.getElementById("myDropdown");
+                myEl  = document.getElementById(dropId);
                 lpos = viewportOffset.left + 10;
                 myEl.style.left = lpos + "px";
-                document.getElementById("myDropdown").classList.toggle("show");
+                document.getElementById(dropId).classList.toggle("show");
+                openedDropDownid = dropId;
             }
             
             // Close the dropdown if the user clicks outside of it
             window.onclick = function(e) {
+              /*
               if (!e.target.matches('.dropbtn')) {
-              var myDropdown = document.getElementById("myDropdown");
+                console.log("---click----");
+                var myDropdown = document.getElementById("cameraDropdown");
                 if (myDropdown.classList.contains('show')) {
-                  myDropdown.classList.remove('show');
+                    myDropdown.classList.remove('show');
                 }
-              }
+                
+                var myDropdown1 = document.getElementById("viewDropdown");
+                if (myDropdown1.classList.contains('show')) {
+                   myDropdown1.classList.remove('show');
+                }
+                
+             }
+             */
+             
             }
-        </script>
-    </div>
+       </script>
+       
         <script src="index.js"></script>
         <script src="js_helpers.js"></script>
         <div id="GFG" style="background-color: black;font-size:12px; color:white; height:15px;" >

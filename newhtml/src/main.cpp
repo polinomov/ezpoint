@@ -16,7 +16,7 @@ extern "C" {
 	SDL_Renderer* renderer;
 	SDL_Surface* surface;
 	int gCanvasW = 2048, gCanvasH = 2048;
-	int gWinW = 2048, gWinH = 2048;
+	int gWinW = 256, gWinH = 256;
 	int gRenderEvent = 1;
 	int gAlwaysRender = 0;
 	std::function<void (const char *msg)> gWriteLine;
@@ -78,8 +78,7 @@ extern "C" {
 	void MainLoop() {
 		static unsigned char cnt = 0;
 		SDL_Rect srcRect, dstRect;
-
-		PollEvents();
+   		PollEvents();
 		ResetCanvasSize(gWinW, gWinH);
 		{
 		  static char ttt[128];
@@ -115,10 +114,13 @@ extern "C" {
 	}
 
 	void InitSDL() {
+		//return;
 		int sw = 0, sh = 0;
-		emscripten_get_screen_size(&gCanvasW, &gCanvasH);
+		//emscripten_get_screen_size(&gCanvasW, &gCanvasH);
 		//printf("--- init sdl --- %d %d\n",sw,sh);
+		//SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
 		SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
+		SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, "#canvas");
 		SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &renderer);
 		surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
 		gWriteLine =  OutLine;
@@ -130,7 +132,7 @@ extern "C" {
     // Resize call from JS
 	int CallCFunc(int w, int h) 
 	{
-		//printf("HelloC w=%d h=%d\n",w,h);
+		printf("HelloC-- w=%d h=%d\n",w,h);
 		gWinW = w > gCanvasW ? gCanvasW : w-15;
 		gWinH = h-100 > gCanvasH ? gCanvasH : h - 75;
 		ResetCanvasSize(gWinW, gWinH);
@@ -192,7 +194,7 @@ extern "C" {
 	}
 
 	int  main() {
-		printf("--MAIN--\n");
+		printf("-----MAIN----\n");
 		InitSDL();
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
