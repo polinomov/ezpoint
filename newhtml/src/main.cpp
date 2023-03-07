@@ -121,6 +121,9 @@ extern "C" {
 		//SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
 		SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
 		SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, "#canvas");
+		SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
+        SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE);
+
 		SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &renderer);
 		surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
 		gWriteLine =  OutLine;
