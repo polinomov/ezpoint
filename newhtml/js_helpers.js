@@ -10,6 +10,12 @@ class GlobVars {
 }
 var gv = new GlobVars();
 
+
+
+var gCamRotCb;
+
+
+
 function callWasm1() {
     console.log("CallWasm");
     Module['canvas'] = document.getElementById('myPics');
@@ -100,6 +106,40 @@ function resizeCanvas() {
     resize_cb(window.innerWidth, window.innerHeight);
 }
 
+
+function onKeyUp(e){
+    console.log("key=" + code);
+    if(isCamKey(e.key)==1){
+        gCurrKey = -1
+    }
+}
+
+class ProscessEventsClass{
+    constructor() {
+        this.ctrlOn = 0;
+        console.log("ctor");
+    };
+  
+    onKeyUp(e){
+        if(e.key=="Control"){
+            this.ctrlOn = 0;
+        }
+    }
+
+    onKeyDown(e){
+        //console.log(e);
+        switch(e.key){
+            case "ArrowUp":    gCamRotCb( 0, 1, this.ctrlOn,1); break;
+            case "ArrowDown":  gCamRotCb( 0,-1, this.ctrlOn,1); break;
+            case "ArrowLeft":  gCamRotCb(-1, 0, this.ctrlOn,1); break;
+            case "ArrowRight": gCamRotCb( 1, 0, this.ctrlOn,1); break;
+            case "Control":    this.ctrlOn = 1; break;
+        } 
+    }
+}
+
+var ProcessEvents = new ProscessEventsClass();
+
 function onTestCheckClick(cb){
     ch_cb = Module.cwrap('OnDebugCheckBox', 'number', ['number']);
     if(cb.checked){
@@ -123,8 +163,14 @@ function OnLoaded() {
 function OnStart()
 {
     console.log("-OnStart-\n");
+    gCamRotCb = Module.cwrap('CameraRotateJS', 'number','number','number','number' ['number']);
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas, false);
+    window.addEventListener('resize',  resizeCanvas, false);
+    window.addEventListener('keydown', (event) => {ProcessEvents.onKeyDown(event);}, false);
+    window.addEventListener('keyup',   (event) => {ProcessEvents.onKeyUp(event);}, false);
+    //window.addEventListener('keydown', (event) => {onKeyDown(event);}, false);
 }
+
+
 
 //OnStart();

@@ -196,6 +196,11 @@ extern "C" {
 		return 0;
 	}
 
+	int CameraRotateJS (int lr, int td, int zoom,int kind){
+		std::cout<<"Camrot-:"<<" lr =" <<lr<<" zoom="<<zoom<<std::endl;
+		return 0;
+	}
+
 	int  main() {
 		printf("-----MAIN----\n");
 		InitSDL();
