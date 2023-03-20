@@ -32,7 +32,7 @@ namespace ezp
     }
 
     FPoint4* BuildTestScene(int &dataSize){
-        int numVertsInSphere = 1024 * 1024;
+        int numVertsInSphere = 1024 * 1024/4;
         int numSh = 4;
         int sz = numVertsInSphere * numSh;
         float rad = 1000.0f;

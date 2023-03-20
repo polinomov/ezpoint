@@ -107,19 +107,74 @@ function resizeCanvas() {
 }
 
 
-function onKeyUp(e){
-    console.log("key=" + code);
-    if(isCamKey(e.key)==1){
-        gCurrKey = -1
-    }
-}
-
 class ProscessEventsClass{
     constructor() {
         this.ctrlOn = 0;
-        console.log("ctor");
+        this.mouseOn = 0;
+        this.posX = -1;
+        this.posY = -1;
+        //console.log("ctor");
     };
-  
+
+    onMouseUp(e){
+        this.mouseOn = 0;
+        this.posX = -1;
+        this.posY = -1;
+        //console.log(e);
+    }
+
+    onMouseClick(e){
+        //console.log(e);
+    }
+
+    onMouseDown(e){
+        this.mouseOn = 1;
+        this.posX = e.clientX;
+        this.posY = e.clientY;
+        //console.log(e);
+    }
+
+    onMouseMove(e){
+        if(this.mouseOn==1){
+            let dx = e.clientX - this.posX;
+            let dy = e.clientY - this.posY;
+            let adx = (dx>0) ? dx:-dx;
+            let ady = (dy>0) ? dy:-dy;
+            if(adx > ady){
+                let vx = adx *10000/window.innerWidth;
+                if( dx > 0){
+                    gCamRotCb(1, 0, 0,vx);
+                }
+                if(dx<0){
+                    gCamRotCb(-1, 0, 0,vx);
+                }
+            }
+            else{
+                let vy = ady *10000/window.innerHeight;
+                if( dy > 0){
+                    gCamRotCb(0, -1, 0,vy);
+                }
+                if(dy<0){
+                    gCamRotCb(0, 1, 0,vy);
+                }
+            }
+            this.posX = e.clientX;
+            this.posY = e.clientY;
+        }
+    }
+
+    onMouseWheel(e){
+       // console.log("x=" + e.deltaX + " y="+ e.DeltaY);
+    } 
+
+    onWheel(e){
+        if(e.deltaY > 0){
+            gCamRotCb( 0, 1, 1,0);
+        }else{
+            gCamRotCb( 0, -1, 1,0); 
+        }
+    } 
+
     onKeyUp(e){
         if(e.key=="Control"){
             this.ctrlOn = 0;
@@ -127,12 +182,11 @@ class ProscessEventsClass{
     }
 
     onKeyDown(e){
-        //console.log(e);
-        switch(e.key){
-            case "ArrowUp":    gCamRotCb( 0, 1, this.ctrlOn,1); break;
-            case "ArrowDown":  gCamRotCb( 0,-1, this.ctrlOn,1); break;
-            case "ArrowLeft":  gCamRotCb(-1, 0, this.ctrlOn,1); break;
-            case "ArrowRight": gCamRotCb( 1, 0, this.ctrlOn,1); break;
+         switch(e.key){
+            case "ArrowUp":    gCamRotCb( 0, 1, this.ctrlOn,200); break;
+            case "ArrowDown":  gCamRotCb( 0,-1, this.ctrlOn,200); break;
+            case "ArrowLeft":  gCamRotCb(-1, 0, this.ctrlOn,200); break;
+            case "ArrowRight": gCamRotCb( 1, 0, this.ctrlOn,200); break;
             case "Control":    this.ctrlOn = 1; break;
         } 
     }
@@ -166,9 +220,15 @@ function OnStart()
     gCamRotCb = Module.cwrap('CameraRotateJS', 'number','number','number','number' ['number']);
     resizeCanvas();
     window.addEventListener('resize',  resizeCanvas, false);
-    window.addEventListener('keydown', (event) => {ProcessEvents.onKeyDown(event);}, false);
-    window.addEventListener('keyup',   (event) => {ProcessEvents.onKeyUp(event);}, false);
-    //window.addEventListener('keydown', (event) => {onKeyDown(event);}, false);
+    window.addEventListener('keydown',   (event) => {ProcessEvents.onKeyDown(event);}, false);
+    window.addEventListener('keyup',     (event) => {ProcessEvents.onKeyUp(event);}, false);
+    const el = document.getElementById("canvas");
+    el.addEventListener('click',     (event) => {ProcessEvents.onMouseClick(event);}, false);
+    el.addEventListener('mouseup',   (event) => {ProcessEvents.onMouseUp(event);}, false);
+    el.addEventListener('mousemove', (event) => {ProcessEvents.onMouseMove(event);}, false);
+    el.addEventListener('mousedown', (event) => {ProcessEvents.onMouseDown(event);}, false);
+    el.addEventListener('mousewheel',(event) => {ProcessEvents.onMouseWheel(event);}, false);
+    el.addEventListener('wheel',     (event) => {ProcessEvents.onWheel(event);}, false);
 }
 
 

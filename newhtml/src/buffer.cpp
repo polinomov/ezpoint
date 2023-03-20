@@ -6,6 +6,7 @@
 #include <limits>
 #include <iostream>
 #include "ezpoint.h"
+#include "wasm_simd128.h"
 /*
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -19,17 +20,19 @@ namespace ezp
 	
     struct RendererImpl : public Renderer
     {
-        std::shared_ptr<float[]> zBuff;
+        //std::shared_ptr<float[]> zBuff;
         float *m_pzb;
+        unsigned int *m_pb;
         int m_canvasW, m_canvasH;
 
         void Init(int canvasW, int canvasH){
             m_canvasW = canvasW;
             m_canvasH = canvasH;
             m_pzb = new float[canvasW *canvasH];
+            m_pb  = new unsigned int[canvasW *canvasH];
         }
 
-        void RenderChunk(std::shared_ptr<Scene::Chunk> chunk,unsigned int *pBuff,int sw, int sh){
+        void RenderChunk(std::shared_ptr<Scene::Chunk> chunk,int sw, int sh){
             Camera *pCam = Camera::Get();
             float pP[3],pD[3],pU[3],pR[3];
             pCam->GetPos(pP[0],pP[1],pP[2]);
@@ -54,7 +57,7 @@ namespace ezp
                         int dst = x + y * m_canvasW;
                         float zb = m_pzb[dst];
                         if(zf < zb){
-                            pBuff[dst] = pCol[0];//0x00FFFF00;
+                            m_pb[dst] = pCol[0];
                             m_pzb[dst] = zf;
                         }
                     }
@@ -73,18 +76,18 @@ namespace ezp
         }
  
         void Render(unsigned int *pBuff, int winW, int winH){
-
+/**/
             static int val = 0;
             
    	        for (int y = 0; y < winH; y++) {
 		        for (int x = 0; x < winW; x++) {
                         int dst = x + y * m_canvasW;
-                        pBuff[dst]  = 0;
+                        m_pb[dst]  = 0;
                         m_pzb[dst]  = std::numeric_limits<float>::max();;
                 }
             }
             
-            RenderRect(pBuff, 0, winH-10, val, winH, 0xFF);        
+            RenderRect(m_pb, 0, winH-10, val, winH, 0xFF);        
             val++;
             if(val>winW) val = 0;
 
@@ -92,8 +95,16 @@ namespace ezp
   
             for( int i = 0; i<chunks.size(); i++)
             {
-                 RenderChunk(chunks[i],pBuff,winW,winH);
+                 RenderChunk(chunks[i],winW,winH);
             }
+
+            for (int y = 0; y < winH; y++) {
+		        for (int x = 0; x < winW; x++) {
+                        int dst = x + y * m_canvasW;
+                        pBuff[dst] = m_pb[dst];
+                }
+            }
+/**/
             ShowFrameRate();           
         }
 
