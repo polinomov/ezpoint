@@ -166,6 +166,8 @@ extern "C" {
     int CameraRotateJS (int lr, int td, int zoom,int val){
         static const float PI = 3.1415f;
         ezp::Camera *pCam = ezp::Camera::Get();
+        ezp::Scene *pSc = ezp::Scene::Get();
+        float scaleShift = pSc->GetSize()*0.01f;
         float shift = (float)val * 2.0f * PI/10000.0f;
         if(lr==1){
             pCam->RotRight(shift);
@@ -174,13 +176,13 @@ extern "C" {
         }
         if(td==1){
             if(zoom ==1 ){
-                pCam->ZoomIn(100.0f);
+                pCam->ZoomIn(scaleShift);
             }else{
                 pCam->RotUp(shift);
             }
         }else if(td==-1){
             if(zoom==1){
-                pCam->ZoomOut(100.0f);
+                pCam->ZoomOut(scaleShift);
             }else{
                 pCam->RotDown(shift);
             }

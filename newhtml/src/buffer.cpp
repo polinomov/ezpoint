@@ -33,6 +33,7 @@ namespace ezp
         }
 
         void RenderChunk(std::shared_ptr<Scene::Chunk> chunk,int sw, int sh){
+            //_m128 a1,b1;
             Camera *pCam = Camera::Get();
             float pP[3],pD[3],pU[3],pR[3];
             pCam->GetPos(pP[0],pP[1],pP[2]);
