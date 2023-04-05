@@ -30,7 +30,7 @@ namespace ezp
             else{
                 ndx_min = (dim[1] < dim[2])? 1:2;
             }
-             Camera *pCam = Camera::Get();
+            Camera *pCam = Camera::Get();
             pos[0]= (ch->xMax + ch->xMin) *0.5f;
             pos[1]= (ch->yMax + ch->yMin) *0.5f;
             pos[2]= (ch->zMax + ch->zMin) *0.5f;
@@ -42,7 +42,7 @@ namespace ezp
             pCam->SetWorldUpAxis(0.0f,0.0f,1.0f);
         }
 
-        void SetFileImage( void *pData, std::size_t sz,int fType) {
+        void fileXYZ( void *pData, std::size_t sz,int fType) {
             m_isLoading = true;
             int numFloats = sz/sizeof(float);
             int numVerts = numFloats/4;
@@ -72,6 +72,17 @@ namespace ezp
             m_size = std::max(m_size,mainCh->yMax-mainCh->yMin);
             m_size = std::max(m_size,mainCh->zMax-mainCh->zMin);
             UI::Get()->SetRenderEvent(2);
+        }
+
+        void SetFileImage( void *pData, std::size_t sz,int fType) 
+        {
+            if( fType == 0){
+                fileXYZ( pData, sz, 0);
+                return;
+            }
+            if(fType==1){
+                ReadLasFile( pData, sz);
+            }
         }
 
         const std::vector<std::shared_ptr<Chunk>>&  GetChunks() {

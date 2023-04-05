@@ -63,7 +63,6 @@ namespace ezp
         return R;
     }
 
-
     struct CameraImpl : public Camera
     {
         vector3 m_P, m_D, m_U, m_R, m_L;

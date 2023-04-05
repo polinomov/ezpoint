@@ -2,6 +2,7 @@
 #ifndef _READERS_H
 #define _READERS_H
 
+
 namespace ezp 
 {
     struct FPoint4
@@ -13,6 +14,7 @@ namespace ezp
     };
 
     FPoint4* BuildTestScene(int &numPoints);
+    FPoint4* ReadLasFile( void *pData, std::size_t sz);
 }
 
 #endif

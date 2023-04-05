@@ -21,7 +21,6 @@ namespace ezp
 		virtual void GetDir( float &x, float &y, float &z) = 0;
 		virtual void GetUp( float &x, float &y, float &z) = 0;
 		virtual void GetRight( float &x, float &y, float &z) = 0;
-
 		virtual void ReSet() = 0;
 		virtual void SetPos(float *v) = 0;
 		virtual void SetDir(float *v) = 0;

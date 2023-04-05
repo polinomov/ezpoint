@@ -8,10 +8,7 @@
 #include <thread>
 #include <emscripten.h>
 
-// extern void OnRender(unsigned int *pBuff, int winW, int winH, int buffW, int buffH );
-
 extern "C" {
-
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Surface* surface;
@@ -81,7 +78,6 @@ extern "C" {
     }
 
     void InitSDL() {
-        //return;
         int sw = 0, sh = 0;
         //emscripten_get_screen_size(&gCanvasW, &gCanvasH);
         //printf("--- init sdl --- %d %d\n",sw,sh);
@@ -110,16 +106,16 @@ extern "C" {
         return 0;
     }
 
-    int FileBinData(void* pData, int sz) // JS call
+    int FileBinDataJS(void* pData, int sz, int type) // JS call
     {
         static char ts[1024];
         unsigned char* p8 = (unsigned char*)pData;		
         float* pF = (float*)pData;
         int numFloats = sz/sizeof(float);
-        sprintf(ts,"Done Reading123 sz= %d %f",numFloats,pF[numFloats-2]);
+        sprintf(ts,"Done Reading sz= %d %f",numFloats,pF[numFloats-2]);
         OutLine(ts);
         ezp::Scene *pSc = ezp::Scene::Get();
-        pSc->SetFileImage(pData, sz, 0);
+        pSc->SetFileImage(pData, sz, type);
 #if 0
         int numVerts = numFloats/4;
         float x_min = pF[0];
@@ -136,7 +132,6 @@ extern "C" {
 #endif
         return 0;
     }
-
 
     void foo()
     {

@@ -46,53 +46,46 @@ function OnTest() {
         error => alert(error) 
     );
     */
-    
+
 }
 
-//function OnDraw() {
-//}
-
 function OnMouseMove(e) {
-    
+
     gv.mouseX = e.offsetX;
     gv.mouseY = e.offsetY;
     OnDraw();
 }
 
 function OnFileSelected(input) {
-    //console.log("---fileSelected-- " + input.files[0].name);
-    document.getElementById('GFG').innerHTML='Reading: ' + input.files[0].name;
+    document.getElementById('GFG').innerHTML = 'Reading: ' + input.files[0].name;
     var file = input.files[0];
     if (!file) {
         console.log("NO FILE");
         return;
     }
-    console.log("YES FILE size=" + input.files[0].size);
+    var ext = input.files[0].name.split('.').pop();
+    console.log("YES FILE size=" + input.files[0].size + " ext=" + ext);
     var fz = input.files[0].size;
     var reader = new FileReader();
     reader.onload = function (e) {
-        // binary data
-       
-       console.log("-reader-onload-");
-       var data = reader.result;
-       var array = new Uint8Array(data);
-       var res_ptr = Module._malloc(fz);
-       Module.HEAPU8.set(array, res_ptr);
-       file_cb = Module.cwrap('FileBinData', 'number', ['arrayPointer', 'number'],{ async: true });
-       file_cb(res_ptr, fz);
-      // Module._free(res_ptr);
+        var data = reader.result;
+        var array = new Uint8Array(data);
+        var res_ptr = Module._malloc(fz);
+        Module.HEAPU8.set(array, res_ptr);
+        file_cb = Module.cwrap('FileBinDataJS', 'number', ['arrayPointer', 'number', 'number'], { async: true });
+        switch (ext) {
+            case "xyz": file_cb(res_ptr, fz, 0); break;
+            case "las": file_cb(res_ptr, fz, 1); break;
+        }
+        // Module._free(res_ptr);
     };
     reader.onloadend = function (e) {
-       console.log("load done");
+        console.log("load done");
     }
-
     reader.onerror = function (e) {
-        // error occurred
         console.log('Error : ' + e.type);
     };
-   // document.getElementById('GFG1').innerHTML='-JSStart'
-    reader.readAsArrayBuffer(input.files[0]);  
-   // document.getElementById('GFG1').innerHTML='-JSDone'
+    reader.readAsArrayBuffer(input.files[0]);
 }
 
 function OnFileOpen() {
@@ -102,60 +95,55 @@ function OnFileOpen() {
 
 function resizeCanvas() {
     // console.log("Resize w=" + window.innerWidth + " h=" + window.innerHeight);
-    resize_cb = Module.cwrap('CallCFunc', 'number', ['number','number']);
+    resize_cb = Module.cwrap('CallCFunc', 'number', ['number', 'number']);
     resize_cb(window.innerWidth, window.innerHeight);
 }
 
-
-class ProscessEventsClass{
+class ProscessEventsClass {
     constructor() {
         this.ctrlOn = 0;
         this.mouseOn = 0;
         this.posX = -1;
         this.posY = -1;
-        //console.log("ctor");
     };
 
-    onMouseUp(e){
+    onMouseUp(e) {
         this.mouseOn = 0;
         this.posX = -1;
         this.posY = -1;
-        //console.log(e);
     }
 
-    onMouseClick(e){
-        //console.log(e);
+    onMouseClick(e) {
     }
 
-    onMouseDown(e){
+    onMouseDown(e) {
         this.mouseOn = 1;
         this.posX = e.clientX;
         this.posY = e.clientY;
-        //console.log(e);
     }
 
-    onMouseMove(e){
-        if(this.mouseOn==1){
+    onMouseMove(e) {
+        if (this.mouseOn == 1) {
             let dx = e.clientX - this.posX;
             let dy = e.clientY - this.posY;
-            let adx = (dx>0) ? dx:-dx;
-            let ady = (dy>0) ? dy:-dy;
-            if(adx > ady){
-                let vx = adx *10000/window.innerWidth;
-                if( dx > 0){
-                    gCamRotCb(1, 0, 0,vx);
+            let adx = (dx > 0) ? dx : -dx;
+            let ady = (dy > 0) ? dy : -dy;
+            if (adx > ady) {
+                let vx = adx * 10000 / window.innerWidth;
+                if (dx > 0) {
+                    gCamRotCb(1, 0, 0, vx);
                 }
-                if(dx<0){
-                    gCamRotCb(-1, 0, 0,vx);
+                if (dx < 0) {
+                    gCamRotCb(-1, 0, 0, vx);
                 }
             }
-            else{
-                let vy = ady *10000/window.innerHeight;
-                if( dy > 0){
-                    gCamRotCb(0, -1, 0,vy);
+            else {
+                let vy = ady * 10000 / window.innerHeight;
+                if (dy > 0) {
+                    gCamRotCb(0, -1, 0, vy);
                 }
-                if(dy<0){
-                    gCamRotCb(0, 1, 0,vy);
+                if (dy < 0) {
+                    gCamRotCb(0, 1, 0, vy);
                 }
             }
             this.posX = e.clientX;
@@ -163,72 +151,70 @@ class ProscessEventsClass{
         }
     }
 
-    onMouseWheel(e){
-       // console.log("x=" + e.deltaX + " y="+ e.DeltaY);
-    } 
+    onMouseWheel(e) {
+    }
 
-    onWheel(e){
-        if(e.deltaY > 0){
-            gCamRotCb( 0, 1, 1,0);
-        }else{
-            gCamRotCb( 0, -1, 1,0); 
+    onWheel(e) {
+        if (e.deltaY > 0) {
+            gCamRotCb(0, 1, 1, 0);
+        } else {
+            gCamRotCb(0, -1, 1, 0);
         }
-    } 
+    }
 
-    onKeyUp(e){
-        if(e.key=="Control"){
+    onKeyUp(e) {
+        if (e.key == "Control") {
             this.ctrlOn = 0;
         }
     }
 
-    onKeyDown(e){
-         switch(e.key){
-            case "ArrowUp":    gCamRotCb( 0, 1, this.ctrlOn,200); break;
-            case "ArrowDown":  gCamRotCb( 0,-1, this.ctrlOn,200); break;
-            case "ArrowLeft":  gCamRotCb(-1, 0, this.ctrlOn,200); break;
-            case "ArrowRight": gCamRotCb( 1, 0, this.ctrlOn,200); break;
-            case "Control":    this.ctrlOn = 1; break;
-        } 
+    onKeyDown(e) {
+        switch (e.key) {
+            case "ArrowUp": gCamRotCb(0, 1, this.ctrlOn, 200); break;
+            case "ArrowDown": gCamRotCb(0, -1, this.ctrlOn, 200); break;
+            case "ArrowLeft": gCamRotCb(-1, 0, this.ctrlOn, 200); break;
+            case "ArrowRight": gCamRotCb(1, 0, this.ctrlOn, 200); break;
+            case "Control": this.ctrlOn = 1; break;
+        }
     }
 }
 
 var ProcessEvents = new ProscessEventsClass();
 
-function onTestCheckClick(cb){
+function onTestCheckClick(cb) {
     ch_cb = Module.cwrap('OnDebugCheckBox', 'number', ['number']);
-    if(cb.checked){
-         ch_cb(1);
-    }else{
+    if (cb.checked) {
+        ch_cb(1);
+    } else {
         ch_cb(0);
     }
- }
+}
 
-function OnTestButton(){
+function OnTestButton() {
 
 }
 
-function OnLoaded() {  
+function OnLoaded() {
     // init canvas
     htmlCanvas = document.getElementById('myPics');
     context = htmlCanvas.getContext('2d');
     resizeCanvas();
- }
+}
 
-function OnStart()
-{
+function OnStart() {
     console.log("-OnStart-\n");
-    gCamRotCb = Module.cwrap('CameraRotateJS', 'number','number','number','number' ['number']);
+    gCamRotCb = Module.cwrap('CameraRotateJS', 'number', 'number', 'number', 'number'['number']);
     resizeCanvas();
-    window.addEventListener('resize',  resizeCanvas, false);
-    window.addEventListener('keydown',   (event) => {ProcessEvents.onKeyDown(event);}, false);
-    window.addEventListener('keyup',     (event) => {ProcessEvents.onKeyUp(event);}, false);
+    window.addEventListener('resize', resizeCanvas, false);
+    window.addEventListener('keydown', (event) => { ProcessEvents.onKeyDown(event); }, false);
+    window.addEventListener('keyup', (event) => { ProcessEvents.onKeyUp(event); }, false);
     const el = document.getElementById("canvas");
-    el.addEventListener('click',     (event) => {ProcessEvents.onMouseClick(event);}, false);
-    el.addEventListener('mouseup',   (event) => {ProcessEvents.onMouseUp(event);}, false);
-    el.addEventListener('mousemove', (event) => {ProcessEvents.onMouseMove(event);}, false);
-    el.addEventListener('mousedown', (event) => {ProcessEvents.onMouseDown(event);}, false);
-    el.addEventListener('mousewheel',(event) => {ProcessEvents.onMouseWheel(event);}, false);
-    el.addEventListener('wheel',     (event) => {ProcessEvents.onWheel(event);}, false);
+    el.addEventListener('click', (event) => { ProcessEvents.onMouseClick(event); }, false);
+    el.addEventListener('mouseup', (event) => { ProcessEvents.onMouseUp(event); }, false);
+    el.addEventListener('mousemove', (event) => { ProcessEvents.onMouseMove(event); }, false);
+    el.addEventListener('mousedown', (event) => { ProcessEvents.onMouseDown(event); }, false);
+    el.addEventListener('mousewheel', (event) => { ProcessEvents.onMouseWheel(event); }, false);
+    el.addEventListener('wheel', (event) => { ProcessEvents.onWheel(event); }, false);
 }
 
 

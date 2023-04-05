@@ -56,14 +56,9 @@ namespace ezp
         float dy  = yb -ya;
         float dz  = zb -za;
         float dd = sqrt(dx*dx + dy*dy + dz*dz);
-        //dx /= dd; dy /= dd; dz /= dd;
         float nx = dy - dz;
         float ny = dz - dx;
         float nz = dx - dy;
-       // float nx = -dy;
-       // float ny = dx;
-       // float nz = 0;
- 
         float nn = rad/sqrt( nx*nx + ny*ny + nz*nz);
         nx *=nn ; ny *= nn; nz *= nn;
         float sx =  dy * nz - dz * ny;
@@ -99,7 +94,7 @@ namespace ezp
         tz = (-sin(3.0f*u));
      }
 
-      void GetPt1( float u, float &tx, float &ty, float &tz){
+    void GetPt1( float u, float &tx, float &ty, float &tz){
         tx = (sin(u));
         ty = (cos(u));
         tz = 0.0f;
@@ -119,13 +114,10 @@ namespace ezp
             GetPt( u1, tx1, ty1, tz1);
             GetPt( u2, tx2, ty2, tz2);
             unsigned int col = (k&1)? 0xFF0000 : 0xFF00;
-            //if( ( k%7) == 0) col = 0xFFFFFF;
-           // Sphere(pF, 10, tx1,ty1, tz1, col, numImSpr);
+            //Sphere(pF, 10, tx1,ty1, tz1, col, numImSpr);
             BuildCylinder(pF, tx1, ty1, tz1, tx2, ty2, tz2, 0.5f, numImSpr);
-            //BuildCylinder(pF, tx1, ty1, tz1, tx1*0.5f, ty1*0.5f, tz1 , 0.1f, numImSpr);
             pF+=numImSpr;
-        }
-        
+        }       
         dataSize = numImSpr*numPoints*sizeof(FPoint4);
         return pData;
     }
