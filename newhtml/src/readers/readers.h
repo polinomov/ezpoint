@@ -14,7 +14,7 @@ namespace ezp
     };
 
     FPoint4* BuildTestScene(int &numPoints);
-    FPoint4* ReadLasFile( void *pData, std::size_t sz);
+    FPoint4* ReadLasFile( void *pData, std::size_t sz, int &numPt);
 }
 
 #endif

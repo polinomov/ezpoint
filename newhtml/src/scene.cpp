@@ -42,10 +42,9 @@ namespace ezp
             pCam->SetWorldUpAxis(0.0f,0.0f,1.0f);
         }
 
-        void fileXYZ( void *pData, std::size_t sz,int fType) {
-            m_isLoading = true;
-            int numFloats = sz/sizeof(float);
-            int numVerts = numFloats/4;
+        void fileXYZ( void *pData, int numVerts) {
+            //int numFloats = sz/sizeof(float);
+            //int numVerts = numFloats/4;
             auto mainCh = std::make_shared<Chunk>();
             m_chunks.push_back(mainCh);
             mainCh->numVerts = numVerts;
@@ -76,12 +75,18 @@ namespace ezp
 
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {
+            int numPt = 0;
             if( fType == 0){
-                fileXYZ( pData, sz, 0);
+                int numFloats = sz/sizeof(float);
+                numPt = numFloats/4; 
+                fileXYZ( pData, numPt);
                 return;
             }
             if(fType==1){
-                ReadLasFile( pData, sz);
+                m_modelData = ReadLasFile( pData, sz,numPt);
+                if( m_modelData != NULL){
+                    fileXYZ( m_modelData, numPt);
+                }
             }
         }
 

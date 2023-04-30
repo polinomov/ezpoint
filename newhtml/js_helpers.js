@@ -77,7 +77,7 @@ function OnFileSelected(input) {
             case "xyz": file_cb(res_ptr, fz, 0); break;
             case "las": file_cb(res_ptr, fz, 1); break;
         }
-        // Module._free(res_ptr);
+        Module._free(res_ptr);
     };
     reader.onloadend = function (e) {
         console.log("load done");
