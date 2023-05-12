@@ -36,7 +36,7 @@ namespace ezp
             pos[2]= (ch->zMax + ch->zMin) *0.5f;
             pCam->SetPivot(pos[0],pos[1],pos[2]);
 
-            pos[2] += std::max(dim[0],dim[1]);
+            pos[2] += 1.5f*std::max(dim[0],dim[1]);
             pCam->ReSet();
             pCam->SetPos(pos);
             pCam->SetWorldUpAxis(0.0f,0.0f,1.0f);
@@ -96,6 +96,10 @@ namespace ezp
 
         float GetSize(){
             return m_size;
+        }
+
+        virtual std::shared_ptr<Chunk> GetMainChunk(){
+            return m_chunks[0];
         }
 
         void BuildTest( int n) {

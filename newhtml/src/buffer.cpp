@@ -20,7 +20,6 @@ namespace ezp
 	
     struct RendererImpl : public Renderer
     {
-        //std::shared_ptr<float[]> zBuff;
         float *m_pzb;
         unsigned int *m_pb;
         int m_canvasW, m_canvasH;
@@ -35,36 +34,43 @@ namespace ezp
         void RenderChunk(std::shared_ptr<Scene::Chunk> chunk,int sw, int sh){
             //_m128 a1,b1;
             v128_t a;
+            std::shared_ptr<Scene::Chunk> mainChunk = Scene::Get()->GetMainChunk();
+            float hRange = 255.0f/(mainChunk->zMax - mainChunk->zMin); 
+            float atanRatio = 3.0f;
+
             Camera *pCam = Camera::Get();
             float pP[3],pD[3],pU[3],pR[3];
             pCam->GetPos(pP[0],pP[1],pP[2]);
             pCam->GetDir(pD[0],pD[1],pD[2]);
             pCam->GetUp(pU[0],pU[1],pU[2]);
             pCam->GetRight(pR[0],pR[1],pR[2]);
-            //std::cout<<"ppp="<<pP[0]<<","<<pP[1]<<","<<pP[2]<<std::endl;
+        
             float pixSize = 0.5f * (float)std::min(sw,sh);
             float *pV = chunk->pVert;
-            for( int i = 0; i<chunk->numVerts; i++){
+            int skip = 1;
+            for( int i = 0; i<chunk->numVerts; i+=skip){
                 float dx = pV[0] - pP[0];
                 float dy = pV[1] - pP[1];
                 float dz = pV[2] - pP[2];
                 float xf = dx*pR[0] + dy*pR[1] + dz*pR[2];
                 float yf = dx*pU[0] + dy*pU[1] + dz*pU[2];
                 float zf = dx*pD[0] + dy*pD[1] + dz*pD[2];
+                unsigned char zAsColor = (unsigned char )((pV[2] -mainChunk->zMin) * hRange);
                 if(zf>0.001f){
-                    int x = sw/2 + (int) (xf * 1.5f * pixSize/zf);
-                    int y = sh/2 + (int) (yf * 1.5f * pixSize/zf);                 
+                    int x = sw/2 + (int) (xf * atanRatio * pixSize/zf);
+                    int y = sh/2 + (int) (yf * atanRatio * pixSize/zf);                 
                     unsigned int *pCol = (unsigned int*)(pV+3);
                     if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
                         int dst = x + y * m_canvasW;
                         float zb = m_pzb[dst];
                         if(zf < zb){
                             m_pb[dst] = pCol[0];
+                            //m_pb[dst] = zAsColor | (zAsColor<<8) |(zAsColor<<16);
                             m_pzb[dst] = zf;
                         }
                     }
                 }
-                pV+=4;
+                pV+=4*skip;
             }
         }
 

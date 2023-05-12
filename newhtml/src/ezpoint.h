@@ -50,6 +50,7 @@ namespace ezp
 		virtual float GetSize() = 0;
 		virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
 		virtual const std::vector<std::shared_ptr<Chunk>>& GetChunks() = 0;
+		virtual std::shared_ptr<Chunk> GetMainChunk() = 0;
 		static Scene *Get();
 	};
 
