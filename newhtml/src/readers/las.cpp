@@ -98,7 +98,7 @@ namespace ezp
             pD->y = (float)(pf1->y )*float(lh->yScale) + lh->yOffset;
             pD->z = (float)(pf1->z )*float(lh->zScale) + lh->zOffset;
             float vf = (float)(pf1->intensity)/(256.0f*256.0f);
-            vf = vf * vf;
+           // vf = vf * vf;
             uint8_t c = (uint8_t)(vf*255.0f);
             pD->col = 0xFFFFFF;
             pIntens[c] += 1.0f;
@@ -139,7 +139,7 @@ namespace ezp
         {
             PointFormat1 *pf1 = (PointFormat1*)pS;
             float vf = (float)(pf1->intensity)/(256.0f*256.0f);
-            vf = vf * vf;
+            //vf = vf * vf;
             float vf1;
             if(vf < min){
                 vf1 = vf * prd1;
