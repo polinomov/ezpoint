@@ -183,7 +183,7 @@ extern "C" {
             }
         }
         if((lr !=0 ) || (td!=0)){
-            gRenderEvent = 100;	
+            gRenderEvent = 2;	
         }
         return 0;
     }

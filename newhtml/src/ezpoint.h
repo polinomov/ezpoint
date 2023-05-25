@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include <memory>
+#include "chunk.h"
 
 namespace ezp 
 {
@@ -36,21 +37,15 @@ namespace ezp
 		static Camera  *Get();
 	};
 
+	#define CHUNK_MAIN 1
 	struct Scene
 	{
-		struct Chunk{
-			float xMin,xMax,yMin,yMax,zMin,zMax;
-			int numVerts;
-			float *pVert;
-			unsigned int *pColors;
-		};
-
         virtual bool IsLoading() = 0;
 		virtual void BuildTest( int n) = 0;
 		virtual float GetSize() = 0;
 		virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
 		virtual const std::vector<std::shared_ptr<Chunk>>& GetChunks() = 0;
-		virtual std::shared_ptr<Chunk> GetMainChunk() = 0;
+		//virtual std::shared_ptr<Chunk> GetMainChunk() = 0;
 		static Scene *Get();
 	};
 
@@ -60,6 +55,8 @@ namespace ezp
 		virtual void Render(unsigned int *pBuff, int winW, int winH) = 0;
 		static Renderer* Get();
 	};
+
+	void Colorize();
 }
 
 #endif
