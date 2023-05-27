@@ -107,11 +107,11 @@ namespace ezp
         uint8_t classification;   
     };
 
-    static FBdBox FillBdBox(unsigned char *pSrc,int numPoints,const LasHeader *lh){
+    static FBdBox FillBdBox(unsigned char *pSrc,int numPoints,const LasHeader *lh,float *pIntens){
         unsigned char *pS = pSrc;
         int32_t xmin,xmax,ymin,ymax,zmin,zmax;
         xmin = ymin = zmin  = INT_MAX;
-        xmin = ymin = zmin  = INT_MAX;
+        xmax = ymax = zmax  = INT_MIN;
         for(int i = 0; i< numPoints; i++,pS+=lh->poitDataRecordLength){
             PointFormat1 *pf1 = (PointFormat1*)pS;
             xmin = std::min(pf1->x,xmin);
@@ -120,6 +120,9 @@ namespace ezp
             xmax = std::max(pf1->x,xmax);
             ymax = std::max(pf1->y,ymax);
             zmax = std::max(pf1->z,zmax);
+            float vf = (float)(pf1->intensity)/(256.0f*256.0f);
+            uint8_t c = (uint8_t)(vf*255.0f);
+            pIntens[c] += 1.0f;
         }
         FBdBox Res;
         Res.xMin = (float)xmin * float(lh->xScale) + lh->xOffset;
@@ -134,7 +137,7 @@ namespace ezp
         return Res;
     }
 
-    static void FillXYZ(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh,float *pIntens ){
+    static void FillXYZ(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh ){
         unsigned char *pS = pSrc;
         FPoint4 *pD = (FPoint4*)pDst;
         for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength,pD++)
@@ -145,12 +148,12 @@ namespace ezp
             pD->z = (float)(pf1->z )*float(lh->zScale) + lh->zOffset;
             float vf = (float)(pf1->intensity)/(256.0f*256.0f);
             uint8_t c = (uint8_t)(vf*255.0f);
-            pD->col = 0xFFFFFF;
-            pIntens[c] += 1.0f;
+            pD->col = c<<24;
+           // pIntens[c] += 1.0f;
         }
     }
 
-    static void FillXYZ3(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh,float *pIntens ){
+    static void FillXYZ3(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh){
         unsigned char *pS = pSrc;
         FPoint4 *pD = (FPoint4*)pDst;
         for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength,pD++)
@@ -165,16 +168,31 @@ namespace ezp
             uint8_t g = pf3->green;
             uint8_t b = pf3->blue;
             pD->col = b | (g<<8) | (r<<16);
-            pIntens[c] += 1.0f;
+            //pIntens[c] += 1.0f;
         }
     }
-
+    // Process intensity data
     static void ProcessIntens( float *pIntens, int num, float &min, float &max ){
         float sum = 0.0f;
         for( int i = 0; i<num; i++) sum+=pIntens[i];
         int first = 0, last = num-1;
         float sums = sum*0.9f;
+        float tot = 0.0f,tot_prev = 0.0f;
         for( int i = 0; i<num; i++){
+            /*
+            tot+=pIntens[i];
+             if( i>0){
+                if((tot_prev < sum*0.33f) && (tot>=sum*0.33f)){
+                    first = i;   
+                }
+                if((tot_prev < sum*0.66f) && (tot>=sum*0.66f)){
+                    last = i;   
+                }
+
+            }
+            tot_prev = tot;
+            */
+            
             if(pIntens[first]<pIntens[last]){
                 sum-=pIntens[first];
                 first++;
@@ -186,33 +204,36 @@ namespace ezp
             if((sum<sums) || ( last<=first)){
                 break;
             }
+            
+
         }
         min = (float)first/(float)num;
         max = (float)last/(float)num;
     }
 
-    void ApplyIntems(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh,float min, float max){
+   // void ApplyIntems(FPoint4 *pDst,int numPoints, float min, float max){
+    void ApplyIntems(std::vector<std::shared_ptr<Chunk>> &chs, float min, float max){
         float var1 = 0.1f;
         float var2 = 0.7f;
         float prd1 = (min>0.0f) ? var1/min : 0.0f;
         float prd2 = (max<1.0f) ? (1.0f-var2)/(1.0f-max) : 0.0f;
         float prd3 = (var2- var1)/(max-min);
-        unsigned char *pS = pSrc;
-        FPoint4 *pD = (FPoint4*)pDst;
-        for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength,pD++)
-        {
-            PointFormat1 *pf1 = (PointFormat1*)pS;
-            float vf = (float)(pf1->intensity)/(256.0f*256.0f);
-            float vf1;
-            if(vf < min){
-                vf1 = vf * prd1;
-            }else if( vf > max){
-                vf1 = var2 +(vf-max)*prd2;
-            }else{
-                vf1 = var1 + (vf-min)*prd3;
+        for(int k = 0; k<chs.size(); k++) {
+            FPoint4 *pD = (FPoint4*)chs[k]->pVert;
+            for(int i = 0; i<chs[k]->numVerts; i++,pD++) {
+                uint8_t cin = pD->col>>24;
+                float vf = ((float)(cin))/256.0f;
+                float vf1;
+                if(vf < min){
+                    vf1 = vf * prd1;
+                }else if( vf > max){
+                    vf1 = var2 +(vf-max)*prd2;
+                }else{
+                    vf1 = var1 + (vf-min)*prd3;
+                }
+                uint8_t c = (uint8_t)(vf1 * 255.0f);
+                pD->col = c|(c<<8)|(c<<16)|(c<<24);
             }
-            uint8_t c = (uint8_t)(vf1 * 255.0f);
-            pD->col = c|(c<<8)|(c<<16);
         }
     }
 
@@ -221,7 +242,7 @@ namespace ezp
         FBdBox retBox;
         auto ch = std::make_shared<Chunk>();
 
-        static float intens[256*256];
+        static float intems[256*256];
     
         LasHeader *lh = (LasHeader*)pData;
         char magic[5] = {0,0,0,0,0};
@@ -253,9 +274,13 @@ namespace ezp
         }
         std::cout<<"version:"<<vMajor<<"."<<vMinor<<std::endl;
         std::cout<<"numpoints="<<numPoints<<" ofst="<<lh->pointOfst<<" ptFormat="<<ptFormat<<" rlen="<<recLength<<std::endl;
-        memset(intens, 0, 256*256*sizeof(float));
+
+        // Find bounding box and Intensity Histogram.
+        memset(intems, 0, 256*256*sizeof(float));
+        float min, max;
         unsigned char *pStart = (unsigned char*)pData + lh->pointOfst;
-        retBox = FillBdBox(pStart, numPoints,lh);
+        retBox = FillBdBox(pStart, numPoints,lh,intems);
+        ProcessIntens( intems, 255 , min, max);
         ///
         chOut.push_back(ch);
         FPoint4 *pRet = new FPoint4[numPoints];
@@ -263,14 +288,12 @@ namespace ezp
         ch->pVert = (float*)pRet;
         ///
 
-        FillXYZ(pStart, pRet, numPoints,lh,intens);
+        FillXYZ(pStart, pRet, numPoints,lh);
         //FillXYZ3(pStart, pRet, numPoints,lh,intens);
-        // adjust colors
-        float min, max;
-        ProcessIntens( intens, 255 , min, max);
         std::cout<<"first = "<<min<<" last="<<max<<std::endl;
         if( max > min){
-            ApplyIntems(pStart, pRet, numPoints,lh,min, max);
+            //ApplyIntems(pRet,numPoints,min, max);
+            ApplyIntems(chOut,min, max);
         }
         numPt = numPoints;
         return retBox; 

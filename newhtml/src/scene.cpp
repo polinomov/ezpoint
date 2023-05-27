@@ -87,7 +87,7 @@ namespace ezp
                 //fileXYZ( pData, numPt);
                 return;
             }
-            if(fType==1){
+            if(fType==1){  //las
                 m_box  = ReadLasFile( pData, sz,numPt,m_allChunks); 
                 if(m_allChunks.size() >0){
                     SetCamera();

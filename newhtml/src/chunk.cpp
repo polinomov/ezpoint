@@ -7,6 +7,7 @@
 #include "ezpoint.h"
 #include "readers/readers.h"
 
+// http://ewebmap.ci.lubbock.tx.us/currentdata/LiDAR/2010/All_Return_LAS/86817242.las
 namespace ezp {
 
 Chunk::Chunk() : numVerts(0),pVert(NULL){
