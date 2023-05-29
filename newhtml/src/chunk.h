@@ -19,10 +19,12 @@ namespace ezp
     struct Chunk{
         Chunk();
         ~Chunk();
+        void Randomize();
 		float xMin,xMax,yMin,yMax,zMin,zMax;
 		int numVerts;
 		float *pVert;
-		uint32_t flg;
+		uint32_t aux;
+        int32_t tst;
  	};
 }
 

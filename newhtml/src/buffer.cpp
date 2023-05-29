@@ -69,8 +69,7 @@ namespace ezp
         }
 
         void RenderChunk(std::shared_ptr<Chunk> chunk,int sw, int sh){
-            //TestSimd();
-            //std::shared_ptr<Scene::Chunk> mainChunk = Scene::Get()->GetMainChunk();       
+            //std::cout<<"RENDER:"<<chunk->numVerts<<std::endl;
             int skip = 1;
             const __m128 a =  _mm_loadu_ps((const float*)_A);
             const __m128 b =  _mm_loadu_ps((const float*)_B);

@@ -10,13 +10,30 @@
 // http://ewebmap.ci.lubbock.tx.us/currentdata/LiDAR/2010/All_Return_LAS/86817242.las
 namespace ezp {
 
-Chunk::Chunk() : numVerts(0),pVert(NULL){
-    std::cout<<"---Chunk Ctor---"<<std::endl;
+Chunk::Chunk() : numVerts(0),pVert(NULL),aux(0),tst(-1){
+    //std::cout<<"---Chunk Ctor---"<<std::endl;
 }
 
 Chunk::~Chunk(){
-   std::cout<<"Chunk DCtor"<<std::endl;
-}   
+   //std::cout<<"Chunk DCtor"<<std::endl;
+}
+
+void Chunk::Randomize(){
+    FPoint4 *fp = (FPoint4*)pVert;
+    srand(12345);
+    int numSw = 0;
+    for( int i = 0; i<numVerts; i++){
+        uint32_t r1 = rand()%numVerts;
+        uint32_t r2 = rand()%numVerts;
+        if((r1>=0)&&(r1<numVerts)&&(r2>=0)&&(r2<numVerts)){
+            FPoint4 tmp = fp[r1];
+            fp[r1] = fp[r2];
+            fp[r2] = tmp;
+            //fp[r1].col = 0xFFFFFFFF;
+            numSw++;
+        }
+    }
+}
 
 void Colorize(){
     const uint32_t kSizex = 32;

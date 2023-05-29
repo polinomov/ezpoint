@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <map>
 #include <stdlib.h>
 #include <math.h>
 #include "readers.h"
@@ -107,7 +108,15 @@ namespace ezp
         uint8_t classification;   
     };
 
-    static FBdBox FillBdBox(unsigned char *pSrc,int numPoints,const LasHeader *lh,float *pIntens){
+    static uint32_t GetNdx(uint32_t ssz,float val,float valMin, float delta){
+        int32_t ndx= (int32_t)((float)ssz*(val -valMin)/delta);
+        if(ndx<0) ndx = 0;
+        if(ndx >= ssz) ndx = (int32_t)(ssz -1);
+        return (uint32_t)ndx;
+    }
+
+    static FBdBox FillBdBox(unsigned char *pSrc,int numPoints,const LasHeader *lh,float *pIntens,
+      std::vector<std::shared_ptr<Chunk>> &chOut){
         unsigned char *pS = pSrc;
         int32_t xmin,xmax,ymin,ymax,zmin,zmax;
         xmin = ymin = zmin  = INT_MAX;
@@ -134,6 +143,120 @@ namespace ezp
         std::cout<<"X:"<<Res.xMin<<":"<<Res.xMax<<std::endl;
         std::cout<<"Y:"<<Res.yMin<<":"<<Res.yMax<<std::endl;
         std::cout<<"Z:"<<Res.zMin<<":"<<Res.zMax<<std::endl;
+        uint32_t kSizex = 64;
+        uint32_t kSizey = 64;
+        std::unique_ptr<uint32_t[]> pBf(new uint32_t[kSizex*kSizey]);
+        for ( uint32_t k = 0; k<kSizex*kSizey; k++){
+            pBf[k] = 0;
+        }
+        float dx = Res.xMax - Res.xMin;
+        float dy = Res.yMax - Res.yMin;
+        //
+        // Fill pBf
+        //
+        pS = pSrc;
+        for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength){
+            PointFormat1 *pf1 = (PointFormat1*)pS;
+            float xf = (float)(pf1->x )*float(lh->xScale) + lh->xOffset;
+            float yf = (float)(pf1->y )*float(lh->yScale) + lh->yOffset;
+            uint32_t nx = GetNdx(kSizex,xf,Res.xMin, dx);
+            uint32_t ny = GetNdx(kSizey,yf,Res.yMin, dy);
+            uint32_t nn = nx + ny*kSizex;
+            pBf[nn]++;
+        }
+        uint32_t tt = 0;
+        for( int i = 0; i<kSizex*kSizey; i++){
+           // std::cout<<"++++i="<<i<<" "<<pBf[i]<<std::endl;
+            tt+=pBf[i];
+        }
+        std::cout<<"+++++ tot="<<tt<<" from "<<numPoints<<std::endl;
+#if 1       
+        //
+        // Allocate chunks 
+        //
+        std::unordered_map<uint32_t,std::shared_ptr<Chunk>> tab;
+        for( uint32_t i = 0; i<kSizex*kSizey; i++){
+            if(pBf[i]>0){
+                std::shared_ptr<Chunk> chk = std::make_shared<Chunk>();
+                chk->numVerts = pBf[i];
+                uint8_t *pMem = (uint8_t*)malloc(pBf[i]*4*sizeof(float) + 128);
+                uint64_t addr = (uint64_t)pMem;
+                addr = (addr +128) &(~127);
+                chk->pVert =(float*)addr;//new float[pBf[i]*4];
+                chk->aux = 0;
+                chk->tst = i;
+                chOut.push_back(chk);
+                tab[i] = chk;
+                addr= (uint64_t)chk->pVert;
+                if( addr & 0x7F){                    
+                    printf("addr is not alligned %llx\n",addr);
+                }
+                //std::cout<<"New chunk "<<i<<" numv="<< chk->numVerts<< std::endl;
+            }
+        }
+         //for (auto & ch : chOut){
+         //   std::cout<<" +++++++++++++++++++"<<ch->numVerts<<" tst="<<ch->tst<<std::endl;
+        // }
+        //
+        // Fill chunks
+        //
+        pS = pSrc;
+        for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength){
+            PointFormat1 *pf1 = (PointFormat1*)pS;
+            float xf = (float)(pf1->x )*float(lh->xScale) + lh->xOffset;
+            float yf = (float)(pf1->y )*float(lh->yScale) + lh->yOffset;
+            float zf = (float)(pf1->z )*float(lh->zScale) + lh->zOffset;
+            uint32_t nx = GetNdx(kSizex,xf,Res.xMin, dx);
+            uint32_t ny = GetNdx(kSizey,yf,Res.yMin, dy);
+            uint32_t nn = nx + ny*kSizex;
+            auto chk_iter = tab.find(nn);
+            if( chk_iter != tab.end()){
+                std::shared_ptr<Chunk> chk  = chk_iter->second;
+                if(chk->aux < chk->numVerts){
+                    FPoint4 *pPoint = (FPoint4*)chk->pVert;
+                    pPoint[chk->aux].x = xf;
+                    pPoint[chk->aux].y = yf;
+                    pPoint[chk->aux].z = zf;
+                    float vf = (float)(pf1->intensity)/(256.0f*256.0f);
+                    uint8_t c = (uint8_t)(vf*255.0f);
+                    pPoint[chk->aux].col = c<<24;
+                    chk->aux++;
+                }
+                else{
+                   // std::cout<<"Too many verts in chunk "<<nx<<" "<<ny<<" "<<chk->numVerts<<" tst="<<chk->tst<<std::endl;
+                   // return Res;
+                }
+            }else{
+                std::cout<<"Can ot find chunk for "<<nx<<" "<<ny<<std::endl;
+                return Res;
+            }
+        }
+        //std::cout<<"SIZE="<<chOut.size()<<std::endl;
+        for (auto & ch : chOut){
+            ch->Randomize();
+            //std::cout<<"aux="<<ch->aux<< " vers="<<ch->numVerts<<std::endl;
+        }
+        /////////
+#else       
+        auto ch = std::make_shared<Chunk>();
+        chOut.push_back(ch);
+        FPoint4 *pPoints = new FPoint4[numPoints];
+        ch->numVerts = numPoints;
+        ch->pVert = (float*)pPoints;
+
+        pS = pSrc;
+        FPoint4 *pD = (FPoint4*)ch->pVert;
+        for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength,pD++){
+            PointFormat1 *pf1 = (PointFormat1*)pS;
+            pD->x = (float)(pf1->x )*float(lh->xScale) + lh->xOffset;
+            pD->y = (float)(pf1->y )*float(lh->yScale) + lh->yOffset;
+            pD->z = (float)(pf1->z )*float(lh->zScale) + lh->zOffset;
+            float vf = (float)(pf1->intensity)/(256.0f*256.0f);
+            uint8_t c = (uint8_t)(vf*255.0f);
+            pD->col = c<<24;
+        }
+        //ch->Randomize();
+#endif
         return Res;
     }
 
@@ -240,7 +363,7 @@ namespace ezp
     FBdBox ReadLasFile( void *pData, std::size_t sz,int &numPt,std::vector<std::shared_ptr<Chunk>> &chOut){
         std::cout<<"=== READING LAS ==="<<std::endl;
         FBdBox retBox;
-        auto ch = std::make_shared<Chunk>();
+        //auto ch = std::make_shared<Chunk>();
 
         static float intems[256*256];
     
@@ -279,16 +402,16 @@ namespace ezp
         memset(intems, 0, 256*256*sizeof(float));
         float min, max;
         unsigned char *pStart = (unsigned char*)pData + lh->pointOfst;
-        retBox = FillBdBox(pStart, numPoints,lh,intems);
+        retBox = FillBdBox(pStart, numPoints,lh,intems,chOut);
         ProcessIntens( intems, 255 , min, max);
         ///
-        chOut.push_back(ch);
-        FPoint4 *pRet = new FPoint4[numPoints];
-        ch->numVerts = numPoints;
-        ch->pVert = (float*)pRet;
+        //chOut.push_back(ch);
+        //FPoint4 *pRet = new FPoint4[numPoints];
+        //ch->numVerts = numPoints;
+        //ch->pVert = (float*)pRet;
         ///
 
-        FillXYZ(pStart, pRet, numPoints,lh);
+        //FillXYZ(pStart, pRet, numPoints,lh);
         //FillXYZ3(pStart, pRet, numPoints,lh,intens);
         std::cout<<"first = "<<min<<" last="<<max<<std::endl;
         if( max > min){

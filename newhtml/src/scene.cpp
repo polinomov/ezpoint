@@ -91,7 +91,7 @@ namespace ezp
                 m_box  = ReadLasFile( pData, sz,numPt,m_allChunks); 
                 if(m_allChunks.size() >0){
                     SetCamera();
-                    UI::Get()->SetRenderEvent(2);
+                    UI::Get()->SetRenderEvent(100);
                 }
             }
         }
