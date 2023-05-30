@@ -35,6 +35,31 @@ void Chunk::Randomize(){
     }
 }
 
+void Chunk::BuildBdBox(){
+    if(pVert==NULL) return;
+    FPoint4 *pf = (FPoint4*)pVert;
+    xMin = xMax = pf->x;
+    yMin = yMax = pf->y;
+    zMin = zMax = pf->z;
+    for( int i = 0; i<numVerts; i++,pf++){
+        xMin = std::min(xMin,pf->x);
+        yMin = std::min(yMin,pf->y);
+        zMin = std::min(zMin,pf->z);
+        xMax = std::max(xMax,pf->x);
+        yMax = std::max(yMax,pf->y);
+        zMax = std::max(zMax,pf->z);
+    }
+    cx = (xMin + xMax) * 0.5f;
+    cy = (yMin + yMax) * 0.5f;
+    cz = (zMin + zMax) * 0.5f;
+    float dx = xMax - xMin;
+    float dy = yMax - yMin;
+    float dz = zMax - zMin;
+    //std::cout<<dx<<" "<<dy<<" "<<dz<<std::endl;
+    sz = sqrt(dx*dx + dy*dy + dz*dz) * 0.5f;
+   // std::cout<<"-cx="<<cx<<" cy="<<cy<<" cz="<<cz<<" sz="<<sz<<std::endl;
+}
+
 void Colorize(){
     const uint32_t kSizex = 32;
     const uint32_t kSizey = 32;

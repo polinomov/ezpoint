@@ -37,8 +37,8 @@ namespace ezp
             pos[1]= (m_box.yMax + m_box.yMin) *0.5f;
             pos[2]= (m_box.zMax + m_box.zMin) *0.5f;
             pCam->SetPivot(pos[0],pos[1],pos[2]);
-
-            pos[2] += 1.5f*std::max(dim[0],dim[1]);
+            float atanr = Renderer::Get()->GetAtanRatio();
+            pos[2] += 0.5f*atanr*std::max(dim[0],dim[1]);
             pCam->ReSet();
             pCam->SetPos(pos);
             pCam->SetWorldUpAxis(0.0f,0.0f,1.0f);
@@ -77,7 +77,7 @@ namespace ezp
             UI::Get()->SetRenderEvent(2);
         }
 #endif
-
+ 
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {
             int numPt = 0;

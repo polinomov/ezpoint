@@ -8,6 +8,9 @@
 #include <thread>
 #include <emscripten.h>
 
+#define aaa "XA"
+const std::string cars[] = {aaa, "Saab", "Volvo", "BMW"};
+
 extern "C" {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -69,6 +72,11 @@ extern "C" {
             dstRect.y = gCanvasH - gWinH;
             dstRect.w = gWinW;
             dstRect.h = gWinH;
+            /*
+            SDL_SetRenderTarget(renderer, screenTexture);
+            SDL_SetRenderDrawColor(renderer,255, 255, 0,128);
+            SDL_RenderDrawLine(renderer, 0 ,0 ,2048, 2048);
+            */
             SDL_RenderCopy(renderer, screenTexture, &srcRect, &dstRect);
             SDL_RenderPresent(renderer);
             SDL_DestroyTexture(screenTexture);
@@ -155,6 +163,16 @@ extern "C" {
         std::cout<<"onTest"<<std::endl;
         ezp::Scene *pSc = ezp::Scene::Get();
         pSc->BuildTest(val);
+        return 0;
+    }
+
+    int OnUIChangeJS(int el, int value){ 
+         if(el==1){ // Fov
+            float aratio = 1.0f/tan(0.5f* (float)value * 3.1415f/180.0f);
+            //std::cout<<"OnUIChangeJS"<<" el = "<<el<<" ratio="<<aratio<<std::endl;
+            ezp::Renderer::Get()->SetAtanRatio(aratio);
+            gRenderEvent = 2;	
+        }
         return 0;
     }
 

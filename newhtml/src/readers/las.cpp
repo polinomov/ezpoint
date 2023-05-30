@@ -234,6 +234,7 @@ namespace ezp
         //std::cout<<"SIZE="<<chOut.size()<<std::endl;
         for (auto & ch : chOut){
             ch->Randomize();
+            ch->BuildBdBox();
             //std::cout<<"aux="<<ch->aux<< " vers="<<ch->numVerts<<std::endl;
         }
         /////////

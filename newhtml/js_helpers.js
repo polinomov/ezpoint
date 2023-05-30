@@ -10,11 +10,7 @@ class GlobVars {
 }
 var gv = new GlobVars();
 
-
-
 var gCamRotCb;
-
-
 
 function callWasm1() {
     console.log("CallWasm");
@@ -26,27 +22,6 @@ function OnTest() {
     console.log("Hello TestMe JS-\n");
     test_cb = Module.cwrap('OnTestJS', 'number', ['number']);
     test_cb(4);
-    //resize_cb = Module.cwrap('CallCFunc2', 'number', ['number','number'] , { async: true });
-    //resize_cb(window.innerWidth, window.innerHeight);
-    /*
-    let promise = new Promise(function(resolve, reject) {
-        console.log("--Exe promise---");
-        setTimeout(() => {
-            console.log("Delayed for 1 second.");
-          }, "10000")
-          
-        console.log("--Exe promise 2" );
-         resolve();
-    });
- 
-    console.log("---here--------");
-    
-    promise.then(
-        result => alert(result), 
-        error => alert(error) 
-    );
-    */
-
 }
 
 function OnMouseMove(e) {
@@ -97,6 +72,12 @@ function resizeCanvas() {
     // console.log("Resize w=" + window.innerWidth + " h=" + window.innerHeight);
     resize_cb = Module.cwrap('CallCFunc', 'number', ['number', 'number']);
     resize_cb(window.innerWidth, window.innerHeight);
+}
+
+function OnFovChanged(){
+     var v = document.getElementById("fovVal").value; 
+     ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
+     ui_cb(1,v);
 }
 
 class ProscessEventsClass {

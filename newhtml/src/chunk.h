@@ -20,11 +20,13 @@ namespace ezp
         Chunk();
         ~Chunk();
         void Randomize();
+        void BuildBdBox();
 		float xMin,xMax,yMin,yMax,zMin,zMax;
 		int numVerts;
 		float *pVert;
 		uint32_t aux;
         int32_t tst;
+        float cx,cy,cz,sz;
  	};
 }
 

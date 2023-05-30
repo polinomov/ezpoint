@@ -24,6 +24,7 @@ namespace ezp
         float *m_pzb;
         unsigned int *m_pb;
         int m_canvasW, m_canvasH;
+        float m_atanRatio;
         float _A[4],_B[4],_C[4],_D[4];
 
         void Init(int canvasW, int canvasH){
@@ -31,6 +32,7 @@ namespace ezp
             m_canvasH = canvasH;
             m_pzb = new float[canvasW *canvasH];
             m_pb  = new unsigned int[canvasW *canvasH];
+            m_atanRatio = 3.0f;
         }
 
         void TestSimd(){
@@ -48,6 +50,14 @@ namespace ezp
             __m128 r = _mm_mul_ps(x, scalar);
              _mm_storeu_ps((float*)out, r);
             std::cout<<"XXXXXXX"<<out[0]<<","<<out[1]<<","<<out[2]<<","<<out[3]<<std::endl;
+        }
+
+        float GetAtanRatio(){
+            return m_atanRatio;
+        }
+
+		void  SetAtanRatio(float val){
+            m_atanRatio = val;
         }
 
         void BuildProjMatrix(int sw, int sh,float atanRatio ){
@@ -137,7 +147,7 @@ namespace ezp
             //val++;
             //if(val>winW) val = 0;
             
-            BuildProjMatrix(winW,winH, 3.0f );
+            BuildProjMatrix(winW,winH,  m_atanRatio);
             auto chunks = Scene::Get()->GetChunks();
             for( int i = 0; i<chunks.size(); i++) {
                  RenderChunk(chunks[i],winW,winH);
