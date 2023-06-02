@@ -89,11 +89,12 @@ namespace ezp
             const __m128 wss = _mm_set1_ps(one);
             float swf = (float)sw *0.5f;
             float shf = (float)sh *0.5f;
-            float *pV = chunk->pVert;
-            __m128 xss = _mm_set1_ps(pV[0]);
-            __m128 yss = _mm_set1_ps(pV[1]);
-            __m128 zss = _mm_set1_ps(pV[2]);
-            for( int i = 0; i<chunk->numVerts-1; i+=skip){
+            //loat *pV = chunk->pVert;
+            FPoint4 *pV4 = (FPoint4*)chunk->pVert;
+            __m128 xss = _mm_set1_ps(pV4->x);
+            __m128 yss = _mm_set1_ps(pV4->y);
+            __m128 zss = _mm_set1_ps(pV4->z);
+            for( int i = 0; i<chunk->numVerts-1; i++){
                 __m128 r0 = _mm_mul_ps(xss, a);
                 __m128 r1 = _mm_mul_ps(yss, b);
                 __m128 r2 = _mm_mul_ps(zss, c);
@@ -102,23 +103,22 @@ namespace ezp
                 __m128 sum =   _mm_add_ps(sum_01, sum_23);
                 float res[4];
                 _mm_storeu_ps((float*)res, sum);
-                xss = _mm_set1_ps(pV[4]);
-                yss = _mm_set1_ps(pV[5]);
-                zss = _mm_set1_ps(pV[6]);
+                xss = _mm_set1_ps(pV4[1].x);
+                yss = _mm_set1_ps(pV4[1].y);
+                zss = _mm_set1_ps(pV4[1].z);
                 if(res[2]>0.001f){
                     int x = (int) (swf + res[0]/res[2]);
                     int y = (int) (shf + res[1]/res[2]);                 
-                    unsigned char *pCol = (unsigned char*)(pV+3);
                     if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
                         int dst = x + y * m_canvasW;
                         float zb = m_pzb[dst];
                         if(res[2] < zb){
-                            m_pb[dst] = pCol[3];
+                            m_pb[dst]  = pV4->col;
                             m_pzb[dst] = res[2];
                         }
                     }
                 }
-                pV+=4*skip;
+                pV4++;
             }
         }
 
@@ -138,7 +138,7 @@ namespace ezp
    	        for (int y = 0; y < winH; y++) {
 		        for (int x = 0; x < winW; x++) {
                         int dst = x + y * m_canvasW;
-                        m_pb[dst]  = 0x00;
+                        m_pb[dst]  = 0x80;
                         m_pzb[dst]  = std::numeric_limits<float>::max();;
                 }
             }
@@ -156,9 +156,10 @@ namespace ezp
             for (int y = 0; y < winH; y++) {
 		        for (int x = 0; x < winW; x++) {
                         int dst = x + y * m_canvasW;
-                        uint8_t c = m_pb[dst];
+                       // uint8_t c = m_pb[dst];
                        // uint8_t g = (c<50)? 50-c: c;
-                        pBuff[dst] = c|(c<<8)|(c<<16);
+                       // pBuff[dst] = c|(c<<8)|(c<<16);
+                       pBuff[dst] = m_pb[dst];
                 }
             }
 /**/

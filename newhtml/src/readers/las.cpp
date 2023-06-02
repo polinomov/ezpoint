@@ -12,7 +12,7 @@ namespace ezp
 {
     //  0x000000FF -blue ,0x0000FF00- green, 0x00FF0000- red
     static uint32_t classColors[16]={
-        0x0000FF00,0x0000FF00,0x00FF0000,0x0000FF00,
+        0x0000FF00,0x0000FF80,0x00FF0000,0x0080FF00,
         0x000000FF,0x000000FF,0x000000FF,0x000000FF,
         0x00FF0000,0x00FF0000,0x00FF0000,0x00FF0000,
         0x0000FFFF,0x0000FFFF,0x0000FFFF,0x0000FFFF
@@ -116,11 +116,26 @@ namespace ezp
     }
 
     static FBdBox FillBdBox(unsigned char *pSrc,int numPoints,const LasHeader *lh,float *pIntens,
-      std::vector<std::shared_ptr<Chunk>> &chOut){
+        std::vector<std::shared_ptr<Chunk>> &chOut){
+
+        int ptFormat = (int)lh->pointDataFormatId;
+        if(ptFormat == 6){
+            std::cout<<"PTIS6"<<std::endl;
+        }
+        else{
+            std::cout<<"PT="<<ptFormat<<std::endl;
+        }
+    
         unsigned char *pS = pSrc;
+        //float *itmp_16 = new float[256*256];
+        std::unique_ptr<float[]> itmp_16(new float[256*256]);
+        for(int i= 0; i<256*256; i++) itmp_16[i] = 0.0f;
         int32_t xmin,xmax,ymin,ymax,zmin,zmax;
         xmin = ymin = zmin  = INT_MAX;
         xmax = ymax = zmax  = INT_MIN;
+        uint16_t intens_max = 0;
+        uint16_t intens_min = 0xFFFF;
+        //memset(itmp_16,0,256*256*sizeof(float));
         for(int i = 0; i< numPoints; i++,pS+=lh->poitDataRecordLength){
             PointFormat1 *pf1 = (PointFormat1*)pS;
             xmin = std::min(pf1->x,xmin);
@@ -129,9 +144,12 @@ namespace ezp
             xmax = std::max(pf1->x,xmax);
             ymax = std::max(pf1->y,ymax);
             zmax = std::max(pf1->z,zmax);
+            intens_max  = std::max(intens_max ,pf1->intensity);
+            intens_min  = std::min(intens_min ,pf1->intensity);
             float vf = (float)(pf1->intensity)/(256.0f*256.0f);
             uint8_t c = (uint8_t)(vf*255.0f);
             pIntens[c] += 1.0f;
+            itmp_16[pf1->intensity] += 1.0f;
         }
         FBdBox Res;
         Res.xMin = (float)xmin * float(lh->xScale) + lh->xOffset;
@@ -143,6 +161,18 @@ namespace ezp
         std::cout<<"X:"<<Res.xMin<<":"<<Res.xMax<<std::endl;
         std::cout<<"Y:"<<Res.yMin<<":"<<Res.yMax<<std::endl;
         std::cout<<"Z:"<<Res.zMin<<":"<<Res.zMax<<std::endl;
+        std::cout<<"IMIN="<<intens_min<<" IMAX="<<intens_max<<std::endl;
+        float s = itmp_16[0];
+        for( int i =1; i<256*256; i++){
+            s+=itmp_16[i];
+            itmp_16[i] = s;
+        }
+        for( int i =0; i<256*256; i++){
+            itmp_16[i] *= (255.0f/s);
+        }
+        //
+        // Allocate temp array to collect chunks
+        //
         uint32_t kSizex = 64;
         uint32_t kSizey = 64;
         std::unique_ptr<uint32_t[]> pBf(new uint32_t[kSizex*kSizey]);
@@ -152,7 +182,7 @@ namespace ezp
         float dx = Res.xMax - Res.xMin;
         float dy = Res.yMax - Res.yMin;
         //
-        // Fill pBf
+        // Fill pBf ( number of points inside each chunk)
         //
         pS = pSrc;
         for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength){
@@ -194,9 +224,6 @@ namespace ezp
                 //std::cout<<"New chunk "<<i<<" numv="<< chk->numVerts<< std::endl;
             }
         }
-         //for (auto & ch : chOut){
-         //   std::cout<<" +++++++++++++++++++"<<ch->numVerts<<" tst="<<ch->tst<<std::endl;
-        // }
         //
         // Fill chunks
         //
@@ -217,9 +244,28 @@ namespace ezp
                     pPoint[chk->aux].x = xf;
                     pPoint[chk->aux].y = yf;
                     pPoint[chk->aux].z = zf;
-                    float vf = (float)(pf1->intensity)/(256.0f*256.0f);
-                    uint8_t c = (uint8_t)(vf*255.0f);
-                    pPoint[chk->aux].col = c<<24;
+                    // colors
+                    /*
+                    if((int)lh->pointDataFormatId==6){
+                        PointFormat6 *pt6 = (PointFormat6*)pS;
+                        if(pt6->classification < 15){
+                            if((pt6->flg.classFlg & (1<<2))==0){
+                                pPoint[chk->aux].col = classColors[pt6->classification];
+                            }else{
+                                pPoint[chk->aux].col = 0xFF;
+                            }
+                        }else{
+                            pPoint[chk->aux].col = 0xFF8080;
+                        }
+                    }else{
+                        float vf = (float)(pf1->intensity)/(256.0f*256.0f);
+                        uint8_t c = (uint8_t)(vf*255.0f);
+                        pPoint[chk->aux].col = c<<24;
+                    }
+                    */
+                    uint16_t c1 = pf1->intensity;
+                    uint8_t c = (uint8_t)itmp_16[c1]; 
+                    pPoint[chk->aux].col = c |(c<<8)|(c<<16)|(c<<24);
                     chk->aux++;
                 }
                 else{
@@ -238,26 +284,7 @@ namespace ezp
             //std::cout<<"aux="<<ch->aux<< " vers="<<ch->numVerts<<std::endl;
         }
         /////////
-#else       
-        auto ch = std::make_shared<Chunk>();
-        chOut.push_back(ch);
-        FPoint4 *pPoints = new FPoint4[numPoints];
-        ch->numVerts = numPoints;
-        ch->pVert = (float*)pPoints;
-
-        pS = pSrc;
-        FPoint4 *pD = (FPoint4*)ch->pVert;
-        for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength,pD++){
-            PointFormat1 *pf1 = (PointFormat1*)pS;
-            pD->x = (float)(pf1->x )*float(lh->xScale) + lh->xOffset;
-            pD->y = (float)(pf1->y )*float(lh->yScale) + lh->yOffset;
-            pD->z = (float)(pf1->z )*float(lh->zScale) + lh->zOffset;
-            float vf = (float)(pf1->intensity)/(256.0f*256.0f);
-            uint8_t c = (uint8_t)(vf*255.0f);
-            pD->col = c<<24;
-        }
-        //ch->Randomize();
-#endif
+#endif       
         return Res;
     }
 
@@ -405,19 +432,10 @@ namespace ezp
         unsigned char *pStart = (unsigned char*)pData + lh->pointOfst;
         retBox = FillBdBox(pStart, numPoints,lh,intems,chOut);
         ProcessIntens( intems, 255 , min, max);
-        ///
-        //chOut.push_back(ch);
-        //FPoint4 *pRet = new FPoint4[numPoints];
-        //ch->numVerts = numPoints;
-        //ch->pVert = (float*)pRet;
-        ///
-
-        //FillXYZ(pStart, pRet, numPoints,lh);
-        //FillXYZ3(pStart, pRet, numPoints,lh,intens);
         std::cout<<"first = "<<min<<" last="<<max<<std::endl;
         if( max > min){
             //ApplyIntems(pRet,numPoints,min, max);
-            ApplyIntems(chOut,min, max);
+           // ApplyIntems(chOut,min, max);
         }
         numPt = numPoints;
         return retBox; 
