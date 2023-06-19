@@ -13,6 +13,9 @@ namespace ezp
         FPoint4 *m_modelData;
         bool m_isLoading;
         float m_size;
+        FPoint4 * m_pChPos;
+        FPoint4 * m_pChAuxPos;
+
         bool IsLoading() { return m_isLoading;}
 
         SceneImpl(){
@@ -91,13 +94,30 @@ namespace ezp
                 m_box  = ReadLasFile( pData, sz,numPt,m_allChunks); 
                 if(m_allChunks.size() >0){
                     SetCamera();
-                    UI::Get()->SetRenderEvent(100);
                 }
             }
+            if(m_allChunks.size() >0){
+                m_pChAuxPos  = new FPoint4[m_allChunks.size()];
+                m_pChPos  = new FPoint4[m_allChunks.size()];
+                for( int i = 0; i<m_allChunks.size(); i++){
+                    m_pChPos[i].x = m_allChunks[i]->cx;
+                    m_pChPos[i].y = m_allChunks[i]->cy;
+                    m_pChPos[i].z = m_allChunks[i]->cz;
+                }
+            }
+            UI::Get()->SetRenderEvent(100);
+ 
+        }
+
+        FPoint4* GetChunkPos(){
+            return m_pChPos;
+        }
+
+        FPoint4* GetChunkAuxPos(){
+            return m_pChAuxPos;
         }
 
         const std::vector<std::shared_ptr<Chunk>>&  GetChunks() {
-           // return m_chunks;
             return m_allChunks;
         }
 

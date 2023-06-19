@@ -10,7 +10,7 @@
 // http://ewebmap.ci.lubbock.tx.us/currentdata/LiDAR/2010/All_Return_LAS/86817242.las
 namespace ezp {
 
-Chunk::Chunk() : numVerts(0),pVert(NULL),aux(0),tst(-1){
+Chunk::Chunk() : numVerts(0),pVert(NULL),aux(0),flg(0),numToRender(0),reduction(1.0f){
     //std::cout<<"---Chunk Ctor---"<<std::endl;
 }
 
@@ -55,7 +55,7 @@ void Chunk::BuildBdBox(){
     float dx = xMax - xMin;
     float dy = yMax - yMin;
     float dz = zMax - zMin;
-    //std::cout<<dx<<" "<<dy<<" "<<dz<<std::endl;
+    //std::cout<<"CH:"<<dx<<" "<<dy<<" "<<dz<<std::endl;
     sz = sqrt(dx*dx + dy*dy + dz*dz) * 0.5f;
    // std::cout<<"-cx="<<cx<<" cy="<<cy<<" cz="<<cz<<" sz="<<sz<<std::endl;
 }

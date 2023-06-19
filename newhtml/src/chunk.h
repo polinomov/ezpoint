@@ -16,6 +16,7 @@ namespace ezp
         float xMin,xMax,yMin,yMax,zMin,zMax;
     };
 
+    #define CHUNK_FLG_NV (1<<2)
     struct Chunk{
         Chunk();
         ~Chunk();
@@ -25,8 +26,11 @@ namespace ezp
 		int numVerts;
 		float *pVert;
 		uint32_t aux;
-        int32_t tst;
+        int32_t flg;
         float cx,cy,cz,sz;
+        uint32_t numToRender;
+        FPoint4 proj;
+        float reduction;
  	};
 }
 

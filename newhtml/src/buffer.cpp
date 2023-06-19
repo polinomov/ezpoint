@@ -18,7 +18,8 @@
 */
 namespace ezp 
 {
-	
+	#define RND_POINTS 1
+	#define PROJ_POINTS 2
     struct RendererImpl : public Renderer
     {
         float *m_pzb;
@@ -26,7 +27,7 @@ namespace ezp
         int m_canvasW, m_canvasH;
         float m_atanRatio;
         float _A[4],_B[4],_C[4],_D[4];
-
+ 
         void Init(int canvasW, int canvasH){
             m_canvasW = canvasW;
             m_canvasH = canvasH;
@@ -78,23 +79,23 @@ namespace ezp
             _D[3] =  0.0f;
         }
 
-        void RenderChunk(std::shared_ptr<Chunk> chunk,int sw, int sh){
-            //std::cout<<"RENDER:"<<chunk->numVerts<<std::endl;
-            int skip = 1;
-            const __m128 a =  _mm_loadu_ps((const float*)_A);
-            const __m128 b =  _mm_loadu_ps((const float*)_B);
-            const __m128 c =  _mm_loadu_ps((const float*)_C);
-            const __m128 d =  _mm_loadu_ps((const float*)_D);
+        template <unsigned int N>
+        static void RenderChunk(FPoint4 *pVerts,int sw, int sh,int numV,void *pD,RendererImpl *rp){
+            std::vector<std::shared_ptr<Chunk>> chunks = Scene::Get()->GetChunks();
+            const __m128 a =  _mm_loadu_ps((const float*)rp->_A);
+            const __m128 b =  _mm_loadu_ps((const float*)rp->_B);
+            const __m128 c =  _mm_loadu_ps((const float*)rp->_C);
+            const __m128 d =  _mm_loadu_ps((const float*)rp->_D);
             float one  = 1.0f;
             const __m128 wss = _mm_set1_ps(one);
             float swf = (float)sw *0.5f;
             float shf = (float)sh *0.5f;
-            //loat *pV = chunk->pVert;
-            FPoint4 *pV4 = (FPoint4*)chunk->pVert;
+           
+            FPoint4 *pV4 = (FPoint4*)pVerts;
             __m128 xss = _mm_set1_ps(pV4->x);
             __m128 yss = _mm_set1_ps(pV4->y);
             __m128 zss = _mm_set1_ps(pV4->z);
-            for( int i = 0; i<chunk->numVerts-1; i++){
+            for( int i = 0; i<numV-1; i++){
                 __m128 r0 = _mm_mul_ps(xss, a);
                 __m128 r1 = _mm_mul_ps(yss, b);
                 __m128 r2 = _mm_mul_ps(zss, c);
@@ -106,18 +107,56 @@ namespace ezp
                 xss = _mm_set1_ps(pV4[1].x);
                 yss = _mm_set1_ps(pV4[1].y);
                 zss = _mm_set1_ps(pV4[1].z);
-                if(res[2]>0.001f){
-                    int x = (int) (swf + res[0]/res[2]);
-                    int y = (int) (shf + res[1]/res[2]);                 
-                    if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
-                        int dst = x + y * m_canvasW;
-                        float zb = m_pzb[dst];
-                        if(res[2] < zb){
-                            m_pb[dst]  = pV4->col;
-                            m_pzb[dst] = res[2];
+                if(N==RND_POINTS)
+                {
+                    if(res[2]>0.001f){
+                        int x = (int) (swf + res[0]/res[2]);
+                        int y = (int) (shf + res[1]/res[2]);  
+                            if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
+                            int dst = x + y * rp->m_canvasW;
+                            float zb = rp->m_pzb[dst];
+                            if(res[2] < zb){
+                                rp->m_pb[dst]  = pV4->col;
+                                rp->m_pzb[dst] = res[2];
+                            }
                         }
                     }
-                }
+                } 
+                if(N==PROJ_POINTS){
+                    chunks[i]->proj.x = res[0];
+                    chunks[i]->proj.y = res[1];
+                    chunks[i]->proj.z = res[2];
+                    chunks[i]->flg = 0;
+                    chunks[i]->numToRender = chunks[i]->numVerts;
+                    chunks[i]->reduction = 1.0f;
+                    if(res[2]>0.001f){
+                        chunks[i]->reduction = 1.0f/res[2];
+                        float szsc = 2.0f * res[2]/ rp->m_atanRatio;
+                        float myszpix = swf*chunks[i]->sz/szsc;
+                        int x = (int) ( res[0]/res[2]);
+                        int y = (int) ( res[1]/res[2]);  
+                        if(( x>-swf) && ( x<swf) && ( y>-shf) && (y<shf) ){
+                            chunks[i]->flg = 0;
+                        }else{
+                           
+                           if(x > (int)myszpix + swf){
+                                chunks[i]->flg = CHUNK_FLG_NV; 
+                           }
+                           if(y > (int)myszpix + shf){
+                                chunks[i]->flg = CHUNK_FLG_NV; 
+                           }
+                           if(x < -myszpix-swf ){
+                                chunks[i]->flg = CHUNK_FLG_NV; 
+                           }
+                           if(y < -myszpix-shf){
+                                chunks[i]->flg = CHUNK_FLG_NV; 
+                           }
+                        } 
+                    }
+                    else{
+                        chunks[i]->flg = CHUNK_FLG_NV;
+                    }
+                }               
                 pV4++;
             }
         }
@@ -130,39 +169,129 @@ namespace ezp
                 }
             }
         }
+
+        void RenderHelpers(unsigned int *pBuff,int sw, int sh){
+            float swf = (float)sw *0.5f;
+            float shf = (float)sh *0.5f;
+            auto chunks = Scene::Get()->GetChunks();
+            for( int i =0; i<chunks.size(); i++){
+                if(chunks[i]->proj.z>0.0f ){
+                    int x = (int) (swf + chunks[i]->proj.x/chunks[i]->proj.z);
+                    int y = (int) (shf + chunks[i]->proj.y/chunks[i]->proj.z);  
+                    if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
+                        int dst = x + y * m_canvasW;
+                        pBuff[dst]  = 0xFFFF00FF;
+                    }
+                }
+            }
+        }
  
-        void Render(unsigned int *pBuff, int winW, int winH){
+        void Render(unsigned int *pBuff, int winW, int winH,int evnum){
 /**/
             static int val = 0;
             
    	        for (int y = 0; y < winH; y++) {
 		        for (int x = 0; x < winW; x++) {
                         int dst = x + y * m_canvasW;
-                        m_pb[dst]  = 0x80;
+                        m_pb[dst]  = 0x40;
                         m_pzb[dst]  = std::numeric_limits<float>::max();;
                 }
             }
+            
             
             //RenderRect(m_pb, 0, winH-10, val, winH, 0xFF);        
             //val++;
             //if(val>winW) val = 0;
             
             BuildProjMatrix(winW,winH,  m_atanRatio);
-            auto chunks = Scene::Get()->GetChunks();
-            for( int i = 0; i<chunks.size(); i++) {
-                 RenderChunk(chunks[i],winW,winH);
-            }
 
-            for (int y = 0; y < winH; y++) {
-		        for (int x = 0; x < winW; x++) {
-                        int dst = x + y * m_canvasW;
-                       // uint8_t c = m_pb[dst];
-                       // uint8_t g = (c<50)? 50-c: c;
-                       // pBuff[dst] = c|(c<<8)|(c<<16);
-                       pBuff[dst] = m_pb[dst];
+            auto chunks = Scene::Get()->GetChunks();
+            FPoint4* chp  = Scene::Get()->GetChunkPos();
+            FPoint4* chpa = Scene::Get()->GetChunkAuxPos();
+            RenderChunk<PROJ_POINTS>(chp,winW,winH,chunks.size(),chpa,this);
+
+            float prd_tot = 0.0f;
+            uint32_t tv = 0;
+            uint32_t budget = 3*1000*1000;
+           // std::cout<<"XAXA "<<chunks.size()<<std::endl;
+            for( int i = 0; i<chunks.size(); i++) {
+                if(chunks[i]->flg & CHUNK_FLG_NV){
+                    continue;
+                }
+                if(chunks[i]->proj.z>0.0001){
+                    tv+= chunks[i]->numVerts;
+                    prd_tot += (float)chunks[i]->numVerts * chunks[i]->reduction;
                 }
             }
-/**/
+            prd_tot = (prd_tot>0.0f)? (float)budget/prd_tot : 1.0f;
+
+           // std::cout<<"prd_tot="<<prd_tot<<" tv="<<tv<<std::endl;
+
+            int num_skip = 0,num_rnd = 0;
+            for( int i = 0; i<chunks.size(); i++) {
+                if(chunks[i]->flg & CHUNK_FLG_NV){
+                    num_skip++;
+                    continue;
+                }
+                if(chunks[i]->numToRender<2){
+                   continue;
+                }
+                int numToRender  = prd_tot *chunks[i]->reduction*(float)chunks[i]->numVerts;
+                if(numToRender > chunks[i]->numVerts ) numToRender = chunks[i]->numVerts;
+                if(numToRender >2){
+                    num_rnd+=numToRender;
+                    RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                }
+                //RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,chunks[i]->numVerts,NULL,this);
+
+            }
+            std::cout<<"num_skip="<<num_skip<<" rnd="<<num_rnd<<" ch="<<chunks.size()<<std::endl;
+            
+            //RenderHelpers(m_pb, winW, winH);
+            // postprocess
+            float none = std::numeric_limits<float>::max();
+            for (int y = 1; y < winH-1; y++) {
+		        for (int x = 1; x < winW-1; x++) {
+                    int dst = x + y * m_canvasW;
+                    int dsti = dst,aa;
+                    float zm=m_pzb[dst],zz;
+                    //if(zm!=none){
+                    //    pBuff[dst] = m_pb[dst];
+                    //    continue;
+                    //}
+                    /*
+                    int aa = dst-1;
+                    float zz=m_pzb[aa];
+                    if(zz<zm){
+                        zm = zz;
+                        dsti = aa;
+                    }
+                    */
+                    aa =dst + 1;
+                    zz=m_pzb[aa];
+                    if(zz<zm){
+                        zm = zz;
+                        dsti = aa;
+                    }
+
+ 
+                    aa =dst + m_canvasW;
+                    zz=m_pzb[aa];
+                    if(zz<zm){
+                        zm = zz;
+                        dsti = aa;
+                    }
+                    aa =dst + m_canvasW+1;
+                    zz=m_pzb[aa];
+                    if(zz<zm){
+                        zm = zz;
+                        dsti = aa;
+                    }
+                    pBuff[dst] = m_pb[dsti];
+                }
+            }
+                    
+ /**/
             ShowFrameRate();           
         }
 

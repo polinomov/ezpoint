@@ -63,7 +63,7 @@
         .dropdown-content {
             display: none;
             position: absolute;
-            background-color: #f9f9f9;
+            background-color: #333;
             min-width: 16px;
             box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
             z-index: 1;
@@ -101,7 +101,9 @@
         <div class="dropdown">
             <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
             <button type="button" class="dropbtn" onclick="OnFileOpen()"class="thebutton">File</button>
+            <!--
             <button class="dropbtn" onclick="OnTest()">Test</button>
+            -->
             <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
             <div class="dropdown-content" id="cameraDropdown">
                 <button class="thebutton">Reset</button>
@@ -114,10 +116,15 @@
             </div>
             <button class="dropbtn" id="viewBtn" onclick="myFunction('viewBtn','viewDropdown')">View</button>
             <div class="dropdown-content" id="viewDropdown">
-                <button class="thebutton">Item1 </button>
-                <button class="thebutton">Item2 </button>
+                <div style="color:0x333; height:5px;" ></div>
+                <label for="colrgb" class="thelabel"><input type="radio" name="grp1" value="0" id="colrgb" class="theradio" >rgb</label><br>
+                <div style="color:0x333; height:5px;" ></div>
+                <label for="colint" class="thelabel"><input type="radio" name="grp1" value="1" id="colint" class="theradio">intensity</label><br>
+                <div style="color:0x333; height:5px;" ></div>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colhtm" class="theradio">heightmap  </label><br>
+                <div style="color:0x333; height:5px;" ></div>
             </div>
-            <small class="thetext">FoV:</small>
+            <small class="thetext">Fov:</small>
             <input class="thespin" id="fovVal" onclick="OnFovChanged()" type="number" min="10" max="80" value="35"/> 
             <small class="thetext">Size:</small>
             <input class="thespin" type="number" min="1" max="10" value="2"/> 

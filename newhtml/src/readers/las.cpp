@@ -173,8 +173,8 @@ namespace ezp
         //
         // Allocate temp array to collect chunks
         //
-        uint32_t kSizex = 64;
-        uint32_t kSizey = 64;
+        uint32_t kSizex = 24;
+        uint32_t kSizey = 24;
         std::unique_ptr<uint32_t[]> pBf(new uint32_t[kSizex*kSizey]);
         for ( uint32_t k = 0; k<kSizex*kSizey; k++){
             pBf[k] = 0;
@@ -202,7 +202,7 @@ namespace ezp
         std::cout<<"+++++ tot="<<tt<<" from "<<numPoints<<std::endl;
 #if 1       
         //
-        // Allocate chunks 
+        // Allocate points inside each chunk 
         //
         std::unordered_map<uint32_t,std::shared_ptr<Chunk>> tab;
         for( uint32_t i = 0; i<kSizex*kSizey; i++){
@@ -214,7 +214,6 @@ namespace ezp
                 addr = (addr +128) &(~127);
                 chk->pVert =(float*)addr;//new float[pBf[i]*4];
                 chk->aux = 0;
-                chk->tst = i;
                 chOut.push_back(chk);
                 tab[i] = chk;
                 addr= (uint64_t)chk->pVert;
@@ -224,6 +223,8 @@ namespace ezp
                 //std::cout<<"New chunk "<<i<<" numv="<< chk->numVerts<< std::endl;
             }
         }
+        std::shared_ptr<Chunk> chk = std::make_shared<Chunk>();
+        chOut.push_back(chk);
         //
         // Fill chunks
         //

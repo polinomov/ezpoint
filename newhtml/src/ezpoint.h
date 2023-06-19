@@ -44,13 +44,15 @@ namespace ezp
 		virtual float GetSize() = 0;
 		virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
 		virtual const std::vector<std::shared_ptr<Chunk>>& GetChunks() = 0;
+		virtual FPoint4* GetChunkPos() = 0;
+		virtual FPoint4* GetChunkAuxPos() = 0;
 		static Scene *Get();
 	};
 
 	struct Renderer
 	{
 		virtual void Init(int canvasW, int canvasH) = 0;
-		virtual void Render(unsigned int *pBuff, int winW, int winH) = 0;
+		virtual void Render(unsigned int *pBuff, int winW, int winH,int evnum) = 0;
 		virtual float GetAtanRatio() = 0;
 		virtual void  SetAtanRatio(float val) = 0;
 		static Renderer* Get();

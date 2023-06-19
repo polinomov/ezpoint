@@ -15,7 +15,7 @@ extern "C" {
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Surface* surface;
-    int gCanvasW = 2048, gCanvasH = 2048;
+    int gCanvasW = 2048, gCanvasH = 1024;
     int gWinW = 256, gWinH = 256;
     int gRenderEvent = 1;
     int gAlwaysRender = 0;
@@ -59,7 +59,7 @@ extern "C" {
             Uint8* pixels = (Uint8*)surface->pixels;
             Uint32* pDst = (Uint32*)pixels; 
         
-            ezp::Renderer::Get()->Render(pDst, gWinW, gWinH);
+            ezp::Renderer::Get()->Render(pDst, gWinW, gWinH,gRenderEvent);
 
             if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
             SDL_Texture* screenTexture = SDL_CreateTextureFromSurface(renderer, surface);
@@ -138,6 +138,7 @@ extern "C" {
             //break;
         }
 #endif
+        //gAlwaysRender = 1;
         return 0;
     }
 
