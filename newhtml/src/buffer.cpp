@@ -26,7 +26,11 @@ namespace ezp
         unsigned int *m_pb;
         int m_canvasW, m_canvasH;
         float m_atanRatio;
+        int m_budget;
+        int m_pointSize;
         float _A[4],_B[4],_C[4],_D[4];
+        bool m_showfr;
+        char m_outsrt[1024];
  
         void Init(int canvasW, int canvasH){
             m_canvasW = canvasW;
@@ -34,8 +38,11 @@ namespace ezp
             m_pzb = new float[canvasW *canvasH];
             m_pb  = new unsigned int[canvasW *canvasH];
             m_atanRatio = 3.0f;
+            m_showfr = false;
+            m_budget = 2*1000*1000;
+            m_pointSize = 2;
         }
-
+#if 0
         void TestSimd(){
              float va[4] = {1.0f,2.0f,3.0f,4.0f};
              float vb[4] = {1.0f,2.0f,3.0f,4.0f};
@@ -52,6 +59,10 @@ namespace ezp
              _mm_storeu_ps((float*)out, r);
             std::cout<<"XXXXXXX"<<out[0]<<","<<out[1]<<","<<out[2]<<","<<out[3]<<std::endl;
         }
+#endif
+        void ShowFrameRate(bool val){
+            m_showfr = val;
+        }
 
         float GetAtanRatio(){
             return m_atanRatio;
@@ -59,6 +70,13 @@ namespace ezp
 
 		void  SetAtanRatio(float val){
             m_atanRatio = val;
+        }
+
+        void  SetBudget(float val){
+            m_budget = val;
+        }
+		void  SetPointSize(float val){
+             m_pointSize = (int)val;
         }
 
         void BuildProjMatrix(int sw, int sh,float atanRatio ){
@@ -197,12 +215,7 @@ namespace ezp
                         m_pzb[dst]  = std::numeric_limits<float>::max();;
                 }
             }
-            
-            
-            //RenderRect(m_pb, 0, winH-10, val, winH, 0xFF);        
-            //val++;
-            //if(val>winW) val = 0;
-            
+           
             BuildProjMatrix(winW,winH,  m_atanRatio);
 
             auto chunks = Scene::Get()->GetChunks();
@@ -212,7 +225,7 @@ namespace ezp
 
             float prd_tot = 0.0f;
             uint32_t tv = 0;
-            uint32_t budget = 3*1000*1000;
+            uint32_t budget = m_budget;
            // std::cout<<"XAXA "<<chunks.size()<<std::endl;
             for( int i = 0; i<chunks.size(); i++) {
                 if(chunks[i]->flg & CHUNK_FLG_NV){
@@ -224,9 +237,6 @@ namespace ezp
                 }
             }
             prd_tot = (prd_tot>0.0f)? (float)budget/prd_tot : 1.0f;
-
-           // std::cout<<"prd_tot="<<prd_tot<<" tv="<<tv<<std::endl;
-
             int num_skip = 0,num_rnd = 0;
             for( int i = 0; i<chunks.size(); i++) {
                 if(chunks[i]->flg & CHUNK_FLG_NV){
@@ -243,66 +253,70 @@ namespace ezp
                     RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
                 }
                 //RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,chunks[i]->numVerts,NULL,this);
-
             }
-            std::cout<<"num_skip="<<num_skip<<" rnd="<<num_rnd<<" ch="<<chunks.size()<<std::endl;
-            
-            //RenderHelpers(m_pb, winW, winH);
             // postprocess
-            float none = std::numeric_limits<float>::max();
-            for (int y = 1; y < winH-1; y++) {
-		        for (int x = 1; x < winW-1; x++) {
+            switch(m_pointSize){
+                case 1: PostProcess<1>(pBuff, winW, winH); break;
+                case 2: PostProcess<2>(pBuff, winW, winH); break;
+                case 3: PostProcess<3>(pBuff, winW, winH); break;
+                case 4: PostProcess<4>(pBuff, winW, winH); break;
+                case 5: PostProcess<4>(pBuff, winW, winH); break;
+                case 6: PostProcess<6>(pBuff, winW, winH); break;
+                case 7: PostProcess<7>(pBuff, winW, winH); break;
+                case 8: PostProcess<8>(pBuff, winW, winH); break;
+                case 9: PostProcess<9>(pBuff, winW, winH); break;
+                default: PostProcess<9>(pBuff, winW, winH); break;
+            }
+            if(m_showfr){
+                DbgShowFrameRate(num_rnd);  
+            }         
+        }
+        
+        template <unsigned int N>
+        void PostProcess(unsigned int *pBuff, int winW, int winH){
+            //float none = std::numeric_limits<float>::max();
+            float pTmp[N*N];
+            for (int y = 0; y < winH-N; y++) {
+		        for (int x = 0; x < winW-N; x++) {
                     int dst = x + y * m_canvasW;
-                    int dsti = dst,aa;
-                    float zm=m_pzb[dst],zz;
-                    //if(zm!=none){
-                    //    pBuff[dst] = m_pb[dst];
-                    //    continue;
-                    //}
-                    /*
-                    int aa = dst-1;
-                    float zz=m_pzb[aa];
-                    if(zz<zm){
-                        zm = zz;
-                        dsti = aa;
+
+                    for(int i =0; i<N;  i++){
+                        for(int j =0; j<N; j++){
+                            int addr = x+i + (y+j)*m_canvasW;
+                            pTmp[j + i*N]  = m_pzb[addr];
+                        }
                     }
-                    */
-                    aa =dst + 1;
-                    zz=m_pzb[aa];
-                    if(zz<zm){
-                        zm = zz;
-                        dsti = aa;
+                    
+                    int addr_min = dst;
+                    float z_min = pTmp[0];
+                    for(int i =0; i<N;  i++){
+                        for(int j =0; j<N; j++){
+                            int k = j + i*N;
+                            if(pTmp[k]<z_min) {
+                                z_min = pTmp[k];
+                                addr_min = x+i + (y+j)*m_canvasW;
+                            }
+                        }
                     }
 
- 
-                    aa =dst + m_canvasW;
-                    zz=m_pzb[aa];
-                    if(zz<zm){
-                        zm = zz;
-                        dsti = aa;
-                    }
-                    aa =dst + m_canvasW+1;
-                    zz=m_pzb[aa];
-                    if(zz<zm){
-                        zm = zz;
-                        dsti = aa;
-                    }
-                    pBuff[dst] = m_pb[dsti];
+
+                    //int dsti = dst,aa;
+                    //float zm=m_pzb[dst],zz;
+                    // pBuff[dst] = m_pb[dst];
+                    pBuff[dst] = m_pb[addr_min];
                 }
             }
-                    
- /**/
-            ShowFrameRate();           
         }
 
-        void ShowFrameRate(){
+        void DbgShowFrameRate( int num_rnd){
             static unsigned char cnt = 0,nn =0;
             static std::chrono::time_point<std::chrono::system_clock> prev;
             if(cnt==10){
                 auto curr = std::chrono::system_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(curr - prev);
                 float fps = 10000.0f/(float)elapsed.count();
-                UI::Get()->PrintMessage("fps=", (int)fps);
+                snprintf(m_outsrt,1024,"points=%d fps=",num_rnd);
+                UI::Get()->PrintMessage(m_outsrt, (int)fps);
                 cnt = 0; 
                 nn++;
                 prev = std::chrono::system_clock::now();

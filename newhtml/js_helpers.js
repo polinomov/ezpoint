@@ -1,7 +1,7 @@
 
 //const myPics = document.getElementById('myPics');
 //const context = myPics.getContext('2d');
-
+// document.getElementById("radioButtonX").disabled = true;
 var htmlCanvas;
 var context;
 class GlobVars {
@@ -18,10 +18,10 @@ function callWasm1() {
     const result = Module.ccall('CallCFunc', 'number');
 }
 
-function OnTest() {
+function OnTest( v) {
     console.log("Hello TestMe JS-\n");
     test_cb = Module.cwrap('OnTestJS', 'number', ['number']);
-    test_cb(4);
+    test_cb(v);
 }
 
 function OnMouseMove(e) {
@@ -75,9 +75,22 @@ function resizeCanvas() {
 }
 
 function OnFovChanged(){
-     var v = document.getElementById("fovVal").value; 
-     ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
-     ui_cb(1,v);
+    var v = document.getElementById("fovVal").value; 
+    ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
+    ui_cb(1,v);
+}
+
+function OnBudgetChanged(){
+    var v = document.getElementById("budVal").value; 
+    ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
+    ui_cb(2,v);
+}
+
+function OnPtSizeChanged(){
+    console.log("PTSIZE");
+    var v = document.getElementById("ptSize").value; 
+    ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
+    ui_cb(3,v);
 }
 
 class ProscessEventsClass {
@@ -150,12 +163,14 @@ class ProscessEventsClass {
     }
 
     onKeyDown(e) {
+        console.log("Key="+e.key);
         switch (e.key) {
             case "ArrowUp": gCamRotCb(0, 1, this.ctrlOn, 200); break;
             case "ArrowDown": gCamRotCb(0, -1, this.ctrlOn, 200); break;
             case "ArrowLeft": gCamRotCb(-1, 0, this.ctrlOn, 200); break;
             case "ArrowRight": gCamRotCb(1, 0, this.ctrlOn, 200); break;
             case "Control": this.ctrlOn = 1; break;
+            case "r" : OnTest(-1); break;
         }
     }
 }

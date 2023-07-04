@@ -50,36 +50,6 @@ namespace ezp
             m_size = std::max(m_size,m_box.yMax-m_box.yMin);
             m_size = std::max(m_size,m_box.zMax-m_box.zMin);
         }
-#if 0
-        void fileXYZ( void *pData, int numVerts) {
-            //int numFloats = sz/sizeof(float);
-            //int numVerts = numFloats/4;
-            auto mainCh = std::make_shared<Chunk>();
-            m_chunks.push_back(mainCh);
-            mainCh->flg &= CHUNK_MAIN;
-            mainCh->numVerts = numVerts;
-            mainCh->pVert = (float*)pData;
-            float *pv = (float*)pData;
-            mainCh->xMin = mainCh->xMax =  pv[0];
-            mainCh->yMin = mainCh->yMax =  pv[1];
-            mainCh->zMin = mainCh->zMax =  pv[2];
-            for(int k = 0;k<numVerts;k++){
-                mainCh->xMin  = std::min(mainCh->xMin,pv[0]);
-                mainCh->xMax  = std::max(mainCh->xMax,pv[0]);
-                mainCh->yMin  = std::min(mainCh->yMin,pv[1]);
-                mainCh->yMax  = std::max(mainCh->yMax,pv[1]);
-                mainCh->zMin  = std::min(mainCh->zMin,pv[2]);
-                mainCh->zMax  = std::max(mainCh->zMax,pv[2]);
-                pv+=4;
-            }
-            //SetCamera(mainCh);
-            m_size = std::max(m_size,mainCh->xMax-mainCh->xMin);
-            m_size = std::max(m_size,mainCh->yMax-mainCh->yMin);
-            m_size = std::max(m_size,mainCh->zMax-mainCh->zMin);
-           // Colorize();
-            UI::Get()->SetRenderEvent(2);
-        }
-#endif
  
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {

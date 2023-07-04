@@ -35,7 +35,7 @@
             font-size: 16px;
             color: white;
             text-align: center;
-            padding: 14px 16px;
+            padding: 10px 10px;
             text-decoration: none;
         }
 
@@ -114,7 +114,7 @@
                     <input type="radio">
                 </div>
             </div>
-            <button class="dropbtn" id="viewBtn" onclick="myFunction('viewBtn','viewDropdown')">View</button>
+            <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">Colors</button>
             <div class="dropdown-content" id="viewDropdown">
                 <div style="color:0x333; height:5px;" ></div>
                 <label for="colrgb" class="thelabel"><input type="radio" name="grp1" value="0" id="colrgb" class="theradio" >rgb</label><br>
@@ -123,13 +123,20 @@
                 <div style="color:0x333; height:5px;" ></div>
                 <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colhtm" class="theradio">heightmap  </label><br>
                 <div style="color:0x333; height:5px;" ></div>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colclass" class="theradio">classification</label><br>
+                <div style="color:0x333; height:5px; width:200px" ></div>
             </div>
             <small class="thetext">Fov:</small>
             <input class="thespin" id="fovVal" onclick="OnFovChanged()" type="number" min="10" max="80" value="35"/> 
+
             <small class="thetext">Size:</small>
-            <input class="thespin" type="number" min="1" max="10" value="2"/> 
-            <button class="dropbtn" id="helpBtn">Help</button>
-        </div> 
+            <input class="thespin" id="ptSize" type="number" onclick="OnPtSizeChanged()" min="1" max="10" value="2"/> 
+
+            <small class="thetext" title="Rendering budget">Budget:</small>
+            <input class="thespin" id="budVal" onclick="OnBudgetChanged()" type="number" min="1" max="100" value="20"/> 
+
+            <input type="color" title="Background Color" id="bkcolor" value="#000080">
+          </div> 
     </div>
  
     <div>
@@ -165,22 +172,13 @@
             
             // Close the dropdown if the user clicks outside of it
             window.onclick = function(e) {
-              /*
-              if (!e.target.matches('.dropbtn')) {
-                console.log("---click----");
-                var myDropdown = document.getElementById("cameraDropdown");
-                if (myDropdown.classList.contains('show')) {
-                    myDropdown.classList.remove('show');
-                }
-                
-                var myDropdown1 = document.getElementById("viewDropdown");
-                if (myDropdown1.classList.contains('show')) {
-                   myDropdown1.classList.remove('show');
-                }
-                
-             }
-             */
-             
+                if(e.target.getAttribute('id')=='canvas'){
+                    console.log("---click---- " + e.target.getAttribute('id')); 
+                    var myDropdown1 = document.getElementById(openedDropDownid);
+                    if (myDropdown1.classList.contains('show')) {
+                        myDropdown1.classList.remove('show');
+                    }   
+                }        
             }
        </script>
        

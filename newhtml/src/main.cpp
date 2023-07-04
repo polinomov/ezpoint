@@ -8,8 +8,8 @@
 #include <thread>
 #include <emscripten.h>
 
-#define aaa "XA"
-const std::string cars[] = {aaa, "Saab", "Volvo", "BMW"};
+//#define aaa "XA"
+//const std::string cars[] = {aaa, "Saab", "Volvo", "BMW"};
 
 extern "C" {
     SDL_Window* window;
@@ -161,18 +161,35 @@ extern "C" {
     }
 
     int OnTestJS(int val){ //JS call
-        std::cout<<"onTest"<<std::endl;
-        ezp::Scene *pSc = ezp::Scene::Get();
-        pSc->BuildTest(val);
+        std::cout<<"onTest "<<val<<std::endl;
+        //ezp::Scene *pRnd = ezp::Renderer::Get();
+        if(val== -1){
+            if(gAlwaysRender==0){
+                gAlwaysRender = 1;
+                ezp::Renderer::Get()->ShowFrameRate(true);
+            }else{
+                gAlwaysRender = 0;
+                ezp::Renderer::Get()->ShowFrameRate(false);
+            }
+        }
+        if(val== -2){
+            gAlwaysRender = 0;
+            ezp::Renderer::Get()->ShowFrameRate(false);
+        }
         return 0;
     }
 
     int OnUIChangeJS(int el, int value){ 
          if(el==1){ // Fov
             float aratio = 1.0f/tan(0.5f* (float)value * 3.1415f/180.0f);
-            //std::cout<<"OnUIChangeJS"<<" el = "<<el<<" ratio="<<aratio<<std::endl;
             ezp::Renderer::Get()->SetAtanRatio(aratio);
             gRenderEvent = 2;	
+        }else if(el==2){  // budget
+            ezp::Renderer::Get()->SetBudget(value*100000);
+            gRenderEvent = 2;
+        }else if(el==3){
+            ezp::Renderer::Get()-> SetPointSize(value);
+            gRenderEvent = 2;
         }
         return 0;
     }

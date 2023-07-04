@@ -88,7 +88,8 @@ namespace ezp
         uint16_t green;
         uint16_t blue;
     };
-
+    
+    #pragma pack (1)
     struct Point6Flags{
        uint16_t returnNumber:4;  
        uint16_t givenPulse:4;  

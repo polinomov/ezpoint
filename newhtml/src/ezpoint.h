@@ -55,6 +55,9 @@ namespace ezp
 		virtual void Render(unsigned int *pBuff, int winW, int winH,int evnum) = 0;
 		virtual float GetAtanRatio() = 0;
 		virtual void  SetAtanRatio(float val) = 0;
+		virtual void  SetBudget(float val) = 0;
+		virtual void  SetPointSize(float val) = 0;
+		virtual void ShowFrameRate(bool val) = 0;
 		static Renderer* Get();
 	};
 
