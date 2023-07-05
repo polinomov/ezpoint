@@ -28,6 +28,7 @@ namespace ezp
         float m_atanRatio;
         int m_budget;
         int m_pointSize;
+        int m_sceneSize;
         float _A[4],_B[4],_C[4],_D[4];
         bool m_showfr;
         char m_outsrt[1024];
@@ -41,6 +42,7 @@ namespace ezp
             m_showfr = false;
             m_budget = 2*1000*1000;
             m_pointSize = 2;
+            m_sceneSize = 1;
         }
 #if 0
         void TestSimd(){
@@ -128,9 +130,9 @@ namespace ezp
                 if(N==RND_POINTS)
                 {
                     if(res[2]>0.001f){
-                        int x = (int) (swf + res[0]/res[2]);
-                        int y = (int) (shf + res[1]/res[2]);  
-                            if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
+                        int x = (int) (swf + res[0]/res[2] + 0.5f);
+                        int y = (int) (shf + res[1]/res[2] + 0.5f);  
+                        if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
                             int dst = x + y * rp->m_canvasW;
                             float zb = rp->m_pzb[dst];
                             if(res[2] < zb){
@@ -148,7 +150,8 @@ namespace ezp
                     chunks[i]->numToRender = chunks[i]->numVerts;
                     chunks[i]->reduction = 1.0f;
                     if(res[2]>0.001f){
-                        chunks[i]->reduction = 1.0f/res[2];
+                        //chunks[i]->reduction = 1.0f/res[2];
+                        chunks[i]->reduction = std::max(1.0f - res[2]/rp->m_sceneSize,0.1f);
                         float szsc = 2.0f * res[2]/ rp->m_atanRatio;
                         float myszpix = swf*chunks[i]->sz/szsc;
                         int x = (int) ( res[0]/res[2]);
@@ -217,7 +220,7 @@ namespace ezp
             }
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
-
+            m_sceneSize = Scene::Get()->GetSize();
             auto chunks = Scene::Get()->GetChunks();
             FPoint4* chp  = Scene::Get()->GetChunkPos();
             FPoint4* chpa = Scene::Get()->GetChunkAuxPos();
@@ -226,7 +229,6 @@ namespace ezp
             float prd_tot = 0.0f;
             uint32_t tv = 0;
             uint32_t budget = m_budget;
-           // std::cout<<"XAXA "<<chunks.size()<<std::endl;
             for( int i = 0; i<chunks.size(); i++) {
                 if(chunks[i]->flg & CHUNK_FLG_NV){
                     continue;
@@ -274,7 +276,6 @@ namespace ezp
         
         template <unsigned int N>
         void PostProcess(unsigned int *pBuff, int winW, int winH){
-            //float none = std::numeric_limits<float>::max();
             float pTmp[N*N];
             for (int y = 0; y < winH-N; y++) {
 		        for (int x = 0; x < winW-N; x++) {
@@ -298,11 +299,6 @@ namespace ezp
                             }
                         }
                     }
-
-
-                    //int dsti = dst,aa;
-                    //float zm=m_pzb[dst],zz;
-                    // pBuff[dst] = m_pb[dst];
                     pBuff[dst] = m_pb[addr_min];
                 }
             }

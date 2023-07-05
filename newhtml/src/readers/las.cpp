@@ -425,6 +425,14 @@ namespace ezp
             std::cout<<"----unsupported version:"<<vMajor<<"."<<vMinor<<std::endl;
             return retBox ;
         }
+        /*
+        lh->xOffset = 0.0f;
+        lh->yOffset = 0.0f;
+        lh->zOffset = 0.0f;
+        lh->xScale = 0.0001f;
+        lh->yScale = 0.0001f;
+        lh->zScale = 0.0001f;
+        */
         std::cout<<"version:"<<vMajor<<"."<<vMinor<<std::endl;
         std::cout<<"numpoints="<<numPoints<<" ofst="<<lh->pointOfst<<" ptFormat="<<ptFormat<<" rlen="<<recLength<<std::endl;
 
@@ -433,7 +441,7 @@ namespace ezp
         float min, max;
         unsigned char *pStart = (unsigned char*)pData + lh->pointOfst;
         retBox = FillBdBox(pStart, numPoints,lh,intems,chOut);
-        ProcessIntens( intems, 255 , min, max);
+        //ProcessIntens( intems, 255 , min, max);
         std::cout<<"first = "<<min<<" last="<<max<<std::endl;
         if( max > min){
             //ApplyIntems(pRet,numPoints,min, max);

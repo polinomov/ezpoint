@@ -87,7 +87,6 @@ function OnBudgetChanged(){
 }
 
 function OnPtSizeChanged(){
-    console.log("PTSIZE");
     var v = document.getElementById("ptSize").value; 
     ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
     ui_cb(3,v);
@@ -111,9 +110,14 @@ class ProscessEventsClass {
     }
 
     onMouseDown(e) {
-        this.mouseOn = 1;
-        this.posX = e.clientX;
-        this.posY = e.clientY;
+        if(e.button==0){
+            this.mouseOn = 1;
+            this.posX = e.clientX;
+            this.posY = e.clientY;
+        }
+        if(e.button==2){
+            console.log("btnCode="+ e.button);
+        }
     }
 
     onMouseMove(e) {
@@ -163,7 +167,6 @@ class ProscessEventsClass {
     }
 
     onKeyDown(e) {
-        console.log("Key="+e.key);
         switch (e.key) {
             case "ArrowUp": gCamRotCb(0, 1, this.ctrlOn, 200); break;
             case "ArrowDown": gCamRotCb(0, -1, this.ctrlOn, 200); break;
@@ -172,6 +175,10 @@ class ProscessEventsClass {
             case "Control": this.ctrlOn = 1; break;
             case "r" : OnTest(-1); break;
         }
+    }
+
+    onButton(e){
+        //console.log("onButton");
     }
 }
 
@@ -211,6 +218,7 @@ function OnStart() {
     el.addEventListener('mousedown', (event) => { ProcessEvents.onMouseDown(event); }, false);
     el.addEventListener('mousewheel', (event) => { ProcessEvents.onMouseWheel(event); }, false);
     el.addEventListener('wheel', (event) => { ProcessEvents.onWheel(event); }, false);
+    //el.addEventListener('button', (event) => { ProcessEvents.onButton(event); }, false);
 }
 
 

@@ -76,7 +76,6 @@ namespace ezp
                 }
             }
             UI::Get()->SetRenderEvent(100);
- 
         }
 
         FPoint4* GetChunkPos(){
