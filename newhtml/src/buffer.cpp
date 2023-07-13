@@ -20,29 +20,40 @@ namespace ezp
 {
 	#define RND_POINTS 1
 	#define PROJ_POINTS 2
+
+    struct FrBuff{
+        uint32_t zval;
+    };
+
     struct RendererImpl : public Renderer
     {
-        float *m_pzb;
-        unsigned int *m_pb;
+        uint32_t **m_frbuff;
         int m_canvasW, m_canvasH;
         float m_atanRatio;
         int m_budget;
         int m_pointSize;
         int m_sceneSize;
+        float m_zmax;
+        float m_zmin;
+        float m_zprd;
         float _A[4],_B[4],_C[4],_D[4];
         bool m_showfr;
+        bool m_dbgFlf;
         char m_outsrt[1024];
  
         void Init(int canvasW, int canvasH){
             m_canvasW = canvasW;
             m_canvasH = canvasH;
-            m_pzb = new float[canvasW *canvasH];
-            m_pb  = new unsigned int[canvasW *canvasH];
+            m_frbuff = new uint32_t*[2];
+            m_frbuff[0] = new uint32_t[canvasW *canvasH];
+            m_frbuff[1] = new uint32_t[canvasW *canvasH];
             m_atanRatio = 3.0f;
             m_showfr = false;
             m_budget = 2*1000*1000;
             m_pointSize = 2;
             m_sceneSize = 1;
+            m_dbgFlf = false;
+            m_zmax = m_zmin = 0.0f;
         }
 #if 0
         void TestSimd(){
@@ -81,6 +92,10 @@ namespace ezp
              m_pointSize = (int)val;
         }
 
+        void SetDebugParam(int val){
+            m_dbgFlf  = !m_dbgFlf;
+        }
+
         void BuildProjMatrix(int sw, int sh,float atanRatio ){
             Camera *pCam = Camera::Get();
             float pP[3],pD[3],pU[3],pR[3];
@@ -99,7 +114,7 @@ namespace ezp
             _D[3] =  0.0f;
         }
 
-        template <unsigned int N>
+        template <unsigned int N,unsigned int D>
         static void RenderChunk(FPoint4 *pVerts,int sw, int sh,int numV,void *pD,RendererImpl *rp){
             std::vector<std::shared_ptr<Chunk>> chunks = Scene::Get()->GetChunks();
             const __m128 a =  _mm_loadu_ps((const float*)rp->_A);
@@ -115,7 +130,11 @@ namespace ezp
             __m128 xss = _mm_set1_ps(pV4->x);
             __m128 yss = _mm_set1_ps(pV4->y);
             __m128 zss = _mm_set1_ps(pV4->z);
-            for( int i = 0; i<numV-1; i++){
+ 
+            uint32_t *pDstB = (uint32_t*) rp->m_frbuff[0];
+            uint32_t *pAddrDefer = NULL;
+            uint32_t valToWrite;
+            for( int i = 0; i<numV-1; i++){   
                 __m128 r0 = _mm_mul_ps(xss, a);
                 __m128 r1 = _mm_mul_ps(yss, b);
                 __m128 r2 = _mm_mul_ps(zss, c);
@@ -129,17 +148,20 @@ namespace ezp
                 zss = _mm_set1_ps(pV4[1].z);
                 if(N==RND_POINTS)
                 {
-                    if(res[2]>0.001f){
+                    if((res[2]>0.001f)){
                         int x = (int) (swf + res[0]/res[2] + 0.5f);
                         int y = (int) (shf + res[1]/res[2] + 0.5f);  
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
                             int dst = x + y * rp->m_canvasW;
-                            float zb = rp->m_pzb[dst];
-                            if(res[2] < zb){
-                                rp->m_pb[dst]  = pV4->col;
-                                rp->m_pzb[dst] = res[2];
+                            uint32_t *pAddr = rp->m_frbuff[0] + dst;
+                            uint32_t zb = pAddr[0];
+                            uint32_t zi = (uint32_t)((res[2] - rp->m_zmin) * rp->m_zprd);
+                            zi = zi<<8;
+                            if((zi < zb)){
+                                uint8_t coli = pV4->col & 0x000000FF;
+                                *pAddr = zi | coli;
                             }
-                        }
+                       }
                     }
                 } 
                 if(N==PROJ_POINTS){
@@ -190,7 +212,7 @@ namespace ezp
                 }
             }
         }
-
+#if 0
         void RenderHelpers(unsigned int *pBuff,int sw, int sh){
             float swf = (float)sw *0.5f;
             float shf = (float)sh *0.5f;
@@ -206,17 +228,14 @@ namespace ezp
                 }
             }
         }
- 
+#endif
+
         void Render(unsigned int *pBuff, int winW, int winH,int evnum){
-/**/
             static int val = 0;
-            
+            uint32_t *p32 = (uint32_t*)m_frbuff[0];
    	        for (int y = 0; y < winH; y++) {
-		        for (int x = 0; x < winW; x++) {
-                        int dst = x + y * m_canvasW;
-                        m_pb[dst]  = 0x40;
-                        m_pzb[dst]  = std::numeric_limits<float>::max();;
-                }
+                uint32_t *pp = p32 +  y * m_canvasW;
+                memset(pp,0xFF,winW*sizeof(uint32_t));
             }
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
@@ -224,7 +243,13 @@ namespace ezp
             auto chunks = Scene::Get()->GetChunks();
             FPoint4* chp  = Scene::Get()->GetChunkPos();
             FPoint4* chpa = Scene::Get()->GetChunkAuxPos();
-            RenderChunk<PROJ_POINTS>(chp,winW,winH,chunks.size(),chpa,this);
+            Scene::Get()->GetZMax(m_zmin,m_zmax);
+            if(m_zmax<=m_zmin){
+                return;
+            }
+            //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
+            m_zprd = (255.0f * 255.0f * 255.0f)/(m_zmax - m_zmin);
+            RenderChunk<PROJ_POINTS,0>(chp,winW,winH,chunks.size(),chpa,this);
 
             float prd_tot = 0.0f;
             uint32_t tv = 0;
@@ -252,7 +277,7 @@ namespace ezp
                 if(numToRender > chunks[i]->numVerts ) numToRender = chunks[i]->numVerts;
                 if(numToRender >2){
                     num_rnd+=numToRender;
-                    RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                    RenderChunk<RND_POINTS,0>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
                 }
                 //RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,chunks[i]->numVerts,NULL,this);
             }
@@ -277,6 +302,8 @@ namespace ezp
         template <unsigned int N>
         void PostProcess(unsigned int *pBuff, int winW, int winH){
             float pTmp[N*N];
+            //if(m_dbgFlf) return;
+
             for (int y = 0; y < winH-N; y++) {
 		        for (int x = 0; x < winW-N; x++) {
                     int dst = x + y * m_canvasW;
@@ -284,7 +311,7 @@ namespace ezp
                     for(int i =0; i<N;  i++){
                         for(int j =0; j<N; j++){
                             int addr = x+i + (y+j)*m_canvasW;
-                            pTmp[j + i*N]  = m_pzb[addr];
+                            pTmp[j + i*N]  = m_frbuff[0][addr];
                         }
                     }
                     
@@ -299,7 +326,9 @@ namespace ezp
                             }
                         }
                     }
-                    pBuff[dst] = m_pb[addr_min];
+                   // pBuff[dst] = m_pb[addr_min];
+                    uint8_t coli = m_frbuff[0][addr_min] & 0xFF;
+                    pBuff[dst] = coli | (coli<<8) | (coli<<16);// m_frbuff[addr_min].col;
                 }
             }
         }

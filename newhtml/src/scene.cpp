@@ -94,6 +94,32 @@ namespace ezp
             return m_size;
         }
 
+        FBdBox GetBdBox(){
+            return m_box;
+        }
+
+        void GetZMax(float &zmin, float &zmax){
+            float pP[3],pD[3],x[8],y[8],z[8];
+            Camera *pCam = Camera::Get();
+            pCam->GetPos(pP[0],pP[1],pP[2]);
+            pCam->GetDir(pD[0],pD[1],pD[2]);
+            x[0] = m_box.xMin; y[0] = m_box.yMin; z[0] = m_box.zMin;
+            x[1] = m_box.xMin; y[1] = m_box.yMax; z[1] = m_box.zMin;
+            x[2] = m_box.xMax; y[2] = m_box.yMin; z[2] = m_box.zMin;
+            x[3] = m_box.xMax; y[3] = m_box.yMax; z[3] = m_box.zMin;
+            x[4] = m_box.xMin; y[4] = m_box.yMin; z[4] = m_box.zMax;
+            x[5] = m_box.xMin; y[5] = m_box.yMax; z[5] = m_box.zMax;
+            x[6] = m_box.xMax; y[6] = m_box.yMin; z[6] = m_box.zMax;
+            x[7] = m_box.xMax; y[7] = m_box.yMax; z[7] = m_box.zMax;
+
+            zmin = zmax = (x[0]-pP[0])*pD[0] + (y[0]-pP[1])*pD[1] +(z[0]-pP[2])*pD[2];
+            for( int i =1; i<8; i++){
+                float zz =(x[i]-pP[0])*pD[0] + (y[i]-pP[1])*pD[1] +(z[i]-pP[2])*pD[2];
+                if(zz > zmax) zmax = zz;
+                if(zz < zmin) zmin = zz;
+            }
+        }
+
         void BuildTest( int n) {
             int dataSize = 0;
             if(m_modelData != NULL)	{

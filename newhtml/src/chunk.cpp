@@ -29,7 +29,6 @@ void Chunk::Randomize(){
             FPoint4 tmp = fp[r1];
             fp[r1] = fp[r2];
             fp[r2] = tmp;
-            //fp[r1].col = 0xFFFFFFFF;
             numSw++;
         }
     }

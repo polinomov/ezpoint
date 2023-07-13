@@ -8,14 +8,13 @@
 #include <thread>
 #include <emscripten.h>
 
-//#define aaa "XA"
-//const std::string cars[] = {aaa, "Saab", "Volvo", "BMW"};
 
 extern "C" {
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Surface* surface;
     int gCanvasW = 2048, gCanvasH = 1024;
+    //int gCanvasW = 512, gCanvasH = 512;
     int gWinW = 256, gWinH = 256;
     int gRenderEvent = 1;
     int gAlwaysRender = 0;
@@ -173,8 +172,7 @@ extern "C" {
             }
         }
         if(val== -2){
-            gAlwaysRender = 0;
-            ezp::Renderer::Get()->ShowFrameRate(false);
+            ezp::Renderer::Get()->SetDebugParam(-2);
         }
         return 0;
     }
@@ -224,8 +222,18 @@ extern "C" {
         return 0;
     }
 
+    int CameraMoveJS(int xval, int yval){
+        ezp::Camera *pCam = ezp::Camera::Get();
+        float sx= (float)xval;
+        pCam->MoveLeftOrRight(-sx);
+        float sy= (float)yval;
+        pCam->MoveUpOrDown(-sy);
+        gRenderEvent = 2;	
+        return 0;
+    }
+
     int  main() {
-        printf("-----MAIN----\n");
+       // printf("-----MAIN----\n");
         InitSDL();
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);

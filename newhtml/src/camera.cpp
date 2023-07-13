@@ -119,10 +119,15 @@ namespace ezp
             m_P[2] = v[2];
         }
 
+        void SetPos(float x, float y, float  z){
+            m_P[0] = x;
+            m_P[1] = y;
+            m_P[2] = z;
+        }
+
         void SetDir(float *v){}
         void SetUp(float *v){}
         void RotAroudWorldUp( float val){
-            //printf("----Cam-rot-right---- %f\n",val);
             vector3 ZZ(0.0f, 0.0f, 0.0f);
             m_P = rotate(m_P, m_L, m_worldUp, val);
             m_D = rotate(m_D, ZZ, m_worldUp,  val);
@@ -158,6 +163,15 @@ namespace ezp
         }
         virtual void ZoomOut( float val){
             m_P = m_P - (m_D * val);
+        }
+
+        void MoveLeftOrRight( float val){
+             m_P = m_P + (m_R * val);
+             m_L = m_L + (m_R * val);
+        }
+        void MoveUpOrDown( float val){
+             m_P = m_P + (m_U * val);
+             m_L = m_L + (m_U * val);
         }
     };
 

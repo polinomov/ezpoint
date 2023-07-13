@@ -11,6 +11,7 @@ class GlobVars {
 var gv = new GlobVars();
 
 var gCamRotCb;
+var gCamMoveCb;
 
 function callWasm1() {
     console.log("CallWasm");
@@ -96,6 +97,7 @@ class ProscessEventsClass {
     constructor() {
         this.ctrlOn = 0;
         this.mouseOn = 0;
+        this.action = 0;
         this.posX = -1;
         this.posY = -1;
     };
@@ -110,13 +112,15 @@ class ProscessEventsClass {
     }
 
     onMouseDown(e) {
-        if(e.button==0){
-            this.mouseOn = 1;
-            this.posX = e.clientX;
-            this.posY = e.clientY;
+        this.mouseOn = 1;
+        this.posX = e.clientX;
+        this.posY = e.clientY;
+        if(e.button==0){//left
+            this.action = 1; //rotate
         }
-        if(e.button==2){
+        if(e.button==2){//right
             console.log("btnCode="+ e.button);
+            this.action = 2; //move
         }
     }
 
@@ -126,23 +130,18 @@ class ProscessEventsClass {
             let dy = e.clientY - this.posY;
             let adx = (dx > 0) ? dx : -dx;
             let ady = (dy > 0) ? dy : -dy;
-            if (adx > ady) {
-                let vx = adx * 10000 / window.innerWidth;
-                if (dx > 0) {
-                    gCamRotCb(1, 0, 0, vx);
+            if(this.action==1){// rotation
+                if (adx > ady) {
+                    let vx = adx * 10000 / window.innerWidth;
+                    gCamRotCb((dx>0)?-1:1, 0, 0, vx);
                 }
-                if (dx < 0) {
-                    gCamRotCb(-1, 0, 0, vx);
+                else {
+                    let vy = ady * 10000 / window.innerHeight;
+                    gCamRotCb(0, (dy>0)?-1:1, 0, vy);
                 }
             }
-            else {
-                let vy = ady * 10000 / window.innerHeight;
-                if (dy > 0) {
-                    gCamRotCb(0, -1, 0, vy);
-                }
-                if (dy < 0) {
-                    gCamRotCb(0, 1, 0, vy);
-                }
+            if(this.action==2){// move
+                gCamMoveCb(dx,dy);
             }
             this.posX = e.clientX;
             this.posY = e.clientY;
@@ -174,6 +173,7 @@ class ProscessEventsClass {
             case "ArrowRight": gCamRotCb(1, 0, this.ctrlOn, 200); break;
             case "Control": this.ctrlOn = 1; break;
             case "r" : OnTest(-1); break;
+            case "t" : OnTest(-2); break;
         }
     }
 
@@ -206,7 +206,8 @@ function OnLoaded() {
 
 function OnStart() {
     console.log("-OnStart-\n");
-    gCamRotCb = Module.cwrap('CameraRotateJS', 'number', 'number', 'number', 'number'['number']);
+    gCamRotCb =  Module.cwrap('CameraRotateJS', 'number', 'number', 'number', 'number',['number']);
+    gCamMoveCb = Module.cwrap('CameraMoveJS', 'number', ['number','number']);
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas, false);
     window.addEventListener('keydown', (event) => { ProcessEvents.onKeyDown(event); }, false);
