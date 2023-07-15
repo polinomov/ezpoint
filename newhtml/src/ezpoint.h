@@ -62,6 +62,7 @@ namespace ezp
 		virtual void  SetAtanRatio(float val) = 0;
 		virtual void  SetBudget(float val) = 0;
 		virtual void  SetPointSize(float val) = 0;
+		virtual void  SetBkColor( uint32_t val)= 0;
 		virtual void ShowFrameRate(bool val) = 0;
 		virtual void SetDebugParam(int val) = 0;
 		static Renderer* Get();

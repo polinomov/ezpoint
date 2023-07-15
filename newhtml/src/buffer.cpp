@@ -22,7 +22,9 @@ namespace ezp
 	#define PROJ_POINTS 2
 
     struct FrBuff{
-        uint32_t zval;
+        uint32_t old_val;
+        uint32_t new_val;
+        uint32_t addr;
     };
 
     struct RendererImpl : public Renderer
@@ -32,6 +34,7 @@ namespace ezp
         float m_atanRatio;
         int m_budget;
         int m_pointSize;
+        uint32_t m_bkcolor;
         int m_sceneSize;
         float m_zmax;
         float m_zmin;
@@ -45,15 +48,20 @@ namespace ezp
             m_canvasW = canvasW;
             m_canvasH = canvasH;
             m_frbuff = new uint32_t*[2];
-            m_frbuff[0] = new uint32_t[canvasW *canvasH];
-            m_frbuff[1] = new uint32_t[canvasW *canvasH];
+            m_frbuff[0] = new uint32_t[canvasW *canvasH + 128];
+            uint64_t addr = (uint64_t)m_frbuff[0];
+            addr = (addr +128) &(~127);
+            m_frbuff[0] =(uint32_t*)addr;//new float[pBf[i]*4];
+
+           // m_frbuff[1] = new uint32_t[canvasW *canvasH];
             m_atanRatio = 3.0f;
             m_showfr = false;
             m_budget = 2*1000*1000;
-            m_pointSize = 2;
+            m_pointSize = 1;
             m_sceneSize = 1;
             m_dbgFlf = false;
             m_zmax = m_zmin = 0.0f;
+            m_bkcolor = 0x404040;
         }
 #if 0
         void TestSimd(){
@@ -92,6 +100,10 @@ namespace ezp
              m_pointSize = (int)val;
         }
 
+        void  SetBkColor( uint32_t val){
+             m_bkcolor = val;
+        }
+
         void SetDebugParam(int val){
             m_dbgFlf  = !m_dbgFlf;
         }
@@ -116,6 +128,8 @@ namespace ezp
 
         template <unsigned int N,unsigned int D>
         static void RenderChunk(FPoint4 *pVerts,int sw, int sh,int numV,void *pD,RendererImpl *rp){
+            FrBuff tbuff[16];
+            uint32_t tbi = 0;
             std::vector<std::shared_ptr<Chunk>> chunks = Scene::Get()->GetChunks();
             const __m128 a =  _mm_loadu_ps((const float*)rp->_A);
             const __m128 b =  _mm_loadu_ps((const float*)rp->_B);
@@ -132,9 +146,11 @@ namespace ezp
             __m128 zss = _mm_set1_ps(pV4->z);
  
             uint32_t *pDstB = (uint32_t*) rp->m_frbuff[0];
-            uint32_t *pAddrDefer = NULL;
-            uint32_t valToWrite;
-            for( int i = 0; i<numV-1; i++){   
+            const float zmf =  rp->m_zmin;
+            const float zprd = rp->m_zprd;
+            const int canvas_w = rp->m_canvasW;
+            int addr_max = rp->m_canvasW*rp->m_canvasH;
+             for( int i = 0; i<numV-1; i++){   
                 __m128 r0 = _mm_mul_ps(xss, a);
                 __m128 r1 = _mm_mul_ps(yss, b);
                 __m128 r2 = _mm_mul_ps(zss, c);
@@ -149,19 +165,18 @@ namespace ezp
                 if(N==RND_POINTS)
                 {
                     if((res[2]>0.001f)){
-                        int x = (int) (swf + res[0]/res[2] + 0.5f);
-                        int y = (int) (shf + res[1]/res[2] + 0.5f);  
+                        int x = (int) (swf + res[0]/res[2] );
+                        int y = (int) (shf + res[1]/res[2] );                             
+                        int dst = x + y * canvas_w;
+                        uint32_t *pAddr = pDstB + dst;
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
-                            int dst = x + y * rp->m_canvasW;
-                            uint32_t *pAddr = rp->m_frbuff[0] + dst;
                             uint32_t zb = pAddr[0];
-                            uint32_t zi = (uint32_t)((res[2] - rp->m_zmin) * rp->m_zprd);
+                            uint32_t zi = (uint32_t)((res[2] - zmf) * zprd);
                             zi = zi<<8;
-                            if((zi < zb)){
-                                uint8_t coli = pV4->col & 0x000000FF;
-                                *pAddr = zi | coli;
-                            }
-                       }
+                            pAddr  = (zi < zb)?pAddr:pDstB;
+                            uint8_t coli = pV4->col & 0x000000FF;
+                            *pAddr = zi | coli;
+                        }
                     }
                 } 
                 if(N==PROJ_POINTS){
@@ -245,6 +260,7 @@ namespace ezp
             FPoint4* chpa = Scene::Get()->GetChunkAuxPos();
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
+                PostProcess<1>(pBuff, winW, winH);
                 return;
             }
             //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
@@ -328,7 +344,11 @@ namespace ezp
                     }
                    // pBuff[dst] = m_pb[addr_min];
                     uint8_t coli = m_frbuff[0][addr_min] & 0xFF;
-                    pBuff[dst] = coli | (coli<<8) | (coli<<16);// m_frbuff[addr_min].col;
+                    if( m_frbuff[0][addr_min] == 0xFFFFFFFF){
+                        pBuff[dst] = m_bkcolor;
+                    }else{
+                        pBuff[dst] = coli | (coli<<8) | (coli<<16);// m_frbuff[addr_min].col;
+                    }
                 }
             }
         }

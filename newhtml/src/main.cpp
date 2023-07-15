@@ -186,7 +186,11 @@ extern "C" {
             ezp::Renderer::Get()->SetBudget(value*100000);
             gRenderEvent = 2;
         }else if(el==3){
-            ezp::Renderer::Get()-> SetPointSize(value);
+            ezp::Renderer::Get()->SetPointSize(value);
+            gRenderEvent = 2;
+        }else if(el==4){ //4
+            std::cout<<"SetBkColor-main:"<<value<<std::endl;
+            ezp::Renderer::Get()->SetBkColor((uint32_t)value);
             gRenderEvent = 2;
         }
         return 0;
