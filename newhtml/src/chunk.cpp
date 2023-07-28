@@ -22,7 +22,7 @@ void Chunk::Randomize(){
     FPoint4 *fp = (FPoint4*)pVert;
     srand(12345);
     int numSw = 0;
-    for( int i = 0; i<numVerts; i++){
+    for( int i = 0; i<numVerts*2; i++){
         uint32_t r1 = rand()%numVerts;
         uint32_t r2 = rand()%numVerts;
         if((r1>=0)&&(r1<numVerts)&&(r2>=0)&&(r2<numVerts)){

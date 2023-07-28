@@ -72,7 +72,32 @@ function OnFileOpen() {
 
 function resizeCanvas() {
     resize_cb = Module.cwrap('CallCFunc', 'number', ['number', 'number']);
+    document.getElementById('canvas').height = window.innerHeight;
+    document.getElementById('canvas').width = window.innerWidth;
     resize_cb(window.innerWidth, window.innerHeight);
+}
+
+function forceResize(){
+    window.dispatchEvent(new Event('resize'));
+}
+
+function GetBkColorValue(){
+    var vs = document.getElementById("bkcolor").value; 
+    var vi =  "0x"+vs.slice(1);
+    var v = parseInt(vi);
+    return v;    
+}
+
+function GetUIValue( uiId){
+    switch(uiId){
+        case "bkcolor":
+            return GetBkColorValue();
+        case "budget":
+            break;
+        case "fov":
+            break;
+    }
+    return "blah";
 }
 
 function OnFovChanged(){
@@ -94,9 +119,7 @@ function OnPtSizeChanged(){
 }
 
 function OnBkhanged(){
-    var vs = document.getElementById("bkcolor").value; 
-    var vi =  "0x"+vs.slice(1);
-    var v = parseInt(vi);
+    var v = GetBkColorValue();
     gUIChangeCB(4,v);
 }
 

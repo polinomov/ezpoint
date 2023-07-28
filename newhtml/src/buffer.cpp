@@ -61,7 +61,8 @@ namespace ezp
             m_sceneSize = 1;
             m_dbgFlf = false;
             m_zmax = m_zmin = 0.0f;
-            m_bkcolor = 0x404040;
+            ezp::UI *pUI = ezp::UI::Get();
+            m_bkcolor = pUI->GetBkColor();
         }
 #if 0
         void TestSimd(){
@@ -223,7 +224,7 @@ namespace ezp
             for (int y = top; y < bot; y++) {
 		        for (int x = left; x < right; x++) {
                         int dst = x + y * m_canvasW;
-                        pBuff[dst]  = 0xFF;
+                        pBuff[dst]  = col;
                 }
             }
         }
@@ -252,6 +253,7 @@ namespace ezp
                 uint32_t *pp = p32 +  y * m_canvasW;
                 memset(pp,0xFF,winW*sizeof(uint32_t));
             }
+
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
             m_sceneSize = Scene::Get()->GetSize();
@@ -261,6 +263,7 @@ namespace ezp
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
                 PostProcess<1>(pBuff, winW, winH);
+                RenderRect(pBuff, 0, 0, 100, 100, 0xFF00FF00);
                 return;
             }
             //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
@@ -303,7 +306,7 @@ namespace ezp
                 case 2: PostProcess<2>(pBuff, winW, winH); break;
                 case 3: PostProcess<3>(pBuff, winW, winH); break;
                 case 4: PostProcess<4>(pBuff, winW, winH); break;
-                case 5: PostProcess<4>(pBuff, winW, winH); break;
+                case 5: PostProcess<5>(pBuff, winW, winH); break;
                 case 6: PostProcess<6>(pBuff, winW, winH); break;
                 case 7: PostProcess<7>(pBuff, winW, winH); break;
                 case 8: PostProcess<8>(pBuff, winW, winH); break;
@@ -317,34 +320,38 @@ namespace ezp
         
         template <unsigned int N>
         void PostProcess(unsigned int *pBuff, int winW, int winH){
-            float pTmp[N*N];
-            //if(m_dbgFlf) return;
-
+            uint32_t pTmp[N*N];
+ 
             for (int y = 0; y < winH-N; y++) {
+
+                for(int i =0; i<N;  i++){
+                    for(int j =0; j<N; j++){
+                        int addr = 0 +i + (y+j)*m_canvasW;
+                        pTmp[j + i*N]  = m_frbuff[0][addr];
+                    }
+                }
+                int column = N-1; 
 		        for (int x = 0; x < winW-N; x++) {
                     int dst = x + y * m_canvasW;
-
-                    for(int i =0; i<N;  i++){
-                        for(int j =0; j<N; j++){
-                            int addr = x+i + (y+j)*m_canvasW;
-                            pTmp[j + i*N]  = m_frbuff[0][addr];
-                        }
-                    }
+                    uint32_t z_min = m_frbuff[0][dst];
                     
-                    int addr_min = dst;
-                    float z_min = pTmp[0];
-                    for(int i =0; i<N;  i++){
+                    for(int j =0; j<N; j++){
+                        int addr = x + (y+j)*m_canvasW;
+                        pTmp[j + column*N]  = m_frbuff[0][addr];
+                    }
+                    column++;
+                    if( column==N) column = 0;
+                   
+                     for(int i =0; i<N;  i++){
                         for(int j =0; j<N; j++){
                             int k = j + i*N;
                             if(pTmp[k]<z_min) {
                                 z_min = pTmp[k];
-                                addr_min = x+i + (y+j)*m_canvasW;
                             }
                         }
                     }
-                   // pBuff[dst] = m_pb[addr_min];
-                    uint8_t coli = m_frbuff[0][addr_min] & 0xFF;
-                    if( m_frbuff[0][addr_min] == 0xFFFFFFFF){
+                    uint8_t coli = z_min & 0xFF;
+                     if( z_min == 0xFFFFFFFF){
                         pBuff[dst] = m_bkcolor;
                     }else{
                         pBuff[dst] = coli | (coli<<8) | (coli<<16);// m_frbuff[addr_min].col;

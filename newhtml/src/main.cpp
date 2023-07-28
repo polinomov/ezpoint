@@ -15,9 +15,11 @@ extern "C" {
     SDL_Surface* surface;
     int gCanvasW = 2048, gCanvasH = 1024;
     //int gCanvasW = 512, gCanvasH = 512;
-    int gWinW = 256, gWinH = 256;
+    int gWinW = 1290, gWinH = 454;
     int gRenderEvent = 1;
     int gAlwaysRender = 0;
+    int gNeedResize = 1;
+    int gMenuShift = 50;
     std::function<void (const char *msg)> gWriteLine;
     
     void PollEvents() {
@@ -35,6 +37,12 @@ extern "C" {
         emscripten_run_script(strw);
      }
 
+    void ForceResize(){
+        if(gNeedResize){
+            emscripten_run_script("forceResize()");
+        }
+    }
+
     static void OutLine(const char *txt){
         static char strw[1024];
         sprintf(strw, "%s'%s'", "document.getElementById('GFG').innerHTML=", txt);
@@ -44,15 +52,10 @@ extern "C" {
     void MainLoop() {
         static unsigned char cnt = 0;
         SDL_Rect srcRect, dstRect;
-           //PollEvents();
-        ResetCanvasSize(gWinW, gWinH);
-        {
-          static char ttt[128];
-          sprintf(ttt,"BB %d",cnt);
-          //OutLine(ttt);
-        }
         if((gRenderEvent>0) || ( gAlwaysRender==1))
         {
+            ForceResize();
+            gNeedResize = 0;
             if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
 
             Uint8* pixels = (Uint8*)surface->pixels;
@@ -68,14 +71,10 @@ extern "C" {
             srcRect.w = gWinW;
             srcRect.h = gWinH;
             dstRect.x = 0;
-            dstRect.y = gCanvasH - gWinH;
+            dstRect.y = gCanvasH - gWinH - gMenuShift;
             dstRect.w = gWinW;
             dstRect.h = gWinH;
-            /*
-            SDL_SetRenderTarget(renderer, screenTexture);
-            SDL_SetRenderDrawColor(renderer,255, 255, 0,128);
-            SDL_RenderDrawLine(renderer, 0 ,0 ,2048, 2048);
-            */
+            
             SDL_RenderCopy(renderer, screenTexture, &srcRect, &dstRect);
             SDL_RenderPresent(renderer);
             SDL_DestroyTexture(screenTexture);
@@ -98,17 +97,21 @@ extern "C" {
         surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
         gWriteLine =  OutLine;
         ezp::Renderer::Get()->Init(gCanvasW, gCanvasH);
+        //OutLine("Start");
         emscripten_run_script("OnStart()");
+       // OutLine("-EzPoint-");
         emscripten_set_main_loop(MainLoop, 0, 1);
     }
  
     // Resize call from JS
     int CallCFunc(int w, int h) 
     {
-        printf("HelloC-- w=%d h=%d\n",w,h);
-        gWinW = w > gCanvasW ? gCanvasW : w-15;
-        gWinH = h-100 > gCanvasH ? gCanvasH : h - 75;
-        ResetCanvasSize(gWinW, gWinH);
+       // printf("HelloC-- w=%d h=%d\n",w,h);
+        //gWinW = w > gCanvasW ? gCanvasW : w-15;
+        //gWinH = h-100 > gCanvasH ? gCanvasH : h - 75;
+        gWinW = w > gCanvasW ? gCanvasW : w;
+        gWinH = h > gCanvasH ? gCanvasH : h-gMenuShift;
+        //printf("HelloC-- w=%d h=%d\n",gWinW,gWinH);
         gRenderEvent = 2;
         return 0;
     }
@@ -189,7 +192,7 @@ extern "C" {
             ezp::Renderer::Get()->SetPointSize(value);
             gRenderEvent = 2;
         }else if(el==4){ //4
-            std::cout<<"SetBkColor-main:"<<value<<std::endl;
+            //std::cout<<"SetBkColor-main:"<<value<<std::endl;
             ezp::Renderer::Get()->SetBkColor((uint32_t)value);
             gRenderEvent = 2;
         }
@@ -238,6 +241,7 @@ extern "C" {
 
     int  main() {
        // printf("-----MAIN----\n");
+        OutLine("MAIN");
         InitSDL();
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -262,6 +266,17 @@ namespace ezp
 
         void SetRenderEvent(int num){
             gRenderEvent = num;
+        }
+
+        void GetValue( const char *pUiId){
+           char *pRet =  emscripten_run_script_string("GetUIValue('xaxa')");
+           std::cout<<"pRet="<<pRet<<std::endl;
+        }
+
+        int GetBkColor(){
+            int ret =  emscripten_run_script_int("GetUIValue('bkcolor')");
+            std::cout<<"bkcolor="<<ret<<std::endl;
+            return ret;
         }
     };
     

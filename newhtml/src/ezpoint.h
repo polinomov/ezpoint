@@ -13,6 +13,8 @@ namespace ezp
 		virtual void PrintMessage( const char *pMsg) = 0;
 		virtual void PrintMessage( const char *pMsg,int val) = 0;
 		virtual void SetRenderEvent(int num)  = 0;
+		virtual void GetValue( const char *pUiId) = 0;
+		virtual int GetBkColor() = 0;
         static UI *Get();
 	};
 

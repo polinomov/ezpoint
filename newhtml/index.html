@@ -9,12 +9,12 @@
             height: 100px;
             width: 100px;
         }
-
         body {
             overflow: hidden;
             border-left-style: none;
+            background-color:#333;
         }
-
+ 
         .slidecontainer {
             width: 100%; 
         }
@@ -33,7 +33,7 @@
         .navbar a {
             float: left;
             font-size: 16px;
-            color: white;
+            color: #333;
             text-align: center;
             padding: 10px 10px;
             text-decoration: none;
@@ -97,13 +97,10 @@
     </style>
 </head>
 <body>
-   <div class="navbar">
+   <div class="navbar" >
         <div class="dropdown">
             <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
             <button type="button" class="dropbtn" onclick="OnFileOpen()"class="thebutton">File</button>
-            <!--
-            <button class="dropbtn" onclick="OnTest()">Test</button>
-            -->
             <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
             <div class="dropdown-content" id="cameraDropdown">
                 <button class="thebutton">Reset</button>
@@ -136,12 +133,16 @@
             <input class="thespin" id="budVal" onclick="OnBudgetChanged()" type="number" min="1" max="100" value="20"/> 
 
             <input type="color" title="Background Color" id="bkcolor" value="#408080">
-          </div> 
+            <small id="GFG" class="thetext"> </small>
+           </div> 
     </div>
- 
+
     <div>
-        <canvas id="canvas" oncontextmenu="event.preventDefault()" style="border-left-style: none;"></canvas>
+        <canvas id="canvas" oncontextmenu="event.preventDefault()" ></canvas>
     </div>
+
+   
+
     
     <script type='text/javascript'>
         var Module = {
@@ -186,7 +187,7 @@
        
         <script src="index.js"></script>
         <script src="js_helpers.js"></script>
-        <div id="GFG" style="background-color: black;font-size:12px; color:white; height:15px;" >
+        <div id="GFG1" style="background-color: black;font-size:12px; color:white; height:15px;" >
         </div>
  </body>
 </html>
