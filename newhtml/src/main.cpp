@@ -182,8 +182,7 @@ extern "C" {
 
     int OnUIChangeJS(int el, int value){ 
          if(el==1){ // Fov
-            float aratio = 1.0f/tan(0.5f* (float)value * 3.1415f/180.0f);
-            ezp::Renderer::Get()->SetAtanRatio(aratio);
+            ezp::Renderer::Get()->SetFov(value);
             gRenderEvent = 2;	
         }else if(el==2){  // budget
             ezp::Renderer::Get()->SetBudget(value*100000);
@@ -192,7 +191,6 @@ extern "C" {
             ezp::Renderer::Get()->SetPointSize(value);
             gRenderEvent = 2;
         }else if(el==4){ //4
-            //std::cout<<"SetBkColor-main:"<<value<<std::endl;
             ezp::Renderer::Get()->SetBkColor((uint32_t)value);
             gRenderEvent = 2;
         }
@@ -273,10 +271,41 @@ namespace ezp
            std::cout<<"pRet="<<pRet<<std::endl;
         }
 
+        int GetFov(){
+            return emscripten_run_script_int("GetFovValue()");
+        }
+
         int GetBkColor(){
-            int ret =  emscripten_run_script_int("GetUIValue('bkcolor')");
-            std::cout<<"bkcolor="<<ret<<std::endl;
-            return ret;
+           return emscripten_run_script_int("GetBkColorValue()");
+        }
+
+        int GetPtSize(){
+            return emscripten_run_script_int("GetPtSizeValue()");
+        }
+        int GetBudget(){
+            return 100000*emscripten_run_script_int("GetBudgetValue()");
+        }
+
+        void SetElementState( const std::string &id,bool state){
+            const std::string qt = "\"";  
+            std::string cmd = "document.getElementById("+qt+id+qt+").disabled=";
+            cmd += (state) ? "false":"true";
+            emscripten_run_script(cmd.c_str());
+        }
+
+        void SetColorModeState(uint32_t flg, bool state){
+            if(flg & COLOR_MODEL_RGB){
+                SetElementState("colrgbId", state);
+            }
+            if(flg & COLOR_INTENS){
+                SetElementState("colintId", state);
+            }
+            if(flg & COLOR_HMAP){
+                SetElementState("colhtmId", state);
+            }
+            if(flg & COLOR_CLASS){
+                SetElementState("colclassId", state);
+            }
         }
     };
     

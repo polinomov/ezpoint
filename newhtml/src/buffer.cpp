@@ -52,17 +52,15 @@ namespace ezp
             uint64_t addr = (uint64_t)m_frbuff[0];
             addr = (addr +128) &(~127);
             m_frbuff[0] =(uint32_t*)addr;//new float[pBf[i]*4];
-
-           // m_frbuff[1] = new uint32_t[canvasW *canvasH];
-            m_atanRatio = 3.0f;
             m_showfr = false;
-            m_budget = 2*1000*1000;
-            m_pointSize = 1;
             m_sceneSize = 1;
             m_dbgFlf = false;
             m_zmax = m_zmin = 0.0f;
             ezp::UI *pUI = ezp::UI::Get();
             m_bkcolor = pUI->GetBkColor();
+            m_pointSize = pUI->GetPtSize();
+            m_budget = pUI->GetBudget();
+            SetFov(pUI->GetFov());
         }
 #if 0
         void TestSimd(){
@@ -90,13 +88,14 @@ namespace ezp
             return m_atanRatio;
         }
 
-		void  SetAtanRatio(float val){
-            m_atanRatio = val;
+        void  SetFov(int val){
+            m_atanRatio = 1.0f/tan(0.5f* (float)val * 3.1415f/180.0f);
         }
 
         void  SetBudget(float val){
             m_budget = val;
         }
+
 		void  SetPointSize(float val){
              m_pointSize = (int)val;
         }

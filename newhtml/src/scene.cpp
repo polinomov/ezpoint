@@ -54,6 +54,7 @@ namespace ezp
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {
             int numPt = 0;
+            ezp::UI *pUI = ezp::UI::Get();
             if( fType == 0){
                 int numFloats = sz/sizeof(float);
                 numPt = numFloats/4; 
@@ -61,10 +62,12 @@ namespace ezp
                 return;
             }
             if(fType==1){  //las
+                pUI->SetColorModeState(-1, false);
                 m_box  = ReadLasFile( pData, sz,numPt,m_allChunks); 
                 if(m_allChunks.size() >0){
                     SetCamera();
                 }
+                pUI->SetColorModeState(COLOR_INTENS|COLOR_HMAP, true);
             }
             if(m_allChunks.size() >0){
                 m_pChAuxPos  = new FPoint4[m_allChunks.size()];

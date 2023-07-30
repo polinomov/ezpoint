@@ -114,15 +114,15 @@
             <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">Colors</button>
             <div class="dropdown-content" id="viewDropdown">
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colrgb" class="thelabel"><input type="radio" name="grp1" value="0" id="colrgb" class="theradio" >rgb</label><br>
+                <label for="colrgb" class="thelabel"><input type="radio" name="grp1" value="0" id="colrgbId" class="theradio" >rgb</label><br>
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colint" class="thelabel"><input type="radio" name="grp1" value="1" id="colint" class="theradio">intensity</label><br>
+                <label for="colint" class="thelabel"><input type="radio" name="grp1" value="1" id="colintId" class="theradio">intensity</label><br>
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colhtm" class="theradio">heightmap  </label><br>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colhtmId" class="theradio">heightmap  </label><br>
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colclass" class="theradio">classification</label><br>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colclassId" class="theradio">classification</label><br>
                 <div style="color:0x333; height:5px; width:200px" ></div>
-            </div>
+            </div> 
             <small class="thetext">Fov:</small>
             <input class="thespin" id="fovVal" onclick="OnFovChanged()" type="number" min="1" max="80" value="35"/> 
 
@@ -130,9 +130,9 @@
             <input class="thespin" id="ptSize" type="number" onclick="OnPtSizeChanged()" min="1" max="10" value="2"/> 
 
             <small class="thetext" title="Rendering budget">Budget:</small>
-            <input class="thespin" id="budVal" onclick="OnBudgetChanged()" type="number" min="1" max="100" value="20"/> 
+            <input class="thespin" id="budVal" onclick="OnBudgetChanged()" type="number" min="1" max="100" value="18"/> 
 
-            <input type="color" title="Background Color" id="bkcolor" value="#408080">
+            <input type="color" title="Background Color" id="bkcolor" value="#606040">
             <small id="GFG" class="thetext"> </small>
            </div> 
     </div>

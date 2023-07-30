@@ -1,7 +1,6 @@
 
-//const myPics = document.getElementById('myPics');
-//const context = myPics.getContext('2d');
-// document.getElementById("radioButtonX").disabled = true;
+  
+
 var htmlCanvas;
 var context;
 class GlobVars {
@@ -88,39 +87,32 @@ function GetBkColorValue(){
     return v;    
 }
 
-function GetUIValue( uiId){
-    switch(uiId){
-        case "bkcolor":
-            return GetBkColorValue();
-        case "budget":
-            break;
-        case "fov":
-            break;
-    }
-    return "blah";
+function GetBudgetValue(){
+    return  document.getElementById("budVal").value; 
+}
+
+function GetPtSizeValue(){
+    return document.getElementById("ptSize").value; 
+}
+
+function GetFovValue(){
+    return document.getElementById("fovVal").value; 
 }
 
 function OnFovChanged(){
-    var v = document.getElementById("fovVal").value; 
-    ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
-    ui_cb(1,v);
+   gUIChangeCB(1,GetFovValue());
 }
 
 function OnBudgetChanged(){
-    var v = document.getElementById("budVal").value; 
-    ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
-    ui_cb(2,v);
+    gUIChangeCB(2,GetBudgetValue());
 }
 
 function OnPtSizeChanged(){
-    var v = document.getElementById("ptSize").value; 
-    ui_cb = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
-    ui_cb(3,v);
+   gUIChangeCB(3,GetPtSizeValue());
 }
 
 function OnBkhanged(){
-    var v = GetBkColorValue();
-    gUIChangeCB(4,v);
+    gUIChangeCB(4, GetBkColorValue());
 }
 
 class ProscessEventsClass {
@@ -253,8 +245,9 @@ function OnStart() {
 
     const color = document.getElementById("bkcolor");
     color.addEventListener('input', function(e) {OnBkhanged();});
-    //el.addEventListener('button', (event) => { ProcessEvents.onButton(event); }, false);
-}
+    // disable some elements
+    //document.getElementById("colrgb").disabled = true;
+ }
 
 
 
