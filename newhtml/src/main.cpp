@@ -11,10 +11,11 @@
 
 extern "C" {
     SDL_Window* window;
-    SDL_Renderer* renderer;
+    SDL_Renderer* m_renderer;
     SDL_Surface* surface;
+    SDL_Texture* screenTexture;
+    SDL_Texture* m_screenTexture;
     int gCanvasW = 2048, gCanvasH = 1024;
-    //int gCanvasW = 512, gCanvasH = 512;
     int gWinW = 1290, gWinH = 454;
     int gRenderEvent = 1;
     int gAlwaysRender = 0;
@@ -49,23 +50,22 @@ extern "C" {
         emscripten_run_script(strw);
     }
 
-    void MainLoop() {
+    void MainLoop1() {
         static unsigned char cnt = 0;
         SDL_Rect srcRect, dstRect;
+        static  SDL_Texture* screenTexture = NULL;
         if((gRenderEvent>0) || ( gAlwaysRender==1))
         {
             ForceResize();
             gNeedResize = 0;
             if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
-
             Uint8* pixels = (Uint8*)surface->pixels;
             Uint32* pDst = (Uint32*)pixels; 
-        
             ezp::Renderer::Get()->Render(pDst, gWinW, gWinH,gRenderEvent);
-
             if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
-            SDL_Texture* screenTexture = SDL_CreateTextureFromSurface(renderer, surface);
-            SDL_RenderClear(renderer);
+#if 1            
+            screenTexture = SDL_CreateTextureFromSurface(m_renderer, surface);
+            SDL_RenderClear(m_renderer);
             srcRect.x = 0;
             srcRect.y = 0;
             srcRect.w = gWinW;
@@ -75,11 +75,36 @@ extern "C" {
             dstRect.w = gWinW;
             dstRect.h = gWinH;
             
-            SDL_RenderCopy(renderer, screenTexture, &srcRect, &dstRect);
-            SDL_RenderPresent(renderer);
+            SDL_RenderCopy(m_renderer, screenTexture, &srcRect, &dstRect);
+            SDL_RenderPresent(m_renderer);
             SDL_DestroyTexture(screenTexture);
+#endif            
             gRenderEvent--;
             cnt++;
+        }
+     }
+
+    void MainLoop() {
+         if((gRenderEvent>0) || ( gAlwaysRender==1)){
+            SDL_Rect srcRect, dstRect;
+            unsigned char* pixels;
+            int pitch;
+            ForceResize();
+            gNeedResize = 0;
+            srcRect.x = 0;
+            srcRect.y = 0;
+            srcRect.w = gWinW;
+            srcRect.h = gWinH;
+            dstRect.x = 0;
+            dstRect.y = gCanvasH - gWinH - gMenuShift;
+            dstRect.w = gWinW;
+            dstRect.h = gWinH;
+            SDL_LockTexture( m_screenTexture, NULL, (void**)&pixels, &pitch );
+            ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
+            SDL_UnlockTexture( m_screenTexture );
+            SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
+            SDL_RenderPresent(m_renderer);
+            gRenderEvent--;
         }
     }
 
@@ -93,13 +118,14 @@ extern "C" {
         SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
         SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE);
 
-        SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &renderer);
-        surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
+        SDL_CreateWindowAndRenderer(gCanvasW, gCanvasH, 0, &window, &m_renderer);
+        //surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
+        m_screenTexture = SDL_CreateTexture(m_renderer,
+                                            SDL_PIXELFORMAT_BGRA32, SDL_TEXTUREACCESS_STREAMING,
+                                            gCanvasW, gCanvasH);
         gWriteLine =  OutLine;
         ezp::Renderer::Get()->Init(gCanvasW, gCanvasH);
-        //OutLine("Start");
         emscripten_run_script("OnStart()");
-       // OutLine("-EzPoint-");
         emscripten_set_main_loop(MainLoop, 0, 1);
     }
  
@@ -241,7 +267,7 @@ extern "C" {
        // printf("-----MAIN----\n");
         OutLine("MAIN");
         InitSDL();
-        SDL_DestroyRenderer(renderer);
+        SDL_DestroyRenderer(m_renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 0;

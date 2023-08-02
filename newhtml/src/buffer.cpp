@@ -35,6 +35,8 @@ namespace ezp
         int m_budget;
         int m_pointSize;
         uint32_t m_bkcolor;
+        uint32_t m_palGray[256];
+        uint32_t m_palHMap[256];
         int m_sceneSize;
         float m_zmax;
         float m_zmin;
@@ -61,6 +63,20 @@ namespace ezp
             m_pointSize = pUI->GetPtSize();
             m_budget = pUI->GetBudget();
             SetFov(pUI->GetFov());
+            for( int i = 0; i<256; i++){
+                m_palGray[i] = i | (i<<8) | (i<<16) | (i<<24);
+                if( i<128){
+                    float t = (float)i/128.0f;
+                    uint8_t r = (uint8_t)(t*255.0f);
+                    uint8_t g =  (uint8_t)((1.0f-t) * 255.0f);
+                    m_palHMap[i] = (g<<8) | (r<<16);
+                }else{
+                    float t = (float)(i-128)/128.0f;
+                    uint8_t g = (uint8_t)(t*255.0f);
+                    uint8_t b = (uint8_t)((1.0f-t) * 255.0f);
+                    m_palHMap[i] = b | (g<<8) ;
+                }
+            }
         }
 #if 0
         void TestSimd(){
@@ -150,7 +166,7 @@ namespace ezp
             const float zprd = rp->m_zprd;
             const int canvas_w = rp->m_canvasW;
             int addr_max = rp->m_canvasW*rp->m_canvasH;
-             for( int i = 0; i<numV-1; i++){   
+            for( int i = 0; i<numV-1; i++){   
                 __m128 r0 = _mm_mul_ps(xss, a);
                 __m128 r1 = _mm_mul_ps(yss, b);
                 __m128 r2 = _mm_mul_ps(zss, c);
@@ -173,9 +189,8 @@ namespace ezp
                             uint32_t zb = pAddr[0];
                             uint32_t zi = (uint32_t)((res[2] - zmf) * zprd);
                             zi = zi<<8;
-                            pAddr  = (zi < zb)?pAddr:pDstB;
                             uint8_t coli = pV4->col & 0x000000FF;
-                            *pAddr = zi | coli;
+                            *pAddr = (zi < zb) ? (zi | coli) : zb;
                         }
                     }
                 } 
@@ -353,7 +368,7 @@ namespace ezp
                      if( z_min == 0xFFFFFFFF){
                         pBuff[dst] = m_bkcolor;
                     }else{
-                        pBuff[dst] = coli | (coli<<8) | (coli<<16);// m_frbuff[addr_min].col;
+                        pBuff[dst] = m_palGray[coli];
                     }
                 }
             }
