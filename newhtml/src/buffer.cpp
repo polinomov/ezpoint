@@ -27,9 +27,10 @@ namespace ezp
         uint32_t addr;
     };
 
+    template <typename T>
     struct RendererImpl : public Renderer
     {
-        uint32_t **m_frbuff;
+        T *m_frbuff;
         int m_canvasW, m_canvasH;
         float m_atanRatio;
         int m_budget;
@@ -37,6 +38,9 @@ namespace ezp
         uint32_t m_bkcolor;
         uint32_t m_palGray[256];
         uint32_t m_palHMap[256];
+        uint32_t m_cmask;
+        uint32_t m_cshift;
+        uint32_t m_colorMode;
         int m_sceneSize;
         float m_zmax;
         float m_zmin;
@@ -49,19 +53,21 @@ namespace ezp
         void Init(int canvasW, int canvasH){
             m_canvasW = canvasW;
             m_canvasH = canvasH;
-            m_frbuff = new uint32_t*[2];
-            m_frbuff[0] = new uint32_t[canvasW *canvasH + 128];
-            uint64_t addr = (uint64_t)m_frbuff[0];
+            m_frbuff = new T[canvasW *canvasH + 128];
+            uint64_t addr = (uint64_t)m_frbuff;
             addr = (addr +128) &(~127);
-            m_frbuff[0] =(uint32_t*)addr;//new float[pBf[i]*4];
+            m_frbuff =(T*)addr;
             m_showfr = false;
             m_sceneSize = 1;
             m_dbgFlf = false;
             m_zmax = m_zmin = 0.0f;
+            m_cmask = 0x000000FF;
+            m_cshift = 0;
             ezp::UI *pUI = ezp::UI::Get();
             m_bkcolor = pUI->GetBkColor();
             m_pointSize = pUI->GetPtSize();
             m_budget = pUI->GetBudget();
+            m_colorMode = 0;
             SetFov(pUI->GetFov());
             for( int i = 0; i<256; i++){
                 m_palGray[i] = i | (i<<8) | (i<<16) | (i<<24);
@@ -142,7 +148,7 @@ namespace ezp
             _D[3] =  0.0f;
         }
 
-        template <unsigned int N,unsigned int D>
+        template <uint32_t N, uint32_t D, uint32_t MSK, uint32_t SHF>
         static void RenderChunk(FPoint4 *pVerts,int sw, int sh,int numV,void *pD,RendererImpl *rp){
             FrBuff tbuff[16];
             uint32_t tbi = 0;
@@ -161,12 +167,15 @@ namespace ezp
             __m128 yss = _mm_set1_ps(pV4->y);
             __m128 zss = _mm_set1_ps(pV4->z);
  
-            uint32_t *pDstB = (uint32_t*) rp->m_frbuff[0];
+            T *pDstB = (T*) rp->m_frbuff;
             const float zmf =  rp->m_zmin;
             const float zprd = rp->m_zprd;
             const int canvas_w = rp->m_canvasW;
+            const uint32_t cmsk = rp->m_cmask;
+            const uint32_t cshift = rp->m_cshift;
             int addr_max = rp->m_canvasW*rp->m_canvasH;
             for( int i = 0; i<numV-1; i++){   
+                  uint64_t i64 = (uint64_t)i;
                 __m128 r0 = _mm_mul_ps(xss, a);
                 __m128 r1 = _mm_mul_ps(yss, b);
                 __m128 r2 = _mm_mul_ps(zss, c);
@@ -184,13 +193,14 @@ namespace ezp
                         int x = (int) (swf + res[0]/res[2] );
                         int y = (int) (shf + res[1]/res[2] );                             
                         int dst = x + y * canvas_w;
-                        uint32_t *pAddr = pDstB + dst;
+                        T *pAddr = pDstB + dst;
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
                             uint32_t zb = pAddr[0];
                             uint32_t zi = (uint32_t)((res[2] - zmf) * zprd);
                             zi = zi<<8;
-                            uint8_t coli = pV4->col & 0x000000FF;
-                            *pAddr = (zi < zb) ? (zi | coli) : zb;
+                            uint8_t coli = (pV4->col & MSK)>>SHF;
+                            //uint8_t coli = (pV4->col & cmsk)>>cshift;
+                            *pAddr = (zi < zb) ? (zi | coli ) : zb;
                         }
                     }
                 } 
@@ -262,10 +272,10 @@ namespace ezp
 
         void Render(unsigned int *pBuff, int winW, int winH,int evnum){
             static int val = 0;
-            uint32_t *p32 = (uint32_t*)m_frbuff[0];
+            T *p32 = (T*)m_frbuff;
    	        for (int y = 0; y < winH; y++) {
-                uint32_t *pp = p32 +  y * m_canvasW;
-                memset(pp,0xFF,winW*sizeof(uint32_t));
+                T *pp = p32 +  y * m_canvasW;
+                memset(pp,0xFF,winW*sizeof(T));
             }
 
            
@@ -277,13 +287,12 @@ namespace ezp
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
                 PostProcess<1>(pBuff, winW, winH);
-                RenderRect(pBuff, 0, 0, 100, 100, 0xFF00FF00);
+                //RenderRect(pBuff, 0, 0, 100, 100, 0xFF00FF00);
                 return;
             }
-            //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
             m_zprd = (255.0f * 255.0f * 255.0f)/(m_zmax - m_zmin);
-            RenderChunk<PROJ_POINTS,0>(chp,winW,winH,chunks.size(),chpa,this);
-
+            RenderChunk<PROJ_POINTS,0,0x000000FF,0>(chp,winW,winH,chunks.size(),chpa,this);
+ 
             float prd_tot = 0.0f;
             uint32_t tv = 0;
             uint32_t budget = m_budget;
@@ -310,9 +319,21 @@ namespace ezp
                 if(numToRender > chunks[i]->numVerts ) numToRender = chunks[i]->numVerts;
                 if(numToRender >2){
                     num_rnd+=numToRender;
-                    RenderChunk<RND_POINTS,0>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                    switch(m_colorMode){
+                        case 0:
+                            RenderChunk<RND_POINTS,0,0x000000FF,0>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                            break;
+                        case 1:
+                            RenderChunk<RND_POINTS,0,0x0000FF00,8>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                            break;
+                        case 2:
+                            RenderChunk<RND_POINTS,0,0x00FF0000,16>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                            break;
+                        case 3:
+                            RenderChunk<RND_POINTS,0,0xFF000000,24>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                            break;
+                    }
                 }
-                //RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,chunks[i]->numVerts,NULL,this);
             }
             // postprocess
             switch(m_pointSize){
@@ -334,24 +355,24 @@ namespace ezp
         
         template <unsigned int N>
         void PostProcess(unsigned int *pBuff, int winW, int winH){
-            uint32_t pTmp[N*N];
+            T pTmp[N*N];
  
             for (int y = 0; y < winH-N; y++) {
 
                 for(int i =0; i<N;  i++){
                     for(int j =0; j<N; j++){
                         int addr = 0 +i + (y+j)*m_canvasW;
-                        pTmp[j + i*N]  = m_frbuff[0][addr];
+                        pTmp[j + i*N]  = m_frbuff[addr];
                     }
                 }
                 int column = N-1; 
 		        for (int x = 0; x < winW-N; x++) {
                     int dst = x + y * m_canvasW;
-                    uint32_t z_min = m_frbuff[0][dst];
+                    uint32_t z_min = m_frbuff[dst];
                     
                     for(int j =0; j<N; j++){
                         int addr = x + (y+j)*m_canvasW;
-                        pTmp[j + column*N]  = m_frbuff[0][addr];
+                        pTmp[j + column*N]  = m_frbuff[addr];
                     }
                     column++;
                     if( column==N) column = 0;
@@ -396,7 +417,7 @@ namespace ezp
 
     Renderer* Renderer::Get()
     {
-        static RendererImpl TheRendererImpl;
+        static RendererImpl<uint64_t> TheRendererImpl;
         return &TheRendererImpl;
     }    
     

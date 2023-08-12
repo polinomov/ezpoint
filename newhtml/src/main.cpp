@@ -85,7 +85,7 @@ extern "C" {
      }
 
     void MainLoop() {
-         if((gRenderEvent>0) || ( gAlwaysRender==1)){
+        if((gRenderEvent>0) || ( gAlwaysRender==1)){
             SDL_Rect srcRect, dstRect;
             unsigned char* pixels;
             int pitch;
@@ -248,7 +248,7 @@ extern "C" {
             }
         }
         if((lr !=0 ) || (td!=0)){
-            gRenderEvent = 2;	
+            gRenderEvent = 1;	
         }
         return 0;
     }
@@ -264,8 +264,7 @@ extern "C" {
     }
 
     int  main() {
-       // printf("-----MAIN----\n");
-        OutLine("MAIN");
+        OutLine("EZPOINT");
         InitSDL();
         SDL_DestroyRenderer(m_renderer);
         SDL_DestroyWindow(window);

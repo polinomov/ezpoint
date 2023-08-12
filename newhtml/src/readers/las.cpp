@@ -267,7 +267,8 @@ namespace ezp
                     */
                     uint16_t c1 = pf1->intensity;
                     uint8_t c = (uint8_t)itmp_16[c1]; 
-                    pPoint[chk->aux].col = c |(c<<8)|(c<<16)|(c<<24);
+                    //pPoint[chk->aux].col = c |(c<<8)|(c<<16)|(c<<24);
+                    pPoint[chk->aux].col = c|(1<<8);
                     chk->aux++;
                 }
                 else{
