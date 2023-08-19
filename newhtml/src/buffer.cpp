@@ -8,6 +8,7 @@
 #include "ezpoint.h"
 #include "wasm_simd128.h"
 #include "xmmintrin.h"
+#include <emscripten.h>
 /*
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -124,6 +125,10 @@ namespace ezp
 
         void  SetBkColor( uint32_t val){
              m_bkcolor = val;
+        }
+
+        void  SetColorMode( uint32_t val){
+            std::cout<<"SetColorMode " <<val<<std::endl;
         }
 
         void SetDebugParam(int val){
@@ -272,6 +277,18 @@ namespace ezp
 
         void Render(unsigned int *pBuff, int winW, int winH,int evnum){
             static int val = 0;
+            static std::chrono::time_point<std::chrono::system_clock> prev;
+            auto curr = std::chrono::system_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(curr - prev);
+            int diff = elapsed.count();
+            prev = curr;
+            if(diff>0){
+                if(diff < 50){
+                     emscripten_sleep(50-diff);
+                }
+            }
+ 
+            
             T *p32 = (T*)m_frbuff;
    	        for (int y = 0; y < winH; y++) {
                 T *pp = p32 +  y * m_canvasW;

@@ -103,37 +103,34 @@
             <button type="button" class="dropbtn" onclick="OnFileOpen()"class="thebutton">File</button>
             <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
             <div class="dropdown-content" id="cameraDropdown">
+                <small class="thetext">Fov:</small>
+                <input class="thespin" id="fovVal" onclick="OnUIEvent(this)" type="number" min="1" max="80" value="35"/> 
                 <button class="thebutton">Reset</button>
-                <input type="radio">
-                <input type="radio">           
-                <div class="horgrp">
-                    <input type="radio">
-                    <input type="radio">
-                </div>
             </div>
             <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">Colors</button>
             <div class="dropdown-content" id="viewDropdown">
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colrgb" class="thelabel"><input type="radio" name="grp1" value="0" id="colrgbId" class="theradio" >rgb</label><br>
+                <label for="colrgb" class="thelabel"><input type="radio" name="grp1" value="0" id="colrgbId" class="theradio" onclick="OnUIEvent(this)">rgb</label><br>
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colint" class="thelabel"><input type="radio" name="grp1" value="1" id="colintId" class="theradio">intensity</label><br>
+                <label for="colint" class="thelabel"><input type="radio" name="grp1" value="1" id="colintId" class="theradio" onclick="OnUIEvent(this)">intensity</label><br>
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colhtmId" class="theradio">heightmap  </label><br>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colhtmId" class="theradio" onclick="OnUIEvent(this)">heightmap  </label><br>
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colclassId" class="theradio">classification</label><br>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colclassId" class="theradio" onclick="OnUIEvent(this)">classification</label><br>
                 <div style="color:0x333; height:5px; width:200px" ></div>
             </div> 
+            <!---
             <small class="thetext">Fov:</small>
-            <input class="thespin" id="fovVal" onclick="OnFovChanged()" type="number" min="1" max="80" value="35"/> 
-
+            <input class="thespin" id="fovVal1" onclick="OnUIEvent(this)" type="number" min="1" max="80" value="35"/> 
+            -->
             <small class="thetext">Size:</small>
-            <input class="thespin" id="ptSize" type="number" onclick="OnPtSizeChanged()" min="1" max="10" value="1"/> 
+            <input class="thespin" id="ptSize" type="number" onclick="OnUIEvent(this)" min="1" max="10" value="1"/> 
 
             <small class="thetext" title="Rendering budget">Budget:</small>
-            <input class="thespin" id="budVal" onclick="OnBudgetChanged()" type="number" min="1" max="100" value="18"/> 
+            <input class="thespin" id="budVal" onclick="OnUIEvent(this)" type="number" min="1" max="100" value="18"/> 
 
             <input type="color" title="Background Color" id="bkcolor" value="#606040">
-            <small id="GFG" class="thetext"> </small>
+            <small id="GFG" class="thetext">Loading...</small>
            </div> 
     </div>
 
@@ -187,7 +184,9 @@
        
         <script src="index.js"></script>
         <script src="js_helpers.js"></script>
+        <!--
         <div id="GFG1" style="background-color: black;font-size:12px; color:white; height:15px;" >
         </div>
+        -->
  </body>
 </html>

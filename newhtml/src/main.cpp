@@ -13,8 +13,9 @@ extern "C" {
     SDL_Window* window;
     SDL_Renderer* m_renderer;
     SDL_Surface* surface;
-    SDL_Texture* screenTexture;
+    //SDL_Texture* screenTexture;
     SDL_Texture* m_screenTexture;
+    SDL_Texture* m_targetTexture;
     int gCanvasW = 2048, gCanvasH = 1024;
     int gWinW = 1290, gWinH = 454;
     int gRenderEvent = 1;
@@ -101,6 +102,8 @@ extern "C" {
             dstRect.h = gWinH;
             SDL_LockTexture( m_screenTexture, NULL, (void**)&pixels, &pitch );
             ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
+            //SDL_SetRenderDrawColor(m_renderer,128,128,128,128);
+            //SDL_RenderDrawLine(m_renderer, 0,0,256,256);
             SDL_UnlockTexture( m_screenTexture );
             SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
             SDL_RenderPresent(m_renderer);
@@ -122,6 +125,9 @@ extern "C" {
         //surface = SDL_CreateRGBSurface(0, gCanvasW, gCanvasH,32, 0, 0, 0, 0);
         m_screenTexture = SDL_CreateTexture(m_renderer,
                                             SDL_PIXELFORMAT_BGRA32, SDL_TEXTUREACCESS_STREAMING,
+                                            gCanvasW, gCanvasH);
+        m_targetTexture = SDL_CreateTexture(m_renderer,
+                                            SDL_PIXELFORMAT_BGRA32, SDL_TEXTUREACCESS_TARGET,
                                             gCanvasW, gCanvasH);
         gWriteLine =  OutLine;
         ezp::Renderer::Get()->Init(gCanvasW, gCanvasH);
@@ -207,17 +213,19 @@ extern "C" {
     }
 
     int OnUIChangeJS(int el, int value){ 
-         if(el==1){ // Fov
-            ezp::Renderer::Get()->SetFov(value);
+        char *pRet =  emscripten_run_script_string("GetUIString()");
+        ezp::UI::Get()->OnUIEvent(pRet,value);
+        if(el==1){ // Fov
+            //ezp::Renderer::Get()->SetFov(value);
             gRenderEvent = 2;	
         }else if(el==2){  // budget
-            ezp::Renderer::Get()->SetBudget(value*100000);
+            //ezp::Renderer::Get()->SetBudget(value*100000);
             gRenderEvent = 2;
         }else if(el==3){
-            ezp::Renderer::Get()->SetPointSize(value);
+            //ezp::Renderer::Get()->SetPointSize(value);
             gRenderEvent = 2;
         }else if(el==4){ //4
-            ezp::Renderer::Get()->SetBkColor((uint32_t)value);
+           // ezp::Renderer::Get()->SetBkColor((uint32_t)value);
             gRenderEvent = 2;
         }
         return 0;
@@ -263,7 +271,7 @@ extern "C" {
         return 0;
     }
 
-    int  main() {
+    int main() {
         OutLine("EZPOINT");
         InitSDL();
         SDL_DestroyRenderer(m_renderer);
@@ -276,7 +284,19 @@ extern "C" {
 namespace ezp 
 {
     struct UIImpl : public UI{
+        std::unordered_map<std::string, uint32_t> m_strToId;
 
+        UIImpl(){
+            m_strToId["fovVal"] = UIFOV;
+            m_strToId["ptSize"] = UIPTSIZE;
+            m_strToId["budVal"] = UIBUDGET;
+            m_strToId["bkgcol"] = UIBKGCOLOR;
+            m_strToId["colrgbId"] = UICOLOR_RGB;
+            m_strToId["colintId"] = UICOLOR_INTENS;
+            m_strToId["colhtmId"] = UICOLOR_HMAP;
+            m_strToId["colclassId"] = UICOLOR_CLASS;
+        }
+ 
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");
             OutLine(pMsg);
@@ -309,6 +329,46 @@ namespace ezp
         }
         int GetBudget(){
             return 100000*emscripten_run_script_int("GetBudgetValue()");
+        }
+
+        void OnUIEvent(const char *pEvent, int val){
+
+            if(pEvent==NULL) return;
+            auto u_iter = m_strToId.find(pEvent);
+            if( u_iter == m_strToId.end()){
+                return;
+            }
+            std::cout<<"OnUIEvent "<<u_iter->second<<std::endl;
+            switch(u_iter->second){
+                case UIFOV:
+                    ezp::Renderer::Get()->SetFov(val);
+                break;
+                case UIPTSIZE:
+                    ezp::Renderer::Get()->SetPointSize(val);
+                break;
+                case UIBUDGET:
+                    ezp::Renderer::Get()->SetBudget(val*100000);
+                break;
+                case UIBKGCOLOR:
+                    ezp::Renderer::Get()->SetBkColor(val);
+                break;
+                case UICOLOR_INTENS:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_INTENS);
+                break;
+                case UICOLOR_CLASS:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_CLASS);
+                break;
+                case UICOLOR_RGB:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_RGB);
+                break;
+                case UICOLOR_HMAP:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_HMAP);
+                break;
+                default:
+                    std::cout<<"UNKNOWN"<<std::endl;
+                break;
+            }
+            gRenderEvent = 1;	
         }
 
         void SetElementState( const std::string &id,bool state){

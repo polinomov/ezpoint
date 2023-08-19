@@ -15,6 +15,16 @@ namespace ezp
 {
 	struct UI
 	{
+		enum{
+			UIFOV = 0,
+			UIBUDGET,
+			UIBKGCOLOR,
+			UIPTSIZE,
+			UICOLOR_INTENS,
+			UICOLOR_CLASS,
+			UICOLOR_RGB,
+			UICOLOR_HMAP,
+		};
 		virtual void PrintMessage( const char *pMsg) = 0;
 		virtual void PrintMessage( const char *pMsg,int val) = 0;
 		virtual void SetRenderEvent(int num)  = 0;
@@ -24,6 +34,7 @@ namespace ezp
 		virtual int GetPtSize() = 0;
     	virtual int GetBudget() = 0;
 		virtual void SetColorModeState(uint32_t flg, bool state) = 0;
+		virtual void OnUIEvent(const char *pEvent, int val)  = 0;
         static UI *Get();
 	};
 
@@ -74,6 +85,7 @@ namespace ezp
 		virtual void  SetBudget(float val) = 0;
 		virtual void  SetPointSize(float val) = 0;
 		virtual void  SetBkColor( uint32_t val)= 0;
+		virtual void  SetColorMode( uint32_t val) = 0;
 		virtual void ShowFrameRate(bool val) = 0;
 		virtual void SetDebugParam(int val) = 0;
 		static Renderer* Get();
