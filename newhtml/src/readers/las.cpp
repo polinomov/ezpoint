@@ -229,6 +229,8 @@ namespace ezp
         //
         // Fill chunks
         //
+        float zDist = Res.zMax - Res.zMin;
+        std::cout<<"zDist="<<zDist<<std::endl;
         pS = pSrc;
         for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength){
             PointFormat1 *pf1 = (PointFormat1*)pS;
@@ -265,10 +267,15 @@ namespace ezp
                         pPoint[chk->aux].col = c<<24;
                     }
                     */
+                    float zz = (zf - Res.zMin)/zDist;
+                    if(zz>0.5f){
+                        //std::cout<<"zz="<<zz<<std::endl;
+                    }
                     uint16_t c1 = pf1->intensity;
                     uint8_t c = (uint8_t)itmp_16[c1]; 
                     //pPoint[chk->aux].col = c |(c<<8)|(c<<16)|(c<<24);
-                    pPoint[chk->aux].col = c|(1<<8);
+                    uint8_t hm = (uint8_t)(zz * 255.0f);
+                    pPoint[chk->aux].col = c|(hm<<8);
                     chk->aux++;
                 }
                 else{

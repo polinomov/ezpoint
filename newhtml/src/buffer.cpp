@@ -39,6 +39,7 @@ namespace ezp
         uint32_t m_bkcolor;
         uint32_t m_palGray[256];
         uint32_t m_palHMap[256];
+        uint32_t *m_palCurr = NULL;
         uint32_t m_cmask;
         uint32_t m_cshift;
         uint32_t m_colorMode;
@@ -68,22 +69,23 @@ namespace ezp
             m_bkcolor = pUI->GetBkColor();
             m_pointSize = pUI->GetPtSize();
             m_budget = pUI->GetBudget();
-            m_colorMode = 0;
+            m_colorMode = UI::UICOLOR_INTENS;
             SetFov(pUI->GetFov());
             for( int i = 0; i<256; i++){
                 m_palGray[i] = i | (i<<8) | (i<<16) | (i<<24);
-                if( i<128){
-                    float t = (float)i/128.0f;
-                    uint8_t r = (uint8_t)(t*255.0f);
-                    uint8_t g =  (uint8_t)((1.0f-t) * 255.0f);
+                if(  i<128){
+                    float t = (float)i/127.0f;
+                    uint8_t g =  (uint8_t)((1.0f-t) * 127.0f);
+                    uint8_t r = (uint8_t)(t*127.0f);
                     m_palHMap[i] = (g<<8) | (r<<16);
                 }else{
-                    float t = (float)(i-128)/128.0f;
-                    uint8_t g = (uint8_t)(t*255.0f);
-                    uint8_t b = (uint8_t)((1.0f-t) * 255.0f);
-                    m_palHMap[i] = b | (g<<8) ;
-                }
+                    float t = (float)(i-128)/127.0f;
+                    uint8_t r =  (uint8_t)((1.0f-t) * 127.0f);
+                    uint8_t b = (uint8_t)(t*127.0f);
+                    m_palHMap[i] = (b) | (r<<16);
+                 }
             }
+            m_palCurr = m_palGray;
         }
 #if 0
         void TestSimd(){
@@ -120,15 +122,15 @@ namespace ezp
         }
 
 		void  SetPointSize(float val){
-             m_pointSize = (int)val;
+            m_pointSize = (int)val;
         }
 
         void  SetBkColor( uint32_t val){
-             m_bkcolor = val;
+            m_bkcolor = val;
         }
 
         void  SetColorMode( uint32_t val){
-            std::cout<<"SetColorMode " <<val<<std::endl;
+            m_colorMode = val;
         }
 
         void SetDebugParam(int val){
@@ -200,11 +202,12 @@ namespace ezp
                         int dst = x + y * canvas_w;
                         T *pAddr = pDstB + dst;
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
-                            uint32_t zb = pAddr[0];
-                            uint32_t zi = (uint32_t)((res[2] - zmf) * zprd);
+                           // uint32_t zb = pAddr[0];
+                           // uint32_t zi = (uint32_t)((res[2] - zmf) * zprd);
+                            T zb = pAddr[0];
+                            T zi = (T)((res[2] - zmf) * zprd);
                             zi = zi<<8;
                             uint8_t coli = (pV4->col & MSK)>>SHF;
-                            //uint8_t coli = (pV4->col & cmsk)>>cshift;
                             *pAddr = (zi < zb) ? (zi | coli ) : zb;
                         }
                     }
@@ -277,16 +280,18 @@ namespace ezp
 
         void Render(unsigned int *pBuff, int winW, int winH,int evnum){
             static int val = 0;
+            #if 0
             static std::chrono::time_point<std::chrono::system_clock> prev;
             auto curr = std::chrono::system_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(curr - prev);
             int diff = elapsed.count();
             prev = curr;
             if(diff>0){
-                if(diff < 50){
-                     emscripten_sleep(50-diff);
+                if(diff < 40){
+                     emscripten_sleep(40-diff);
                 }
             }
+            #endif
  
             
             T *p32 = (T*)m_frbuff;
@@ -337,16 +342,18 @@ namespace ezp
                 if(numToRender >2){
                     num_rnd+=numToRender;
                     switch(m_colorMode){
-                        case 0:
+                        case UI::UICOLOR_INTENS:
                             RenderChunk<RND_POINTS,0,0x000000FF,0>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                            m_palCurr = m_palGray;
                             break;
-                        case 1:
+                       case UI::UICOLOR_HMAP:
                             RenderChunk<RND_POINTS,0,0x0000FF00,8>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+                            m_palCurr = m_palHMap;
                             break;
-                        case 2:
+                        case UI::UICOLOR_CLASS:
                             RenderChunk<RND_POINTS,0,0x00FF0000,16>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
                             break;
-                        case 3:
+                        case UI::UICOLOR_RGB:
                             RenderChunk<RND_POINTS,0,0xFF000000,24>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
                             break;
                     }
@@ -406,7 +413,7 @@ namespace ezp
                      if( z_min == 0xFFFFFFFF){
                         pBuff[dst] = m_bkcolor;
                     }else{
-                        pBuff[dst] = m_palGray[coli];
+                        pBuff[dst] = m_palCurr[coli];
                     }
                 }
             }

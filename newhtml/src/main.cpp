@@ -338,7 +338,7 @@ namespace ezp
             if( u_iter == m_strToId.end()){
                 return;
             }
-            std::cout<<"OnUIEvent "<<u_iter->second<<std::endl;
+            //std::cout<<"OnUIEvent "<<u_iter->second<<std::endl;
             switch(u_iter->second){
                 case UIFOV:
                     ezp::Renderer::Get()->SetFov(val);
@@ -368,7 +368,7 @@ namespace ezp
                     std::cout<<"UNKNOWN"<<std::endl;
                 break;
             }
-            gRenderEvent = 1;	
+            gRenderEvent = 2;	
         }
 
         void SetElementState( const std::string &id,bool state){
