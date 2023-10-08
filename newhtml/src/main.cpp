@@ -49,41 +49,7 @@ extern "C" {
         sprintf(strw, "%s'%s'", "document.getElementById('GFG').innerHTML=", txt);
         emscripten_run_script(strw);
     }
-
-    void MainLoop1() {
-        static unsigned char cnt = 0;
-        SDL_Rect srcRect, dstRect;
-        static  SDL_Texture* screenTexture = NULL;
-        if((gRenderEvent>0) || ( gAlwaysRender==1))
-        {
-            ForceResize();
-            gNeedResize = 0;
-            if (SDL_MUSTLOCK(surface)) SDL_LockSurface(surface);
-            Uint8* pixels = (Uint8*)surface->pixels;
-            Uint32* pDst = (Uint32*)pixels; 
-            ezp::Renderer::Get()->Render(pDst, gWinW, gWinH,gRenderEvent);
-            if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
-#if 1            
-            screenTexture = SDL_CreateTextureFromSurface(m_renderer, surface);
-            SDL_RenderClear(m_renderer);
-            srcRect.x = 0;
-            srcRect.y = 0;
-            srcRect.w = gWinW;
-            srcRect.h = gWinH;
-            dstRect.x = 0;
-            dstRect.y = gCanvasH - gWinH - gMenuShift;
-            dstRect.w = gWinW;
-            dstRect.h = gWinH;
-            
-            SDL_RenderCopy(m_renderer, screenTexture, &srcRect, &dstRect);
-            SDL_RenderPresent(m_renderer);
-            SDL_DestroyTexture(screenTexture);
-#endif            
-            gRenderEvent--;
-            cnt++;
-        }
-     }
-
+ 
     void MainLoop() {
          if((gRenderEvent>0) || ( gAlwaysRender==1)){
             SDL_Rect srcRect, dstRect;

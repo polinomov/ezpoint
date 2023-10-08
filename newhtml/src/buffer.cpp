@@ -29,7 +29,8 @@ namespace ezp
 
     struct RendererImpl : public Renderer
     {
-        uint32_t **m_frbuff;
+        uint32_t *m_frbuff;
+        uint64_t *m_auxBuff;
         int m_canvasW, m_canvasH;
         float m_atanRatio;
         int m_budget;
@@ -49,11 +50,12 @@ namespace ezp
         void Init(int canvasW, int canvasH){
             m_canvasW = canvasW;
             m_canvasH = canvasH;
-            m_frbuff = new uint32_t*[2];
-            m_frbuff[0] = new uint32_t[canvasW *canvasH + 128];
-            uint64_t addr = (uint64_t)m_frbuff[0];
+           // m_frbuff = new uint32_t*[2];
+            m_auxBuff = new uint64_t[canvasW *canvasH];
+            m_frbuff  = new uint32_t[canvasW *canvasH + 128];
+            uint64_t addr = (uint64_t)m_frbuff;
             addr = (addr +128) &(~127);
-            m_frbuff[0] =(uint32_t*)addr;//new float[pBf[i]*4];
+            m_frbuff =(uint32_t*)addr;//new float[pBf[i]*4];
             m_showfr = false;
             m_sceneSize = 1;
             m_dbgFlf = false;
@@ -161,7 +163,8 @@ namespace ezp
             __m128 yss = _mm_set1_ps(pV4->y);
             __m128 zss = _mm_set1_ps(pV4->z);
  
-            uint32_t *pDstB = (uint32_t*) rp->m_frbuff[0];
+            uint32_t *pDstB = (uint32_t*) rp->m_frbuff;
+            uint64_t *pPoint= rp->m_auxBuff;
             const float zmf =  rp->m_zmin;
             const float zprd = rp->m_zprd;
             const int canvas_w = rp->m_canvasW;
@@ -188,9 +191,10 @@ namespace ezp
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
                             uint32_t zb = pAddr[0];
                             uint32_t zi = (uint32_t)((res[2] - zmf) * zprd);
-                            zi = zi<<8;
-                            uint8_t coli = pV4->col & 0x000000FF;
-                            *pAddr = (zi < zb) ? (zi | coli) : zb;
+                            uint64_t pr = (zi<zb)? -1:0;
+                            uint64_t pr1 = ~pr;
+                            *pAddr = (zi & pr) + (zb & pr1);
+                            pPoint[dst]  = (((uint64_t)pV4) & pr) + (pPoint[dst] & (pr1));
                         }
                     }
                 } 
@@ -262,7 +266,7 @@ namespace ezp
 
         void Render(unsigned int *pBuff, int winW, int winH,int evnum){
             static int val = 0;
-            uint32_t *p32 = (uint32_t*)m_frbuff[0];
+            uint32_t *p32 = (uint32_t*)m_frbuff;
    	        for (int y = 0; y < winH; y++) {
                 uint32_t *pp = p32 +  y * m_canvasW;
                 memset(pp,0xFF,winW*sizeof(uint32_t));
@@ -277,7 +281,7 @@ namespace ezp
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
                 PostProcess<1>(pBuff, winW, winH);
-                RenderRect(pBuff, 0, 0, 100, 100, 0xFF00FF00);
+                //RenderRect(pBuff, 0, 0, 100, 100, 0xFF00FF00);
                 return;
             }
             //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
@@ -335,23 +339,29 @@ namespace ezp
         template <unsigned int N>
         void PostProcess(unsigned int *pBuff, int winW, int winH){
             uint32_t pTmp[N*N];
+            uint64_t pV[N*N];
  
             for (int y = 0; y < winH-N; y++) {
 
                 for(int i =0; i<N;  i++){
                     for(int j =0; j<N; j++){
                         int addr = 0 +i + (y+j)*m_canvasW;
-                        pTmp[j + i*N]  = m_frbuff[0][addr];
+                        int k = j + i*N;
+                        pTmp[k]  = m_frbuff[addr];
+                        pV[k]  = m_auxBuff[addr];
                     }
                 }
                 int column = N-1; 
 		        for (int x = 0; x < winW-N; x++) {
                     int dst = x + y * m_canvasW;
-                    uint32_t z_min = m_frbuff[0][dst];
+                    uint32_t z_min = m_frbuff[dst];
+                    uint64_t v_min = m_auxBuff[dst];
                     
                     for(int j =0; j<N; j++){
                         int addr = x + (y+j)*m_canvasW;
-                        pTmp[j + column*N]  = m_frbuff[0][addr];
+                        int k = j + column*N;
+                        pTmp[k]  = m_frbuff[addr];
+                        pV[k]  = m_auxBuff[addr];
                     }
                     column++;
                     if( column==N) column = 0;
@@ -361,6 +371,7 @@ namespace ezp
                             int k = j + i*N;
                             if(pTmp[k]<z_min) {
                                 z_min = pTmp[k];
+                                v_min = pV[k];
                             }
                         }
                     }
@@ -368,7 +379,10 @@ namespace ezp
                      if( z_min == 0xFFFFFFFF){
                         pBuff[dst] = m_bkcolor;
                     }else{
-                        pBuff[dst] = m_palGray[coli];
+                        FPoint4 *pV4  = (FPoint4*)v_min;
+                        uint8_t col8 = pV4->col & 0x000000FF;
+                        pBuff[dst] = m_palGray[col8];
+                       // pBuff[dst] = m_palGray[coli];
                     }
                 }
             }
