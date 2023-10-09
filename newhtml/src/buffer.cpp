@@ -190,11 +190,19 @@ namespace ezp
                         uint32_t *pAddr = pDstB + dst;
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
                             uint32_t zb = pAddr[0];
-                            uint32_t zi = (uint32_t)((res[2] - zmf) * zprd);
+                            uint32_t zi = (uint32_t)(res[2]);
+                            /*
+                            if(zi<zb){
+                                *pAddr = zi;
+                                pPoint[dst]  = (uint64_t)pV4;
+                            }
+                            */
+                            uint64_t oldPt = pPoint[dst];
                             uint64_t pr = (zi<zb)? -1:0;
                             uint64_t pr1 = ~pr;
                             *pAddr = (zi & pr) + (zb & pr1);
-                            pPoint[dst]  = (((uint64_t)pV4) & pr) + (pPoint[dst] & (pr1));
+                            pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
+                            
                         }
                     }
                 } 
@@ -281,7 +289,6 @@ namespace ezp
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
                 PostProcess<1>(pBuff, winW, winH);
-                //RenderRect(pBuff, 0, 0, 100, 100, 0xFF00FF00);
                 return;
             }
             //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
@@ -320,7 +327,7 @@ namespace ezp
             }
             // postprocess
             switch(m_pointSize){
-                case 1: PostProcess<1>(pBuff, winW, winH); break;
+                case 1: XERR(pBuff, winW, winH); break;
                 case 2: PostProcess<2>(pBuff, winW, winH); break;
                 case 3: PostProcess<3>(pBuff, winW, winH); break;
                 case 4: PostProcess<4>(pBuff, winW, winH); break;
@@ -336,6 +343,7 @@ namespace ezp
             }         
         }
         
+   
         template <unsigned int N>
         void PostProcess(unsigned int *pBuff, int winW, int winH){
             uint32_t pTmp[N*N];
@@ -366,7 +374,7 @@ namespace ezp
                     column++;
                     if( column==N) column = 0;
                    
-                     for(int i =0; i<N;  i++){
+                    for(int i =0; i<N;  i++){
                         for(int j =0; j<N; j++){
                             int k = j + i*N;
                             if(pTmp[k]<z_min) {
@@ -386,6 +394,21 @@ namespace ezp
                     }
                 }
             }
+        }
+
+        void XERR(unsigned int *pBuff, int winW, int winH){
+            for (int y = 0; y < winH; y++) {
+                for (int x = 0; x < winW; x++) {
+                    int dst = x + y * m_canvasW;
+                    if( m_frbuff[dst] != 0xFFFFFFFF){
+                        FPoint4 *pV4  = (FPoint4*)m_auxBuff[dst];
+                        uint8_t col8 = pV4->col & 0x000000FF;
+                        pBuff[dst] = m_palGray[col8];
+                    }else{
+                        pBuff[dst] = m_bkcolor;
+                    }
+                 }
+            } 
         }
 
         void DbgShowFrameRate( int num_rnd){

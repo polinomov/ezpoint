@@ -100,16 +100,16 @@
    <div class="navbar" >
         <div class="dropdown">
             <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
-            <button type="button" class="dropbtn" onclick="OnFileOpen()"class="thebutton">File</button>
+            <button class="dropbtn" id="fbtn" onclick="myFunction('fbtn','fileDropdown')">File</button>
+            <div class="dropdown-content" id="fileDropdown">
+                <button type="button"  onclick="OnFileOpen()"class="thebutton">Load Local File</button>
+                <button type="button"  class="thebutton">Load Http</button>
+                <button type="button"  class="thebutton">Sample</button>
+            </div>
+
             <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
             <div class="dropdown-content" id="cameraDropdown">
                 <button class="thebutton">Reset</button>
-                <input type="radio">
-                <input type="radio">           
-                <div class="horgrp">
-                    <input type="radio">
-                    <input type="radio">
-                </div>
             </div>
             <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">Colors</button>
             <div class="dropdown-content" id="viewDropdown">

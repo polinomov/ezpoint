@@ -114,7 +114,7 @@ extern "C" {
         unsigned char* p8 = (unsigned char*)pData;		
         float* pF = (float*)pData;
         int numFloats = sz/sizeof(float);
-        sprintf(ts,"Done Reading sz= %d %f",numFloats,pF[numFloats-2]);
+        sprintf(ts,"Done Reading sz= %d ",numFloats);
         OutLine(ts);
         ezp::Scene *pSc = ezp::Scene::Get();
         pSc->SetFileImage(pData, sz, type);
