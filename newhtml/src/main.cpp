@@ -173,19 +173,9 @@ extern "C" {
     }
 
     int OnUIChangeJS(int el, int value){ 
-         if(el==1){ // Fov
-            ezp::Renderer::Get()->SetFov(value);
-            gRenderEvent = 2;	
-        }else if(el==2){  // budget
-            ezp::Renderer::Get()->SetBudget(value*100000);
-            gRenderEvent = 2;
-        }else if(el==3){
-            ezp::Renderer::Get()->SetPointSize(value);
-            gRenderEvent = 2;
-        }else if(el==4){ //4
-            ezp::Renderer::Get()->SetBkColor((uint32_t)value);
-            gRenderEvent = 2;
-        }
+        char *pRet =  emscripten_run_script_string("GetUIString()");
+       // std::cout<<"UI:"<<pRet<<" val="<<value<<std::endl;
+        ezp::UI::Get()->OnUIEvent(pRet,value);
         return 0;
     }
 
@@ -243,7 +233,18 @@ extern "C" {
 namespace ezp 
 {
     struct UIImpl : public UI{
+     std::unordered_map<std::string, uint32_t> m_strToId;
 
+        UIImpl(){
+            m_strToId["fovVal"] = UIFOV;
+            m_strToId["ptSize"] = UIPTSIZE;
+            m_strToId["budVal"] = UIBUDGET;
+            m_strToId["bkgcol"] = UIBKGCOLOR;
+            m_strToId["colrgbId"] = UICOLOR_RGB;
+            m_strToId["colintId"] = UICOLOR_INTENS;
+            m_strToId["colhtmId"] = UICOLOR_HMAP;
+            m_strToId["colclassId"] = UICOLOR_CLASS;
+        }
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");
             OutLine(pMsg);
@@ -278,6 +279,46 @@ namespace ezp
             return 100000*emscripten_run_script_int("GetBudgetValue()");
         }
 
+        void OnUIEvent(const char *pEvent, int val){
+
+            if(pEvent==NULL) return;
+            auto u_iter = m_strToId.find(pEvent);
+            if( u_iter == m_strToId.end()){
+                return;
+            }
+            //std::cout<<"OnUIEvent "<<u_iter->second<<std::endl;
+            switch(u_iter->second){
+                case UIFOV:
+                    ezp::Renderer::Get()->SetFov(val);
+                break;
+                case UIPTSIZE:
+                    ezp::Renderer::Get()->SetPointSize(val);
+                break;
+                case UIBUDGET:
+                    ezp::Renderer::Get()->SetBudget(val*100000);
+                break;
+                case UIBKGCOLOR:
+                    ezp::Renderer::Get()->SetBkColor(val);
+                break;
+                case UICOLOR_INTENS:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_INTENS);
+                break;
+                case UICOLOR_CLASS:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_CLASS);
+                break;
+                case UICOLOR_RGB:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_RGB);
+                break;
+                case UICOLOR_HMAP:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_HMAP);
+                break;
+                default:
+                    std::cout<<"UNKNOWN"<<std::endl;
+                break;
+            }
+            gRenderEvent = 2;	
+        }
+
         void SetElementState( const std::string &id,bool state){
             const std::string qt = "\"";  
             std::string cmd = "document.getElementById("+qt+id+qt+").disabled=";
@@ -287,16 +328,16 @@ namespace ezp
 
         void SetColorModeState(uint32_t flg, bool state){
             if(flg & COLOR_MODEL_RGB){
-                SetElementState("colrgbId", state);
+                //SetElementState("colrgbId", state);
             }
             if(flg & COLOR_INTENS){
-                SetElementState("colintId", state);
+                //SetElementState("colintId", state);
             }
             if(flg & COLOR_HMAP){
-                SetElementState("colhtmId", state);
+                //SetElementState("colhtmId", state);
             }
             if(flg & COLOR_CLASS){
-                SetElementState("colclassId", state);
+                //SetElementState("colclassId", state);
             }
         }
     };

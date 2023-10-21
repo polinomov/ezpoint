@@ -136,7 +136,8 @@ namespace ezp
         xmax = ymax = zmax  = INT_MIN;
         uint16_t intens_max = 0;
         uint16_t intens_min = 0xFFFF;
-        //memset(itmp_16,0,256*256*sizeof(float));
+        uint32_t classHist[256];
+        for( int n = 0; n<256; n++) classHist[n] = 0;
         for(int i = 0; i< numPoints; i++,pS+=lh->poitDataRecordLength){
             PointFormat1 *pf1 = (PointFormat1*)pS;
             xmin = std::min(pf1->x,xmin);
@@ -151,7 +152,15 @@ namespace ezp
             uint8_t c = (uint8_t)(vf*255.0f);
             pIntens[c] += 1.0f;
             itmp_16[pf1->intensity] += 1.0f;
+            if((int)lh->pointDataFormatId==6){
+                PointFormat6 *pt6 = (PointFormat6*)pS;
+                classHist[pt6->classification]++;
+            }
         }
+        for( int n = 0; n<256; n++){
+            std::cout<<"["<<n<<"]"<<classHist[n]<<std::endl;
+        }
+
         FBdBox Res;
         Res.xMin = (float)xmin * float(lh->xScale) + lh->xOffset;
         Res.yMin = (float)ymin * float(lh->yScale) + lh->yOffset;
@@ -247,27 +256,18 @@ namespace ezp
                     pPoint[chk->aux].y = yf;
                     pPoint[chk->aux].z = zf;
                     // colors
-                    /*
-                    if((int)lh->pointDataFormatId==6){
+                   if((int)lh->pointDataFormatId==6){
                         PointFormat6 *pt6 = (PointFormat6*)pS;
-                        if(pt6->classification < 15){
-                            if((pt6->flg.classFlg & (1<<2))==0){
-                                pPoint[chk->aux].col = classColors[pt6->classification];
-                            }else{
-                                pPoint[chk->aux].col = 0xFF;
-                            }
-                        }else{
-                            pPoint[chk->aux].col = 0xFF8080;
-                        }
-                    }else{
-                        float vf = (float)(pf1->intensity)/(256.0f*256.0f);
-                        uint8_t c = (uint8_t)(vf*255.0f);
-                        pPoint[chk->aux].col = c<<24;
+                        uint16_t c1 = pf1->intensity;
+                        uint8_t c = (uint8_t)itmp_16[c1]; 
+                        uint8_t c2 = pt6->classification;
+                        pPoint[chk->aux].col = c | (c2<<8) ;
                     }
-                    */
-                    uint16_t c1 = pf1->intensity;
-                    uint8_t c = (uint8_t)itmp_16[c1]; 
-                    pPoint[chk->aux].col = c |(c<<8)|(c<<16)|(c<<24);
+                    else{
+                        uint16_t c1 = pf1->intensity;
+                        uint8_t c = (uint8_t)itmp_16[c1]; 
+                        pPoint[chk->aux].col = c |(c<<8)|(c<<16)|(c<<24);
+                    }
                     chk->aux++;
                 }
                 else{

@@ -35,9 +35,11 @@ namespace ezp
         float m_atanRatio;
         int m_budget;
         int m_pointSize;
+        int m_colorMode;
         uint32_t m_bkcolor;
         uint32_t m_palGray[256];
         uint32_t m_palHMap[256];
+        uint32_t m_palClass[256];
         int m_sceneSize;
         float m_zmax;
         float m_zmin;
@@ -78,7 +80,15 @@ namespace ezp
                     uint8_t b = (uint8_t)((1.0f-t) * 255.0f);
                     m_palHMap[i] = b | (g<<8) ;
                 }
+                m_palClass[i] = 0xFFFFFFFF;
             }
+            m_palClass[0] = 0xFFFFFFFF;
+            m_palClass[1] = 0xFF00;
+            m_palClass[2] = 0x808080;
+            m_palClass[3] = 0x800000;
+            m_palClass[4] = 0x8000;
+            m_palClass[5] = 0xF0F0;
+            m_palClass[6] = 0x8080;
         }
 #if 0
         void TestSimd(){
@@ -119,11 +129,16 @@ namespace ezp
         }
 
         void  SetBkColor( uint32_t val){
-             m_bkcolor = val;
+            //std::cout<<"SetBkColor:"<<val<<std::endl;
+            m_bkcolor = val;
         }
 
         void SetDebugParam(int val){
             m_dbgFlf  = !m_dbgFlf;
+        }
+
+        void SetColorMode( uint32_t val) {
+            m_colorMode = val;
         }
 
         void BuildProjMatrix(int sw, int sh,float atanRatio ){
@@ -288,7 +303,7 @@ namespace ezp
             FPoint4* chpa = Scene::Get()->GetChunkAuxPos();
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
-                PostProcess<1>(pBuff, winW, winH);
+                PostProcess<0>(pBuff, winW, winH,1);
                 return;
             }
             //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
@@ -326,26 +341,26 @@ namespace ezp
                 //RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,chunks[i]->numVerts,NULL,this);
             }
             // postprocess
-            switch(m_pointSize){
-                case 1: XERR(pBuff, winW, winH); break;
-                case 2: PostProcess<2>(pBuff, winW, winH); break;
-                case 3: PostProcess<3>(pBuff, winW, winH); break;
-                case 4: PostProcess<4>(pBuff, winW, winH); break;
-                case 5: PostProcess<5>(pBuff, winW, winH); break;
-                case 6: PostProcess<6>(pBuff, winW, winH); break;
-                case 7: PostProcess<7>(pBuff, winW, winH); break;
-                case 8: PostProcess<8>(pBuff, winW, winH); break;
-                case 9: PostProcess<9>(pBuff, winW, winH); break;
-                default: PostProcess<9>(pBuff, winW, winH); break;
+            switch(m_colorMode){
+                case UI::UICOLOR_INTENS:
+                    PostProcess<0>(pBuff, winW, winH,m_pointSize);
+                break;
+                case UI::UICOLOR_CLASS: 
+                    PostProcess<1>(pBuff, winW, winH,m_pointSize);
+                break;
+                default: 
+                    PostProcess<0>(pBuff, winW, winH,m_pointSize);
+                break;
             }
+
             if(m_showfr){
                 DbgShowFrameRate(num_rnd);  
             }         
         }
         
    
-        template <unsigned int N>
-        void PostProcess(unsigned int *pBuff, int winW, int winH){
+        template <unsigned int M>
+        void PostProcess(unsigned int *pBuff, int winW, int winH, int N){
             uint32_t pTmp[N*N];
             uint64_t pV[N*N];
  
@@ -384,12 +399,19 @@ namespace ezp
                         }
                     }
                     uint8_t coli = z_min & 0xFF;
-                     if( z_min == 0xFFFFFFFF){
+                    if( z_min == 0xFFFFFFFF){
                         pBuff[dst] = m_bkcolor;
                     }else{
                         FPoint4 *pV4  = (FPoint4*)v_min;
-                        uint8_t col8 = pV4->col & 0x000000FF;
-                        pBuff[dst] = m_palGray[col8];
+                        if(M==0){
+                            uint8_t col8 = pV4->col & 0x000000FF;
+                            pBuff[dst] = m_palGray[col8];
+                        }
+                        if(M==1){
+                            uint8_t col8 = (pV4->col & 0x0000FF00)>>8;
+                           // uint8_t coli = pV4->col & 0x000000FF;
+                            pBuff[dst] = m_palClass[col8];
+                        }
                        // pBuff[dst] = m_palGray[coli];
                     }
                 }
@@ -402,12 +424,13 @@ namespace ezp
                     int dst = x + y * m_canvasW;
                     if( m_frbuff[dst] != 0xFFFFFFFF){
                         FPoint4 *pV4  = (FPoint4*)m_auxBuff[dst];
-                        uint8_t col8 = pV4->col & 0x000000FF;
-                        pBuff[dst] = m_palGray[col8];
+                        uint8_t coli = pV4->col & 0x000000FF;
+                        uint8_t col8 = (pV4->col & 0x0000FF00)>>8;
+                        pBuff[dst] = m_palClass[col8];
                     }else{
                         pBuff[dst] = m_bkcolor;
                     }
-                 }
+                }
             } 
         }
 
