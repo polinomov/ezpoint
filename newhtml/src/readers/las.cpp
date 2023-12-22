@@ -183,8 +183,8 @@ namespace ezp
         //
         // Allocate temp array to collect chunks
         //
-        uint32_t kSizex = 24;
-        uint32_t kSizey = 24;
+        uint32_t kSizex = 32;
+        uint32_t kSizey = 32;
         std::unique_ptr<uint32_t[]> pBf(new uint32_t[kSizex*kSizey]);
         for ( uint32_t k = 0; k<kSizex*kSizey; k++){
             pBf[k] = 0;
@@ -258,8 +258,11 @@ namespace ezp
                     // colors
                    if((int)lh->pointDataFormatId==6){
                         PointFormat6 *pt6 = (PointFormat6*)pS;
+                        Point6Flags flg = pt6->flg;
+                        //edgeOfFlight
                         uint16_t c1 = pf1->intensity;
                         uint8_t c = (uint8_t)itmp_16[c1]; 
+                        if(flg.edgeOfFlight) c = 255;
                         uint8_t c2 = pt6->classification;
                         pPoint[chk->aux].col = c | (c2<<8) ;
                     }

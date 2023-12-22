@@ -244,6 +244,7 @@ namespace ezp
             m_strToId["colintId"] = UICOLOR_INTENS;
             m_strToId["colhtmId"] = UICOLOR_HMAP;
             m_strToId["colclassId"] = UICOLOR_CLASS;
+            m_strToId["colmix"] = UICOLOR_MIX;
         }
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");
@@ -312,6 +313,9 @@ namespace ezp
                 case UICOLOR_HMAP:
                     ezp::Renderer::Get()->SetColorMode(UICOLOR_HMAP);
                 break;
+                case UICOLOR_MIX:
+                    ezp::Renderer::Get()->SetColorMode(UICOLOR_MIX);
+                break;
                 default:
                     std::cout<<"UNKNOWN"<<std::endl;
                 break;
@@ -327,6 +331,7 @@ namespace ezp
         }
 
         void SetColorModeState(uint32_t flg, bool state){
+            std::cout<<"SetColorModeState"<<std::endl;
             if(flg & COLOR_MODEL_RGB){
                 //SetElementState("colrgbId", state);
             }

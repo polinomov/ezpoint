@@ -84,11 +84,12 @@ namespace ezp
             }
             m_palClass[0] = 0xFFFFFFFF;
             m_palClass[1] = 0xFF00;
-            m_palClass[2] = 0x808080;
-            m_palClass[3] = 0x800000;
-            m_palClass[4] = 0x8000;
-            m_palClass[5] = 0xF0F0;
-            m_palClass[6] = 0x8080;
+            m_palClass[2] = 0xFFFF00;
+            m_palClass[3] = 0x00FF10;
+            m_palClass[4] = 0x40FF40;
+            m_palClass[5] = 0x90FF90;
+            m_palClass[6] = 0xFF0000;
+            m_palClass[9] = 0xFF;
         }
 #if 0
         void TestSimd(){
@@ -159,11 +160,10 @@ namespace ezp
             _D[3] =  0.0f;
         }
 
-        template <unsigned int N,unsigned int D>
-        static void RenderChunk(FPoint4 *pVerts,int sw, int sh,int numV,void *pD,RendererImpl *rp){
+       
+        static void RenderChunks(int sw, int sh,RendererImpl *rp){
             FrBuff tbuff[16];
             uint32_t tbi = 0;
-            std::vector<std::shared_ptr<Chunk>> chunks = Scene::Get()->GetChunks();
             const __m128 a =  _mm_loadu_ps((const float*)rp->_A);
             const __m128 b =  _mm_loadu_ps((const float*)rp->_B);
             const __m128 c =  _mm_loadu_ps((const float*)rp->_C);
@@ -172,32 +172,32 @@ namespace ezp
             const __m128 wss = _mm_set1_ps(one);
             float swf = (float)sw *0.5f;
             float shf = (float)sh *0.5f;
-           
-            FPoint4 *pV4 = (FPoint4*)pVerts;
-            __m128 xss = _mm_set1_ps(pV4->x);
-            __m128 yss = _mm_set1_ps(pV4->y);
-            __m128 zss = _mm_set1_ps(pV4->z);
+            const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
+            for( int m = 0; m<chunks.size(); m++) {
+                 FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
+                __m128 xss = _mm_set1_ps(pV4->x);
+                __m128 yss = _mm_set1_ps(pV4->y);
+                __m128 zss = _mm_set1_ps(pV4->z);
  
-            uint32_t *pDstB = (uint32_t*) rp->m_frbuff;
-            uint64_t *pPoint= rp->m_auxBuff;
-            const float zmf =  rp->m_zmin;
-            const float zprd = rp->m_zprd;
-            const int canvas_w = rp->m_canvasW;
-            int addr_max = rp->m_canvasW*rp->m_canvasH;
-            for( int i = 0; i<numV-1; i++){   
-                __m128 r0 = _mm_mul_ps(xss, a);
-                __m128 r1 = _mm_mul_ps(yss, b);
-                __m128 r2 = _mm_mul_ps(zss, c);
-                __m128 sum_01 = _mm_add_ps(r0, r1);
-                __m128 sum_23 = _mm_add_ps(r2, d);
-                __m128 sum =   _mm_add_ps(sum_01, sum_23);
-                float res[4];
-                _mm_storeu_ps((float*)res, sum);
-                xss = _mm_set1_ps(pV4[1].x);
-                yss = _mm_set1_ps(pV4[1].y);
-                zss = _mm_set1_ps(pV4[1].z);
-                if(N==RND_POINTS)
-                {
+                uint32_t *pDstB = (uint32_t*) rp->m_frbuff;
+                uint64_t *pPoint= rp->m_auxBuff;
+                const float zmf =  rp->m_zmin;
+                const float zprd = rp->m_zprd;
+                const int canvas_w = rp->m_canvasW;
+                int addr_max = rp->m_canvasW*rp->m_canvasH;
+                int numV = chunks[m]->numVerts;
+                for( int i = 0; i<numV-1; i++){   
+                    __m128 r0 = _mm_mul_ps(xss, a);
+                    __m128 r1 = _mm_mul_ps(yss, b);
+                    __m128 r2 = _mm_mul_ps(zss, c);
+                    __m128 sum_01 = _mm_add_ps(r0, r1);
+                    __m128 sum_23 = _mm_add_ps(r2, d);
+                    __m128 sum =   _mm_add_ps(sum_01, sum_23);
+                    float res[4];
+                    _mm_storeu_ps((float*)res, sum);
+                    xss = _mm_set1_ps(pV4[1].x); 
+                    yss = _mm_set1_ps(pV4[1].y);
+                    zss = _mm_set1_ps(pV4[1].z);
                     if((res[2]>0.001f)){
                         int x = (int) (swf + res[0]/res[2] );
                         int y = (int) (shf + res[1]/res[2] );                             
@@ -206,60 +206,17 @@ namespace ezp
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
                             uint32_t zb = pAddr[0];
                             uint32_t zi = (uint32_t)(res[2]);
-                            /*
-                            if(zi<zb){
-                                *pAddr = zi;
-                                pPoint[dst]  = (uint64_t)pV4;
-                            }
-                            */
                             uint64_t oldPt = pPoint[dst];
                             uint64_t pr = (zi<zb)? -1:0;
                             uint64_t pr1 = ~pr;
                             *pAddr = (zi & pr) + (zb & pr1);
                             pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
-                            
                         }
                     }
-                } 
-                if(N==PROJ_POINTS){
-                    chunks[i]->proj.x = res[0];
-                    chunks[i]->proj.y = res[1];
-                    chunks[i]->proj.z = res[2];
-                    chunks[i]->flg = 0;
-                    chunks[i]->numToRender = chunks[i]->numVerts;
-                    chunks[i]->reduction = 1.0f;
-                    if(res[2]>0.001f){
-                        //chunks[i]->reduction = 1.0f/res[2];
-                        chunks[i]->reduction = std::max(1.0f - res[2]/rp->m_sceneSize,0.1f);
-                        float szsc = 2.0f * res[2]/ rp->m_atanRatio;
-                        float myszpix = swf*chunks[i]->sz/szsc;
-                        int x = (int) ( res[0]/res[2]);
-                        int y = (int) ( res[1]/res[2]);  
-                        if(( x>-swf) && ( x<swf) && ( y>-shf) && (y<shf) ){
-                            chunks[i]->flg = 0;
-                        }else{
-                           
-                           if(x > (int)myszpix + swf){
-                                chunks[i]->flg = CHUNK_FLG_NV; 
-                           }
-                           if(y > (int)myszpix + shf){
-                                chunks[i]->flg = CHUNK_FLG_NV; 
-                           }
-                           if(x < -myszpix-swf ){
-                                chunks[i]->flg = CHUNK_FLG_NV; 
-                           }
-                           if(y < -myszpix-shf){
-                                chunks[i]->flg = CHUNK_FLG_NV; 
-                           }
-                        } 
-                    }
-                    else{
-                        chunks[i]->flg = CHUNK_FLG_NV;
-                    }
-                }               
-                pV4++;
-            }
-        }
+                    pV4++;
+                } // verts in chunk
+            }//chunks.size()
+        }//RenderChunks
 
         void RenderRect(unsigned int *pBuff, int left, int top, int right, int bot,unsigned int col){
             for (int y = top; y < bot; y++) {
@@ -306,9 +263,10 @@ namespace ezp
                 PostProcess<0>(pBuff, winW, winH,1);
                 return;
             }
+#if 0            
             //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
             m_zprd = (255.0f * 255.0f * 255.0f)/(m_zmax - m_zmin);
-            RenderChunk<PROJ_POINTS,0>(chp,winW,winH,chunks.size(),chpa,this);
+            RenderChunk(chp,winW,winH,chunks.size(),chpa,this);
 
             float prd_tot = 0.0f;
             uint32_t tv = 0;
@@ -340,6 +298,20 @@ namespace ezp
                 }
                 //RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,chunks[i]->numVerts,NULL,this);
             }
+#endif   
+/*
+            int num_rnd = 0;  
+            for( int i = 0; i<chunks.size(); i++) {
+                int numToRender =  chunks[i]->numVerts;
+                if(numToRender < 1){
+                    continue;
+                }
+                if(i&1) continue;
+                num_rnd += numToRender;
+                RenderChunk((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
+            }
+*/
+            RenderChunks(winW,winH,this);
             // postprocess
             switch(m_colorMode){
                 case UI::UICOLOR_INTENS:
@@ -348,13 +320,16 @@ namespace ezp
                 case UI::UICOLOR_CLASS: 
                     PostProcess<1>(pBuff, winW, winH,m_pointSize);
                 break;
+                case UI::UICOLOR_MIX: 
+                    PostProcess<2>(pBuff, winW, winH,m_pointSize);
+                break;
                 default: 
                     PostProcess<0>(pBuff, winW, winH,m_pointSize);
                 break;
             }
 
             if(m_showfr){
-                DbgShowFrameRate(num_rnd);  
+                DbgShowFrameRate(7777);  
             }         
         }
         
@@ -398,19 +373,31 @@ namespace ezp
                             }
                         }
                     }
-                    uint8_t coli = z_min & 0xFF;
+                   uint8_t coli = z_min & 0xFF;
                     if( z_min == 0xFFFFFFFF){
                         pBuff[dst] = m_bkcolor;
                     }else{
                         FPoint4 *pV4  = (FPoint4*)v_min;
-                        if(M==0){
+                        if(m_frbuff[dst] != 0xFFFFFFFF){
+                           //pV4  = (FPoint4*) m_auxBuff[dst];
+                        }
+ 
+                        if(M==0){ //:UICOLOR_INTENS
                             uint8_t col8 = pV4->col & 0x000000FF;
                             pBuff[dst] = m_palGray[col8];
                         }
-                        if(M==1){
+                        if(M==1){ //UI::UICOLOR_CLASS
                             uint8_t col8 = (pV4->col & 0x0000FF00)>>8;
-                           // uint8_t coli = pV4->col & 0x000000FF;
                             pBuff[dst] = m_palClass[col8];
+                        }
+                        if(M==2){ //UI::UICOLOR_MIX
+                            float coli = (float(pV4->col & 0x000000FF))/255.9f;
+                            uint8_t col8 = (pV4->col & 0x0000FF00)>>8;
+                            uint32_t cc = m_palClass[col8];
+                            float rr = coli*(float)(cc&0xFF);
+                            float gg = coli*(float)((cc&0xFF00)>>8);
+                            float bb = coli*(float)((cc&0xFF0000)>>16);
+                            pBuff[dst] = (uint8_t)rr | (((uint8_t)gg)<<8) | (((uint8_t)bb)<<16);
                         }
                        // pBuff[dst] = m_palGray[coli];
                     }

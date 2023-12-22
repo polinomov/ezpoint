@@ -24,6 +24,7 @@ namespace ezp
 			UICOLOR_CLASS,
 			UICOLOR_RGB,
 			UICOLOR_HMAP,
+			UICOLOR_MIX
 		};
 
 		virtual void PrintMessage( const char *pMsg) = 0;
