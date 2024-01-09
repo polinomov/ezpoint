@@ -3,6 +3,7 @@ SOURCES = src\main.cpp \
 		src\buffer.cpp \
 		src\scene.cpp \
 		src\camera.cpp \
+		src\rdhelpers.cpp \
 		src\readers\test.cpp \
 		src\readers\las.cpp \
 		src\chunk.cpp \

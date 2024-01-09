@@ -6,6 +6,7 @@
 #include <limits>
 #include <iostream>
 #include "ezpoint.h"
+#include "rdhelpers.h"
 #include "wasm_simd128.h"
 #include "xmmintrin.h"
 /*
@@ -16,6 +17,18 @@
 #define KEEPALIVE
 #endif
 */
+#define MPROJ(_m0,_m1,_m2,_m3,_vx,_vy,_vz,_res) \
+                     {\
+                    __m128 r0 = _mm_mul_ps(_vx, _m0);\
+                    __m128 r1 = _mm_mul_ps(_vy, _m1);\
+                    __m128 r2 = _mm_mul_ps(_vz, _m2);\
+                    __m128 sum_01 = _mm_add_ps(r0, r1);\
+                    __m128 sum_23 = _mm_add_ps(r2, _m3);\
+                    __m128 sum =   _mm_add_ps(sum_01, sum_23);\
+                     _mm_storeu_ps((float*)_res, sum);\
+                     }
+
+
 namespace ezp 
 {
 	#define RND_POINTS 1
@@ -173,8 +186,16 @@ namespace ezp
             float swf = (float)sw *0.5f;
             float shf = (float)sh *0.5f;
             const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
+
             for( int m = 0; m<chunks.size(); m++) {
-                 FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
+                __m128 xss = _mm_set1_ps(chunks[m]->cx);
+                __m128 yss = _mm_set1_ps(chunks[m]->cy);
+                __m128 zss = _mm_set1_ps(chunks[m]->cz);
+                MPROJ(a,b,c,d, xss,yss,zss,&chunks[m]->proj);
+            }
+
+            for( int m = 0; m<chunks.size(); m++) {
+                  FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
                 __m128 xss = _mm_set1_ps(pV4->x);
                 __m128 yss = _mm_set1_ps(pV4->y);
                 __m128 zss = _mm_set1_ps(pV4->z);
@@ -186,15 +207,20 @@ namespace ezp
                 const int canvas_w = rp->m_canvasW;
                 int addr_max = rp->m_canvasW*rp->m_canvasH;
                 int numV = chunks[m]->numVerts;
-                for( int i = 0; i<numV-1; i++){   
+                for( int i = 0; i<numV-1; i++){  
+                     float res[4];
+                     /*
+                     {
                     __m128 r0 = _mm_mul_ps(xss, a);
                     __m128 r1 = _mm_mul_ps(yss, b);
                     __m128 r2 = _mm_mul_ps(zss, c);
                     __m128 sum_01 = _mm_add_ps(r0, r1);
                     __m128 sum_23 = _mm_add_ps(r2, d);
                     __m128 sum =   _mm_add_ps(sum_01, sum_23);
-                    float res[4];
                     _mm_storeu_ps((float*)res, sum);
+                     }
+                     */
+                    MPROJ(a,b,c,d, xss,yss,zss,res);
                     xss = _mm_set1_ps(pV4[1].x); 
                     yss = _mm_set1_ps(pV4[1].y);
                     zss = _mm_set1_ps(pV4[1].z);
@@ -255,9 +281,9 @@ namespace ezp
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
             m_sceneSize = Scene::Get()->GetSize();
-            auto chunks = Scene::Get()->GetChunks();
-            FPoint4* chp  = Scene::Get()->GetChunkPos();
-            FPoint4* chpa = Scene::Get()->GetChunkAuxPos();
+           // auto chunks = Scene::Get()->GetChunks();
+           // FPoint4* chp  = Scene::Get()->GetChunkPos();
+            //FPoint4* chpa = Scene::Get()->GetChunkAuxPos();
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
                 PostProcess<0>(pBuff, winW, winH,1);
@@ -327,6 +353,21 @@ namespace ezp
                     PostProcess<0>(pBuff, winW, winH,m_pointSize);
                 break;
             }
+            // helpers
+            {
+                const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
+                float swf = (float)winW *0.5f;
+                float shf = (float)winH *0.5f;
+                for( int m = 0; m<chunks.size(); m++) {
+                    FPoint4 *res = &chunks[m]->proj;
+                    if((res->z>0.001f)){
+                        int x = (int) (swf + res->x/res->z );
+                        int y = (int) (shf + res->y/res->z ); 
+                        RenderPoint(pBuff,m_canvasW, m_canvasH, x, y );
+                    }                            
+                }
+            }
+
 
             if(m_showfr){
                 DbgShowFrameRate(7777);  
