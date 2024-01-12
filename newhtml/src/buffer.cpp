@@ -58,6 +58,7 @@ namespace ezp
         float m_zmin;
         float m_zprd;
         float _A[4],_B[4],_C[4],_D[4];
+        FPoint4 CNorm[6];
         bool m_showfr;
         bool m_dbgFlf;
         char m_outsrt[1024];
@@ -171,12 +172,40 @@ namespace ezp
             _D[1] =  -(pP[0]*pU[0] + pP[1]*pU[1] + pP[2]*pU[2])*prd;
             _D[2] =  -(pP[0]*pD[0] + pP[1]*pD[1] + pP[2]*pD[2]);
             _D[3] =  0.0f;
+            float ang = atan(1.0f/atanRatio);
+            float b = cos(ang); float a = sin(ang);
+           // std::cout<<atanRatio<<"  "<<atan(a) * 180 / 3.1415f<<std::endl;
+            CNorm[0].x = pU[0]*b - pD[0]*a;            
+            CNorm[0].y = pU[1]*b - pD[1]*a;
+            CNorm[0].z = pU[2]*b - pD[2]*a;
+
+            CNorm[1].x = -pU[0]*b - pD[0]*a;            
+            CNorm[1].y = -pU[1]*b - pD[1]*a;
+            CNorm[1].z = -pU[2]*b - pD[2]*a;
+
+            float rt = (float)sh/(float)sw;
+            ang = atan(1.0f/(atanRatio*rt));
+            b = cos(ang);  a = sin(ang);
+
+
+            CNorm[2].x = pR[0]*b - pD[0]*a;            
+            CNorm[2].y = pR[1]*b - pD[1]*a;
+            CNorm[2].z = pR[2]*b - pD[2]*a;
+
+            CNorm[3].x = -pR[0]*b - pD[0]*a;            
+            CNorm[3].y = -pR[1]*b - pD[1]*a;
+            CNorm[3].z = -pR[2]*b - pD[2]*a;
         }
 
        
         static void RenderChunks(int sw, int sh,RendererImpl *rp){
             FrBuff tbuff[16];
+            Camera *pCam = Camera::Get();
+            float pP[3];
+            pCam->GetPos(pP[0],pP[1],pP[2]);
+
             uint32_t tbi = 0;
+            // load proj matrix
             const __m128 a =  _mm_loadu_ps((const float*)rp->_A);
             const __m128 b =  _mm_loadu_ps((const float*)rp->_B);
             const __m128 c =  _mm_loadu_ps((const float*)rp->_C);
@@ -188,13 +217,22 @@ namespace ezp
             const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
 
             for( int m = 0; m<chunks.size(); m++) {
-                __m128 xss = _mm_set1_ps(chunks[m]->cx);
-                __m128 yss = _mm_set1_ps(chunks[m]->cy);
-                __m128 zss = _mm_set1_ps(chunks[m]->cz);
+                std::shared_ptr<Chunk> pCh= chunks[m];
+                __m128 xss = _mm_set1_ps(pCh->cx);
+                __m128 yss = _mm_set1_ps(pCh->cy);
+                __m128 zss = _mm_set1_ps(pCh->cz);
                 MPROJ(a,b,c,d, xss,yss,zss,&chunks[m]->proj);
+                chunks[m]->numToRender = chunks[m]->numVerts-1;
+                for( int n = 0; n<4; n++){
+                    float v = (pCh->cx - pP[0]) * rp->CNorm[n].x + (pCh->cy - pP[1]) * rp->CNorm[n].y + (pCh->cz - pP[2]) * rp->CNorm[n].z; 
+                    if(v>0.0f) {
+                        pCh->numToRender = 0;
+                        break;
+                    }
+                }
             }
 
-            for( int m = 0; m<chunks.size(); m++) {
+            for( int m = 0; m<chunks.size()-1; m++) {
                   FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
                 __m128 xss = _mm_set1_ps(pV4->x);
                 __m128 yss = _mm_set1_ps(pV4->y);
@@ -206,7 +244,8 @@ namespace ezp
                 const float zprd = rp->m_zprd;
                 const int canvas_w = rp->m_canvasW;
                 int addr_max = rp->m_canvasW*rp->m_canvasH;
-                int numV = chunks[m]->numVerts;
+                //int numV = chunks[m]->numVerts;
+                int numV = chunks[m]->numToRender;
                 for( int i = 0; i<numV-1; i++){  
                      float res[4];
                      /*
@@ -289,42 +328,7 @@ namespace ezp
                 PostProcess<0>(pBuff, winW, winH,1);
                 return;
             }
-#if 0            
-            //std::cout<<"zmin:max="<<m_zmin<<":"<<m_zmax<<std::endl;
-            m_zprd = (255.0f * 255.0f * 255.0f)/(m_zmax - m_zmin);
-            RenderChunk(chp,winW,winH,chunks.size(),chpa,this);
-
-            float prd_tot = 0.0f;
-            uint32_t tv = 0;
-            uint32_t budget = m_budget;
-            for( int i = 0; i<chunks.size(); i++) {
-                if(chunks[i]->flg & CHUNK_FLG_NV){
-                    continue;
-                }
-                if(chunks[i]->proj.z>0.0001){
-                    tv+= chunks[i]->numVerts;
-                    prd_tot += (float)chunks[i]->numVerts * chunks[i]->reduction;
-                }
-            }
-            prd_tot = (prd_tot>0.0f)? (float)budget/prd_tot : 1.0f;
-            int num_skip = 0,num_rnd = 0;
-            for( int i = 0; i<chunks.size(); i++) {
-                if(chunks[i]->flg & CHUNK_FLG_NV){
-                    num_skip++;
-                    continue;
-                }
-                if(chunks[i]->numToRender<2){
-                   continue;
-                }
-                int numToRender  = prd_tot *chunks[i]->reduction*(float)chunks[i]->numVerts;
-                if(numToRender > chunks[i]->numVerts ) numToRender = chunks[i]->numVerts;
-                if(numToRender >2){
-                    num_rnd+=numToRender;
-                    RenderChunk<RND_POINTS,0>((FPoint4*)chunks[i]->pVert,winW,winH,numToRender,NULL,this);
-                }
-                //RenderChunk<RND_POINTS>((FPoint4*)chunks[i]->pVert,winW,winH,chunks[i]->numVerts,NULL,this);
-            }
-#endif   
+  
 /*
             int num_rnd = 0;  
             for( int i = 0; i<chunks.size(); i++) {
@@ -354,6 +358,7 @@ namespace ezp
                 break;
             }
             // helpers
+            if(1)
             {
                 const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
                 float swf = (float)winW *0.5f;
