@@ -24,7 +24,8 @@ namespace ezp
 			UICOLOR_CLASS,
 			UICOLOR_RGB,
 			UICOLOR_HMAP,
-			UICOLOR_MIX
+			UICOLOR_MIX,
+			UIRENDER_ALL
 		};
 
 		virtual void PrintMessage( const char *pMsg) = 0;
@@ -83,13 +84,14 @@ namespace ezp
 		virtual void Init(int canvasW, int canvasH) = 0;
 		virtual void Render(unsigned int *pBuff, int winW, int winH,int evnum) = 0;
 		virtual float GetAtanRatio() = 0;
-		virtual void  SetFov(int val) = 0;
-		virtual void  SetBudget(float val) = 0;
-		virtual void  SetPointSize(float val) = 0;
-		virtual void  SetBkColor( uint32_t val)= 0;
+		virtual void SetFov(int val) = 0;
+		virtual void SetBudget(float val) = 0;
+		virtual void SetPointSize(float val) = 0;
+		virtual void SetBkColor( uint32_t val)= 0;
 		virtual void ShowFrameRate(bool val) = 0;
 		virtual void SetDebugParam(int val) = 0;
 		virtual void SetColorMode( uint32_t val) = 0;
+		virtual void SetRenderAll( uint32_t val) = 0;
 		static Renderer* Get();
 	};
 

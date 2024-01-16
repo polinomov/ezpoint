@@ -106,8 +106,12 @@ function GetUIString(){
 
 function OnUIEvent1(input){
     gIdChanged = input.id;
-    var val = document.getElementById(input.id).value; 
-    gUIChangeCB(123,val);
+    var elType = document.getElementById(input.id).type;
+    if(elType == "checkbox"){
+        gUIChangeCB(123,document.getElementById(input.id).checked );
+    }else{
+        gUIChangeCB(123, document.getElementById(input.id).value);
+    }
 }
 
 function OnBkhanged(input){

@@ -169,6 +169,7 @@ extern "C" {
         if(val== -2){
             ezp::Renderer::Get()->SetDebugParam(-2);
         }
+        gRenderEvent = 2;
         return 0;
     }
 
@@ -245,6 +246,7 @@ namespace ezp
             m_strToId["colhtmId"] = UICOLOR_HMAP;
             m_strToId["colclassId"] = UICOLOR_CLASS;
             m_strToId["colmix"] = UICOLOR_MIX;
+            m_strToId["rdAll"] = UIRENDER_ALL;
         }
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");
@@ -283,6 +285,7 @@ namespace ezp
         void OnUIEvent(const char *pEvent, int val){
 
             if(pEvent==NULL) return;
+            std::cout<<"OnUIEvent:"<<pEvent<<" val="<<val<<std::endl;
             auto u_iter = m_strToId.find(pEvent);
             if( u_iter == m_strToId.end()){
                 return;
@@ -316,6 +319,10 @@ namespace ezp
                 case UICOLOR_MIX:
                     ezp::Renderer::Get()->SetColorMode(UICOLOR_MIX);
                 break;
+                case UIRENDER_ALL:
+                    ezp::Renderer::Get()->SetRenderAll((uint32_t)val);
+                break;
+
                 default:
                     std::cout<<"UNKNOWN"<<std::endl;
                 break;
