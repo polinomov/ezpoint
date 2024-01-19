@@ -66,10 +66,11 @@ extern "C" {
             dstRect.w = gWinW;
             dstRect.h = gWinH;
             SDL_LockTexture( m_screenTexture, NULL, (void**)&pixels, &pitch );
-            ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
+            //ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
             SDL_UnlockTexture( m_screenTexture );
             SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
             SDL_RenderPresent(m_renderer);
+            ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
             gRenderEvent--;
         }
     }

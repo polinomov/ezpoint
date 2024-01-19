@@ -43,6 +43,7 @@ namespace ezp
     struct RendererImpl : public Renderer
     {
         uint32_t *m_frbuff;
+        uint32_t *m_colorBuff;
         uint64_t *m_auxBuff;
         int m_canvasW, m_canvasH;
         float m_atanRatio;
@@ -62,6 +63,7 @@ namespace ezp
         FPoint4 CNorm[6];
         bool m_showfr;
         bool m_dbgFlf;
+        uint32_t m_postTime;
         uint32_t m_totalRdPoints;
         uint32_t m_renderAll;
         char m_outsrt[1024];
@@ -69,12 +71,12 @@ namespace ezp
         void Init(int canvasW, int canvasH){
             m_canvasW = canvasW;
             m_canvasH = canvasH;
-           // m_frbuff = new uint32_t*[2];
             m_auxBuff = new uint64_t[canvasW *canvasH];
             m_frbuff  = new uint32_t[canvasW *canvasH + 128];
             uint64_t addr = (uint64_t)m_frbuff;
             addr = (addr +128) &(~127);
             m_frbuff =(uint32_t*)addr;//new float[pBf[i]*4];
+            m_colorBuff = new uint32_t[canvasW *canvasH];
             m_showfr = false;
             m_sceneSize = 1;
             m_dbgFlf = false;
@@ -305,7 +307,7 @@ namespace ezp
                 __m128 yss = _mm_set1_ps(pV4->y);
                 __m128 zss = _mm_set1_ps(pV4->z);
  
-                uint32_t *pDstB = (uint32_t*) rp->m_frbuff;
+                uint32_t *pDstB = rp->m_frbuff;
                 uint64_t *pPoint= rp->m_auxBuff;
                 const float zmf =  rp->m_zmin;
                 const float zprd = rp->m_zprd;
@@ -313,6 +315,7 @@ namespace ezp
                 int addr_max = rp->m_canvasW*rp->m_canvasH;
                 //int numV = chunks[m]->numVerts;
                 int numV = chunks[m]->numToRender;
+               // uint32_t color,color_old = 0;
                 rp->m_visPoints+=numV-1;
                 for( int i = 0; i<numV-1; i++){  
                      float res[4];
@@ -337,14 +340,17 @@ namespace ezp
                         int dst = x + y * canvas_w;
                         uint32_t *pAddr = pDstB + dst;
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
+                            uint32_t color= pV4->col;
+                            uint32_t color_old= rp->m_colorBuff[dst];
                             uint32_t zb = pAddr[0];
                             uint32_t zi = (uint32_t)(res[2]);
-                            uint64_t oldPt = pPoint[dst];
                             uint64_t pr = (zi<zb)? -1:0;
                             uint64_t pr1 = ~pr;
                             *pAddr = (zi & pr) + (zb & pr1);
-                            pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
-                       }
+                            rp->m_colorBuff[dst] =  (color & pr) + (color_old & pr1);
+                            //uint64_t oldPt = pPoint[dst];
+                            // pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
+                        }
                     }
                     pV4++;
                 } // verts in chunk
@@ -379,12 +385,19 @@ namespace ezp
 
         void Render(unsigned int *pBuff, int winW, int winH,int evnum){
             static int val = 0;
+            static FPoint4 pt4;
+            uint64_t addrd = (uint64_t)(&pt4);
             uint32_t *p32 = (uint32_t*)m_frbuff;
    	        for (int y = 0; y < winH; y++) {
-                uint32_t *pp = p32 +  y * m_canvasW;
-                memset(pp,0xFF,winW*sizeof(uint32_t));
+                for (int x = 0; x < winW; x++) {
+                    int dst = x + y * m_canvasW;
+                    p32[dst] = 0xFFFFFFFF;
+                    m_colorBuff[dst] = 0;//m_bkcolor;
+                }
+                // uint32_t *pp = p32 +  y * m_canvasW;
+                // memset(pp,0xFF,winW*sizeof(uint32_t));
             }
-
+            m_palGray[0] = m_bkcolor;
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
             m_sceneSize = Scene::Get()->GetSize();
@@ -393,11 +406,21 @@ namespace ezp
                 PostProcess<0>(pBuff, winW, winH,1);
                 return;
             }
-            auto before = std::chrono::system_clock::now();
-            RenderChunks(winW,winH,this);
-            auto after = std::chrono::system_clock::now();
-            uint32_t rndMs = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
+            uint32_t rndMs = 0;
+            {
+                auto before = std::chrono::system_clock::now();
+                RenderChunks(winW,winH,this);
+                auto after = std::chrono::system_clock::now();
+                rndMs = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
+            }
             // postprocess
+            {
+                auto before = std::chrono::system_clock::now();
+                XERR(pBuff, winW, winH);
+                auto after = std::chrono::system_clock::now();
+                m_postTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
+            }
+            /*
             switch(m_colorMode){
                 case UI::UICOLOR_INTENS:
                     PostProcess<0>(pBuff, winW, winH,m_pointSize);
@@ -412,6 +435,7 @@ namespace ezp
                     PostProcess<0>(pBuff, winW, winH,m_pointSize);
                 break;
             }
+            */
             // helpers
             if(0)
             {
@@ -434,7 +458,7 @@ namespace ezp
             }         
         }
         
-   
+#if 1  
         template <unsigned int M>
         void PostProcess(unsigned int *pBuff, int winW, int winH, int N){
             uint32_t pTmp[N*N];
@@ -505,23 +529,18 @@ namespace ezp
                 }
             }
         }
+#endif
 
         void XERR(unsigned int *pBuff, int winW, int winH){
+            static const int nsz = 3;
             for (int y = 0; y < winH; y++) {
-                for (int x = 0; x < winW; x++) {
+                for (int x = 0,n = 0; x < winW; x++, n++){
                     int dst = x + y * m_canvasW;
-                    if( m_frbuff[dst] != 0xFFFFFFFF){
-                        FPoint4 *pV4  = (FPoint4*)m_auxBuff[dst];
-                        uint8_t coli = pV4->col & 0x000000FF;
-                        uint8_t col8 = (pV4->col & 0x0000FF00)>>8;
-                        pBuff[dst] = m_palClass[col8];
-                    }else{
-                        pBuff[dst] = m_bkcolor;
-                    }
+                    uint8_t cndx = m_colorBuff[dst] & 0xFF;
+                    pBuff[dst] = m_palGray[cndx];
                 }
             } 
         }
-
         void DbgShowFrameRate( int num_rnd,uint32_t rndMs){
             static unsigned char cnt = 0,nn =0;
             static std::chrono::time_point<std::chrono::system_clock> prev;
@@ -529,7 +548,7 @@ namespace ezp
                 auto curr = std::chrono::system_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(curr - prev);
                 float fps = 10000.0f/(float)elapsed.count();
-                snprintf(m_outsrt,1024,"points=%d tm=%d fps=",num_rnd,rndMs);
+                snprintf(m_outsrt,1024,"points=%d tm=%d post=%d,fps=",num_rnd,rndMs,m_postTime);
                 UI::Get()->PrintMessage(m_outsrt, (int)fps);
                 cnt = 0; 
                 nn++;
