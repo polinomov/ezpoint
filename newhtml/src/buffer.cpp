@@ -300,16 +300,17 @@ namespace ezp
             float swf = (float)sw *0.5f;
             float shf = (float)sh *0.5f;
             rp->m_visPoints= 0;
+            uint32_t *pDstB = rp->m_frbuff;
+            uint32_t *pColBuff = rp->m_colorBuff;
+            uint64_t *pPoint = rp->m_auxBuff;
+
             for( int m = 0; m<chunks.size()-1; m++) {
                 if(chunks[m]->numToRender<=1) continue;
                   FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
                 __m128 xss = _mm_set1_ps(pV4->x);
                 __m128 yss = _mm_set1_ps(pV4->y);
                 __m128 zss = _mm_set1_ps(pV4->z);
- 
-                uint32_t *pDstB = rp->m_frbuff;
-                uint64_t *pPoint= rp->m_auxBuff;
-                const float zmf =  rp->m_zmin;
+                 const float zmf =  rp->m_zmin;
                 const float zprd = rp->m_zprd;
                 const int canvas_w = rp->m_canvasW;
                 int addr_max = rp->m_canvasW*rp->m_canvasH;
@@ -318,18 +319,7 @@ namespace ezp
                // uint32_t color,color_old = 0;
                 rp->m_visPoints+=numV-1;
                 for( int i = 0; i<numV-1; i++){  
-                     float res[4];
-                     /*
-                     {
-                    __m128 r0 = _mm_mul_ps(xss, a);
-                    __m128 r1 = _mm_mul_ps(yss, b);
-                    __m128 r2 = _mm_mul_ps(zss, c);
-                    __m128 sum_01 = _mm_add_ps(r0, r1);
-                    __m128 sum_23 = _mm_add_ps(r2, d);
-                    __m128 sum =   _mm_add_ps(sum_01, sum_23);
-                    _mm_storeu_ps((float*)res, sum);
-                     }
-                     */
+                    float res[4];
                     MPROJ(a,b,c,d, xss,yss,zss,res);
                     xss = _mm_set1_ps(pV4[1].x); 
                     yss = _mm_set1_ps(pV4[1].y);
@@ -339,19 +329,21 @@ namespace ezp
                         int y = (int) (shf + res[1]/res[2] );                             
                         int dst = x + y * canvas_w;
                         uint32_t *pAddr = pDstB + dst;
+                        uint32_t *pColAddr = pColBuff + dst;
+                        uint32_t colOld  = pColAddr[0];
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
-                            uint32_t color= pV4->col;
-                            uint32_t color_old= rp->m_colorBuff[dst];
+                           // uint32_t color= pV4->col;
+                           // uint32_t color_old= pColAddr[0] ;
                             uint32_t zb = pAddr[0];
                             uint32_t zi = (uint32_t)(res[2]);
-                            uint64_t pr = (zi<zb)? -1:0;
-                            uint64_t pr1 = ~pr;
+                            uint32_t pr = (zi<zb)? -1:0;
+                            uint32_t pr1 = ~pr;
                             *pAddr = (zi & pr) + (zb & pr1);
-                            rp->m_colorBuff[dst] =  (color & pr) + (color_old & pr1);
+                            *pColAddr =  ( pV4->col & pr) + (colOld & pr1);
                             //uint64_t oldPt = pPoint[dst];
                             // pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
-                        }
-                    }
+                       }
+                   }
                     pV4++;
                 } // verts in chunk
             }//chunks.size()
@@ -394,16 +386,14 @@ namespace ezp
                     p32[dst] = 0xFFFFFFFF;
                     m_colorBuff[dst] = 0;//m_bkcolor;
                 }
-                // uint32_t *pp = p32 +  y * m_canvasW;
-                // memset(pp,0xFF,winW*sizeof(uint32_t));
-            }
+             }
             m_palGray[0] = m_bkcolor;
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
             m_sceneSize = Scene::Get()->GetSize();
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
-                PostProcess<0>(pBuff, winW, winH,1);
+               // PostProcess<0>(pBuff, winW, winH,1);
                 return;
             }
             uint32_t rndMs = 0;

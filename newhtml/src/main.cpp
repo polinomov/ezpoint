@@ -66,19 +66,20 @@ extern "C" {
             dstRect.w = gWinW;
             dstRect.h = gWinH;
             SDL_LockTexture( m_screenTexture, NULL, (void**)&pixels, &pitch );
-            //ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
+            ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
             SDL_UnlockTexture( m_screenTexture );
             SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
             SDL_RenderPresent(m_renderer);
-            ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
             gRenderEvent--;
         }
     }
 
     void InitSDL() {
         int sw = 0, sh = 0;
-        //emscripten_get_screen_size(&gCanvasW, &gCanvasH);
-        //printf("--- init sdl --- %d %d\n",sw,sh);
+        emscripten_get_screen_size(&gCanvasW, &gCanvasH);
+        gCanvasW = std::min(gCanvasW,2048);
+        gCanvasH = std::min(gCanvasH,1024);
+        //printf("--- init sdl --- %d %d\n",gCanvasW,gCanvasH);
         //SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
         SDL_Init(SDL_INIT_VIDEO|SDL_WINDOW_RESIZABLE);
         SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, "#canvas");
@@ -93,7 +94,7 @@ extern "C" {
         gWriteLine =  OutLine;
         ezp::Renderer::Get()->Init(gCanvasW, gCanvasH);
         emscripten_run_script("OnStart()");
-        emscripten_set_main_loop(MainLoop, 0, 1);
+        emscripten_set_main_loop(MainLoop, 0, true);
     }
  
     // Resize call from JS
