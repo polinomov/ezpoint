@@ -328,10 +328,11 @@ namespace ezp
                         int x = (int) (swf + res[0]/res[2] );
                         int y = (int) (shf + res[1]/res[2] );                             
                         int dst = x + y * canvas_w;
+                        //int dst = (x&msk) + ((y&msk) * canvas_w);
                         uint32_t *pAddr = pDstB + dst;
                         uint32_t *pColAddr = pColBuff + dst;
                         uint32_t colOld  = pColAddr[0];
-                        if(( x>0) && ( x<sw) && ( y>0) && (y<sh) ){
+                        if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
                            // uint32_t color= pV4->col;
                            // uint32_t color_old= pColAddr[0] ;
                             uint32_t zb = pAddr[0];
@@ -342,8 +343,8 @@ namespace ezp
                             *pColAddr =  ( pV4->col & pr) + (colOld & pr1);
                             //uint64_t oldPt = pPoint[dst];
                             // pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
-                       }
-                   }
+                        }
+                    }
                     pV4++;
                 } // verts in chunk
             }//chunks.size()
@@ -406,7 +407,16 @@ namespace ezp
             // postprocess
             {
                 auto before = std::chrono::system_clock::now();
-                XERR(pBuff, winW, winH);
+                switch(m_pointSize){
+                    case 1:  XERR1<1>(pBuff, winW, winH); break;
+                    case 2:  XERR1<2>(pBuff, winW, winH); break;
+                    case 3:  XERR1<3>(pBuff, winW, winH); break;
+                    case 4:  XERR1<4>(pBuff, winW, winH); break;
+                    case 5:  XERR1<5>(pBuff, winW, winH); break;
+                    case 6:  XERR1<6>(pBuff, winW, winH); break;
+                    case 7:  XERR1<7>(pBuff, winW, winH); break;
+                }
+               
                 auto after = std::chrono::system_clock::now();
                 m_postTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
             }
@@ -520,6 +530,49 @@ namespace ezp
             }
         }
 #endif
+        template <unsigned int M>
+        void XERR1(unsigned int *pBuff, int winW, int winH){
+            //static const int  nsz1 = 3;
+            uint32_t minZ[16];
+            uint32_t minC[16];
+            for(int m = 0; m<M; m++) minZ[m] = -1;
+            for (int y = 0; y < winH-M; y++) {
+                for(int xt = 0; xt<M; xt++){
+                    for(int yt = 0; yt<M; yt++){
+                        int ad = xt + yt * m_canvasW;
+                        if(m_frbuff[ad] <minZ[xt]) minZ[xt] = m_frbuff[ad];
+                    }
+                }
+                int cnt = 0;
+                for (int x = 0,n = 0; x < winW-M; x++, n++){
+                    int dst = x + y * m_canvasW;
+                    uint32_t zm = -1;
+                    uint32_t min_col = m_colorBuff[dst];
+                    int ad = x + M-1 + y * m_canvasW;
+                    for(int yt = y; yt<M+y; yt++){
+                        if(m_frbuff[ad] < zm) {
+                            zm = m_frbuff[ad];
+                            min_col  =  m_colorBuff[ad];
+                        }
+                        ad+=m_canvasW;
+                    }
+                    minZ[cnt] = zm;
+                    minC[cnt] =  min_col;
+                    uint32_t bz = minZ[0];
+                    uint32_t bc = minC[0];
+                    for(int m = 0; m<M; m++){
+                        if(minZ[m]<bz){
+                            bz = minZ[m];
+                            bc = minC[m];
+                        }
+                    }
+                    cnt++;
+                    if(cnt>=M) cnt = 0;
+                    uint8_t cndx = bc & 0xFF;
+                    pBuff[dst] = m_palGray[cndx];
+                }
+            } 
+        }
 
         void XERR(unsigned int *pBuff, int winW, int winH){
             static const int nsz = 3;
@@ -531,6 +584,7 @@ namespace ezp
                 }
             } 
         }
+
         void DbgShowFrameRate( int num_rnd,uint32_t rndMs){
             static unsigned char cnt = 0,nn =0;
             static std::chrono::time_point<std::chrono::system_clock> prev;

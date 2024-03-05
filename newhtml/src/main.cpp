@@ -51,7 +51,10 @@ extern "C" {
     }
  
     void MainLoop() {
-         if((gRenderEvent>0) || ( gAlwaysRender==1)){
+        static int cnt = 0;
+        cnt++;
+       // if(cnt &1) return;
+        if((gRenderEvent>0) || ( gAlwaysRender==1)){
             SDL_Rect srcRect, dstRect;
             unsigned char* pixels;
             int pitch;
@@ -107,6 +110,8 @@ extern "C" {
         gWinH = h > gCanvasH ? gCanvasH : h-gMenuShift;
         //printf("HelloC-- w=%d h=%d\n",gWinW,gWinH);
         gRenderEvent = 2;
+        //gWinW= gWinW;
+        //gWinH= gWinH;
         return 0;
     }
 
