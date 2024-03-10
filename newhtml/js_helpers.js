@@ -11,6 +11,7 @@ var gv = new GlobVars();
 
 var gCamRotCb;
 var gCamMoveCb;
+var gCamDbClickCB;
 var gUIChangeCB;
 var gIdChanged = "unknown"
 
@@ -139,6 +140,11 @@ class ProscessEventsClass {
     onMouseClick(e) {
     }
 
+    onDbClick(e){
+        console.log("DBclick: x= " + e.clientX + " y="+e.clientY);
+        gCamDbClickCB(e.clientX,e.clientY);
+    }
+
     onMouseDown(e) {
         this.mouseOn = 1;
         this.posX = e.clientX;
@@ -236,6 +242,7 @@ function OnStart() {
     console.log("-OnStart-\n");
     gCamRotCb   = Module.cwrap('CameraRotateJS', 'number', 'number', 'number', 'number',['number']);
     gCamMoveCb  = Module.cwrap('CameraMoveJS', 'number', ['number','number']);
+    gCamDbClickCB = Module.cwrap('CameraMoveDbClickJS', 'number', ['number','number']);
     gUIChangeCB = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas, false);
@@ -248,6 +255,7 @@ function OnStart() {
     el.addEventListener('mousedown', (event) => { ProcessEvents.onMouseDown(event); }, false);
     el.addEventListener('mousewheel', (event) => { ProcessEvents.onMouseWheel(event); }, false);
     el.addEventListener('wheel', (event) => { ProcessEvents.onWheel(event); }, false);
+    el.addEventListener('dblclick', (event) => { ProcessEvents.onDbClick(event); }, false);
 
     const color = document.getElementById("bkcolor");
     color.addEventListener('input', function(e) {OnBkhanged(e);});

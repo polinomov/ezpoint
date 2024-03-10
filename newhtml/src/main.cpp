@@ -212,8 +212,14 @@ extern "C" {
             }
         }
         if((lr !=0 ) || (td!=0)){
-            gRenderEvent = 2;	
+            gRenderEvent = 1;	
         }
+        return 0;
+    }
+
+    int CameraMoveDbClickJS(int xval, int yval){
+        ezp::Renderer::Get()->SetDbClickEvent( (uint32_t)xval, (uint32_t) yval-gMenuShift);
+        gRenderEvent = 1;
         return 0;
     }
 
@@ -223,7 +229,7 @@ extern "C" {
         pCam->MoveLeftOrRight(-sx);
         float sy= (float)yval;
         pCam->MoveUpOrDown(-sy);
-        gRenderEvent = 2;	
+        gRenderEvent = 1;	
         return 0;
     }
 

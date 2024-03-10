@@ -100,6 +100,10 @@ namespace ezp
         void GetRight( float &x, float &y, float &z){
             x = m_R[0]; y = m_R[1]; z = m_R[2];
         }
+        void GetPivot( float &x, float &y, float &z){
+            x = m_L[0]; y = m_L[1]; z = m_L[2];
+        }
+
 
         void SetWorldUpAxis(float x, float y, float  z) {
             m_worldUp[0] = x;

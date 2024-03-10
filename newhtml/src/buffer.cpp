@@ -66,6 +66,9 @@ namespace ezp
         uint32_t m_postTime;
         uint32_t m_totalRdPoints;
         uint32_t m_renderAll;
+        bool m_hasDbClick;
+        uint32_t m_bdClickX;
+        uint32_t m_bdClickY;
         char m_outsrt[1024];
  
         void Init(int canvasW, int canvasH){
@@ -81,6 +84,7 @@ namespace ezp
             m_sceneSize = 1;
             m_dbgFlf = false;
             m_zmax = m_zmin = 0.0f;
+            m_hasDbClick = false;
             ezp::UI *pUI = ezp::UI::Get();
             m_bkcolor = pUI->GetBkColor();
             m_pointSize = pUI->GetPtSize();
@@ -163,6 +167,36 @@ namespace ezp
         void SetRenderAll( uint32_t val){
             m_renderAll = val;
         }
+        void SetDbClickEvent( uint32_t x, uint32_t y){
+            m_bdClickX = x;
+            m_bdClickY = y;
+            m_hasDbClick = true;
+//            std::cout<<"DbClick: "<<x<<" "<<y<<std::endl;
+        }
+
+        void MoveCameraOnDbClick(){
+            uint32_t addr = m_bdClickX + m_canvasW *m_bdClickY;
+            uint64_t ptPtr = m_auxBuff[addr];
+            if(ptPtr != -1){
+                FPoint4 pos,piv;
+                Camera *pCam = Camera::Get();
+                pCam->GetPivot(piv.x,piv.y,piv.z);
+                pCam->GetPos(pos.x,pos.y,pos.z);
+                FPoint4 *pT  = (FPoint4*)ptPtr;
+                float dx = pT->x - piv.x;
+                float dy = pT->y - piv.y;
+                float dz = pT->z - piv.z;
+                pCam->SetPos(pos.x + dx,pos.y + dy,pos.z + dz);
+                pCam->SetPivot(pT->x,pT->y,pT->z);
+                UI::Get()->SetRenderEvent(2);
+                //printf("pr= %f,%f,%f,%xd\n",pT->x,pT->y,pT->z,pT->col);
+               // printf("piv= %f,%f,%f\n",pP[0],pP[1],pP[2]);
+            }
+            else{
+                printf("****\n");
+            }
+ 
+        }
 
         void BuildProjMatrix(int sw, int sh,float atanRatio ){
             Camera *pCam = Camera::Get();
@@ -206,7 +240,7 @@ namespace ezp
             CNorm[4].z = -pD[2];
         }
 
-       
+        //template <unsigned int M>
         static void RenderChunks(int sw, int sh,RendererImpl *rp){
             FrBuff tbuff[16];
             Camera *pCam = Camera::Get();
@@ -341,8 +375,10 @@ namespace ezp
                             uint32_t pr1 = ~pr;
                             *pAddr = (zi & pr) + (zb & pr1);
                             *pColAddr =  ( pV4->col & pr) + (colOld & pr1);
-                            //uint64_t oldPt = pPoint[dst];
-                            // pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
+                            if(rp->m_hasDbClick){
+                                uint64_t oldPt = pPoint[dst];
+                                pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
+                            }
                         }
                     }
                     pV4++;
@@ -387,7 +423,8 @@ namespace ezp
                     p32[dst] = 0xFFFFFFFF;
                     m_colorBuff[dst] = 0;//m_bkcolor;
                 }
-             }
+            }
+            memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
             m_palGray[0] = m_bkcolor;
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
@@ -404,6 +441,12 @@ namespace ezp
                 auto after = std::chrono::system_clock::now();
                 rndMs = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
             }
+            if(m_hasDbClick){
+                if((m_bdClickX<m_canvasW )&&(m_bdClickY<m_canvasH)){
+                    MoveCameraOnDbClick();
+                }
+                m_hasDbClick = false;
+            }
             // postprocess
             {
                 auto before = std::chrono::system_clock::now();
@@ -411,7 +454,7 @@ namespace ezp
                     case 1:  XERR1<1>(pBuff, winW, winH); break;
                     case 2:  XERR1<2>(pBuff, winW, winH); break;
                     case 3:  XERR1<3>(pBuff, winW, winH); break;
-                    case 4:  XERR1<4>(pBuff, winW, winH); break;
+                    case 4:  XERR1<4>(pBuff, winW, winH); break;       
                     case 5:  XERR1<5>(pBuff, winW, winH); break;
                     case 6:  XERR1<6>(pBuff, winW, winH); break;
                     case 7:  XERR1<7>(pBuff, winW, winH); break;
@@ -569,7 +612,9 @@ namespace ezp
                     cnt++;
                     if(cnt>=M) cnt = 0;
                     uint8_t cndx = bc & 0xFF;
-                    pBuff[dst] = m_palGray[cndx];
+                    pBuff[dst] =  (bz==0xFFFFFFFF)?  m_bkcolor: m_palGray[cndx];
+                    //uint8_t col8 = (bc & 0x0000FF00)>>8;
+                    //pBuff[dst] =  (bz==0xFFFFFFFF)?  m_bkcolor: m_palClass[col8];
                 }
             } 
         }

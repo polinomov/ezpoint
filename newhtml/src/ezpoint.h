@@ -47,6 +47,7 @@ namespace ezp
 		virtual void GetDir( float &x, float &y, float &z) = 0;
 		virtual void GetUp( float &x, float &y, float &z) = 0;
 		virtual void GetRight( float &x, float &y, float &z) = 0;
+		virtual void GetPivot( float &x, float &y, float &z)  = 0;
 		virtual void ReSet() = 0;
 		virtual void SetPos(float *v) = 0;
 	    virtual void SetPos(float x, float y, float  z) = 0;
@@ -92,6 +93,7 @@ namespace ezp
 		virtual void SetDebugParam(int val) = 0;
 		virtual void SetColorMode( uint32_t val) = 0;
 		virtual void SetRenderAll( uint32_t val) = 0;
+		virtual void SetDbClickEvent( uint32_t x, uint32_t y) = 0;
 		static Renderer* Get();
 	};
 

@@ -158,7 +158,7 @@ namespace ezp
             }
         }
         for( int n = 0; n<256; n++){
-            std::cout<<"["<<n<<"]"<<classHist[n]<<std::endl;
+           // std::cout<<"["<<n<<"]"<<classHist[n]<<std::endl;
         }
 
         FBdBox Res;
