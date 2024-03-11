@@ -42,8 +42,8 @@ namespace ezp
 
     struct RendererImpl : public Renderer
     {
-        uint32_t *m_frbuff;
-        uint32_t *m_colorBuff;
+        uint64_t *m_frbuff;
+       // uint32_t *m_colorBuff;
         uint64_t *m_auxBuff;
         int m_canvasW, m_canvasH;
         float m_atanRatio;
@@ -75,11 +75,11 @@ namespace ezp
             m_canvasW = canvasW;
             m_canvasH = canvasH;
             m_auxBuff = new uint64_t[canvasW *canvasH];
-            m_frbuff  = new uint32_t[canvasW *canvasH + 128];
+            m_frbuff  = new uint64_t[canvasW *canvasH + 128];
             uint64_t addr = (uint64_t)m_frbuff;
             addr = (addr +128) &(~127);
-            m_frbuff =(uint32_t*)addr;//new float[pBf[i]*4];
-            m_colorBuff = new uint32_t[canvasW *canvasH];
+            m_frbuff =(uint64_t*)addr;//new float[pBf[i]*4];
+            //m_colorBuff = new uint32_t[canvasW *canvasH];
             m_showfr = false;
             m_sceneSize = 1;
             m_dbgFlf = false;
@@ -356,16 +356,13 @@ namespace ezp
                         int x = (int) (swf + res[0]/res[2] );
                         int y = (int) (shf + res[1]/res[2] );                             
                         int dst = x + y * canvas_w;
-                        uint32_t *pAddr = m_frbuff + dst;
-                        uint32_t *pColAddr = m_colorBuff + dst;
-                        uint32_t colOld  = pColAddr[0];
+                        uint64_t *pAddr = m_frbuff + dst;
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
-                            uint32_t zb = pAddr[0];
-                            uint32_t zi = (uint32_t)(res[2]);
-                            uint32_t pr = (zi<zb)? -1:0;
-                            uint32_t pr1 = ~pr;
+                            uint64_t zb = pAddr[0];
+                            uint64_t zi = (((uint64_t)(res[2]*1024.0f))<<32) | pV4->col ;
+                            uint64_t pr = (zi<zb)? -1L:0;
+                            uint64_t pr1 = ~pr;
                             *pAddr = (zi & pr) + (zb & pr1);
-                            *pColAddr =  ( pV4->col & pr) + (colOld & pr1);
                             if(rp->m_hasDbClick){
                                 uint64_t oldPt = m_auxBuff[dst];
                                 m_auxBuff[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
@@ -407,15 +404,21 @@ namespace ezp
             static int val = 0;
             static FPoint4 pt4;
             uint64_t addrd = (uint64_t)(&pt4);
-            uint32_t *p32 = (uint32_t*)m_frbuff;
+            uint64_t *p32 = (uint64_t*)m_frbuff;
+            #if 0
    	        for (int y = 0; y < winH; y++) {
                 for (int x = 0; x < winW; x++) {
                     int dst = x + y * m_canvasW;
-                    p32[dst] = 0xFFFFFFFF;
+                    //p32[dst] = 0xFFFFFFFF;
                     m_colorBuff[dst] = 0;//m_bkcolor;
                 }
             }
-            memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+            #endif
+
+            memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+            if(m_hasDbClick){
+                memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+            }
             m_palGray[0] = m_bkcolor;
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
@@ -566,9 +569,7 @@ namespace ezp
 #endif
         template <unsigned int M>
         void XERR1(unsigned int *pBuff, int winW, int winH){
-            //static const int  nsz1 = 3;
-            uint32_t minZ[16];
-            uint32_t minC[16];
+            uint64_t minZ[16];
             for(int m = 0; m<M; m++) minZ[m] = -1;
             for (int y = 0; y < winH-M; y++) {
                 for(int xt = 0; xt<M; xt++){
@@ -580,30 +581,25 @@ namespace ezp
                 int cnt = 0;
                 for (int x = 0,n = 0; x < winW-M; x++, n++){
                     int dst = x + y * m_canvasW;
-                    uint32_t zm = -1;
-                    uint32_t min_col = m_colorBuff[dst];
+                    uint64_t zm = -1L;
                     int ad = x + M-1 + y * m_canvasW;
                     for(int yt = y; yt<M+y; yt++){
                         if(m_frbuff[ad] < zm) {
                             zm = m_frbuff[ad];
-                            min_col  =  m_colorBuff[ad];
                         }
                         ad+=m_canvasW;
                     }
                     minZ[cnt] = zm;
-                    minC[cnt] =  min_col;
-                    uint32_t bz = minZ[0];
-                    uint32_t bc = minC[0];
+                    uint64_t bz = minZ[0];
                     for(int m = 0; m<M; m++){
                         if(minZ[m]<bz){
                             bz = minZ[m];
-                            bc = minC[m];
                         }
                     }
                     cnt++;
                     if(cnt>=M) cnt = 0;
-                    uint8_t cndx = bc & 0xFF;
-                    pBuff[dst] =  (bz==0xFFFFFFFF)?  m_bkcolor: m_palGray[cndx];
+                    uint8_t cndx = bz & 0xFF;
+                    pBuff[dst] =  (bz==-1L)?  m_bkcolor: m_palGray[cndx];
                     //uint8_t col8 = (bc & 0x0000FF00)>>8;
                     //pBuff[dst] =  (bz==0xFFFFFFFF)?  m_bkcolor: m_palClass[col8];
                 }
@@ -615,8 +611,8 @@ namespace ezp
             for (int y = 0; y < winH; y++) {
                 for (int x = 0,n = 0; x < winW; x++, n++){
                     int dst = x + y * m_canvasW;
-                    uint8_t cndx = m_colorBuff[dst] & 0xFF;
-                    pBuff[dst] = m_palGray[cndx];
+                   // uint8_t cndx = m_colorBuff[dst] & 0xFF;
+                   // pBuff[dst] = m_palGray[cndx];
                 }
             } 
         }
