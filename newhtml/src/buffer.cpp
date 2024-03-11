@@ -241,7 +241,7 @@ namespace ezp
         }
 
         //template <unsigned int M>
-        static void RenderChunks(int sw, int sh,RendererImpl *rp){
+        void RenderChunks(int sw, int sh,RendererImpl *rp){
             FrBuff tbuff[16];
             Camera *pCam = Camera::Get();
             float pP[3],pD[3];
@@ -334,23 +334,17 @@ namespace ezp
             float swf = (float)sw *0.5f;
             float shf = (float)sh *0.5f;
             rp->m_visPoints= 0;
-            uint32_t *pDstB = rp->m_frbuff;
-            uint32_t *pColBuff = rp->m_colorBuff;
-            uint64_t *pPoint = rp->m_auxBuff;
-
             for( int m = 0; m<chunks.size()-1; m++) {
                 if(chunks[m]->numToRender<=1) continue;
-                  FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
+                FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
                 __m128 xss = _mm_set1_ps(pV4->x);
                 __m128 yss = _mm_set1_ps(pV4->y);
                 __m128 zss = _mm_set1_ps(pV4->z);
-                 const float zmf =  rp->m_zmin;
+                const float zmf =  rp->m_zmin;
                 const float zprd = rp->m_zprd;
                 const int canvas_w = rp->m_canvasW;
                 int addr_max = rp->m_canvasW*rp->m_canvasH;
-                //int numV = chunks[m]->numVerts;
                 int numV = chunks[m]->numToRender;
-               // uint32_t color,color_old = 0;
                 rp->m_visPoints+=numV-1;
                 for( int i = 0; i<numV-1; i++){  
                     float res[4];
@@ -362,13 +356,10 @@ namespace ezp
                         int x = (int) (swf + res[0]/res[2] );
                         int y = (int) (shf + res[1]/res[2] );                             
                         int dst = x + y * canvas_w;
-                        //int dst = (x&msk) + ((y&msk) * canvas_w);
-                        uint32_t *pAddr = pDstB + dst;
-                        uint32_t *pColAddr = pColBuff + dst;
+                        uint32_t *pAddr = m_frbuff + dst;
+                        uint32_t *pColAddr = m_colorBuff + dst;
                         uint32_t colOld  = pColAddr[0];
                         if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
-                           // uint32_t color= pV4->col;
-                           // uint32_t color_old= pColAddr[0] ;
                             uint32_t zb = pAddr[0];
                             uint32_t zi = (uint32_t)(res[2]);
                             uint32_t pr = (zi<zb)? -1:0;
@@ -376,8 +367,8 @@ namespace ezp
                             *pAddr = (zi & pr) + (zb & pr1);
                             *pColAddr =  ( pV4->col & pr) + (colOld & pr1);
                             if(rp->m_hasDbClick){
-                                uint64_t oldPt = pPoint[dst];
-                                pPoint[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
+                                uint64_t oldPt = m_auxBuff[dst];
+                                m_auxBuff[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
                             }
                         }
                     }
