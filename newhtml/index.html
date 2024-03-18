@@ -99,6 +99,7 @@
 <body>
    <div class="navbar" >
         <div class="dropdown">
+            <!-- file -->
             <input type="file" class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
             <button class="dropbtn" id="fbtn" onclick="myFunction('fbtn','fileDropdown')">File</button>
             <div class="dropdown-content" id="fileDropdown">
@@ -106,13 +107,14 @@
                 <button type="button"  class="thebutton">Load Http</button>
                 <button type="button"  class="thebutton">Sample</button>
             </div>
-
+            <!-- camera -->
             <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
             <div class="dropdown-content" id="cameraDropdown">
-                <button class="thebutton">Reset</button>
-                <small class="thetext1">Orthographic</small>
-                <input type="checkbox"  title="Orthographic" id="camOrto" />
+                <button class="thebutton" id="camReset" onclick="OnUIEvent1(this)">Reset </button>
+                <small  class="thetext1"  id="camOr"    onclick="OnUIEvent1(this)">Orthographic</small>
+                <input type="checkbox"    id="camOrto"  onclick="OnUIEvent1(this)" title="Orthographic" id="camOrto" />
             </div>
+             <!-- colors -->
             <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">Colors</button>
             <div class="dropdown-content" id="viewDropdown">
                 <div style="color:0x333; height:5px;" ></div>

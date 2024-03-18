@@ -121,8 +121,8 @@ extern "C" {
         unsigned char* p8 = (unsigned char*)pData;		
         float* pF = (float*)pData;
         int numFloats = sz/sizeof(float);
-        sprintf(ts,"Done Reading sz= %d ",numFloats);
-        OutLine(ts);
+       // sprintf(ts,"Done Reading sz= %d ",numFloats);
+        //OutLine(ts);
         ezp::Scene *pSc = ezp::Scene::Get();
         pSc->SetFileImage(pData, sz, type);
 #if 0
@@ -133,7 +133,7 @@ extern "C" {
             float x_min = std::min(x_min,pF[k]);
             sprintf(ts,"processing %d from %d",k,numVerts);
             if(( k& 0xFFFF) ==0 ){
-                OutLine(ts);
+               // OutLine(ts);
                 emscripten_sleep(1);
             }
             //break;
@@ -182,7 +182,7 @@ extern "C" {
 
     int OnUIChangeJS(int el, int value){ 
         char *pRet =  emscripten_run_script_string("GetUIString()");
-       // std::cout<<"UI:"<<pRet<<" val="<<value<<std::endl;
+        std::cout<<"UI:"<<pRet<<" val="<<value<<std::endl;
         ezp::UI::Get()->OnUIEvent(pRet,value);
         return 0;
     }
@@ -260,6 +260,8 @@ namespace ezp
             m_strToId["colclassId"] = UICOLOR_CLASS;
             m_strToId["colmix"] = UICOLOR_MIX;
             m_strToId["rdAll"] = UIRENDER_ALL;
+            m_strToId["camReset"] = UICAM_RESET;
+            m_strToId["camOrto"] = UICAM_ORTO;
         }
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");
@@ -298,12 +300,11 @@ namespace ezp
         void OnUIEvent(const char *pEvent, int val){
 
             if(pEvent==NULL) return;
-            std::cout<<"OnUIEvent:"<<pEvent<<" val="<<val<<std::endl;
+            //std::cout<<"OnUIEvent:"<<pEvent<<" val="<<val<<std::endl;
             auto u_iter = m_strToId.find(pEvent);
             if( u_iter == m_strToId.end()){
                 return;
             }
-            //std::cout<<"OnUIEvent "<<u_iter->second<<std::endl;
             switch(u_iter->second){
                 case UIFOV:
                     ezp::Renderer::Get()->SetFov(val);
@@ -335,7 +336,12 @@ namespace ezp
                 case UIRENDER_ALL:
                     ezp::Renderer::Get()->SetRenderAll((uint32_t)val);
                 break;
-
+                case UICAM_RESET:
+                   ezp::Scene::Get()->SetCamera();
+                break;
+                case UICAM_ORTO:
+                   ezp::Scene::Get()->SetCameraOrto();
+                break;
                 default:
                     std::cout<<"UNKNOWN"<<std::endl;
                 break;

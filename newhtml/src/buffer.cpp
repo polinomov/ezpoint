@@ -55,6 +55,7 @@ namespace ezp
         uint32_t m_palGray[256];
         uint32_t m_palHMap[256];
         uint32_t m_palClass[256];
+        uint32_t m_UniPal[16][256];
         int m_sceneSize;
         float m_zmax;
         float m_zmin;
@@ -113,7 +114,22 @@ namespace ezp
             m_palClass[5] = 0x90FF90;
             m_palClass[6] = 0xFF0000;
             m_palClass[9] = 0xFF;
+            
+            for(int i =0; i<16; i++){
+                uint32_t cc = m_palClass[i];
+                float rr = (float)(cc&0xFF);
+                float gg = (float)((cc&0xFF00)>>8);
+                float bb = (float)((cc&0xFF0000)>>16);
+                for(int k = 0; k<256; k++){
+                    float prd = (float)k/255.9f;
+                    float rf = rr*prd;
+                    float gf = gg*prd;
+                    float bf = bb*prd;
+                    m_UniPal[i][k] = (uint8_t)rf | (((uint8_t)gf)<<8) | (((uint8_t)bf)<<16);;
+               }
+            }
         }
+       
 #if 0
         void TestSimd(){
              float va[4] = {1.0f,2.0f,3.0f,4.0f};
@@ -419,7 +435,7 @@ namespace ezp
             if(m_hasDbClick){
                 memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
             }
-            m_palGray[0] = m_bkcolor;
+            //m_palGray[0] = m_bkcolor;
            
             BuildProjMatrix(winW,winH,  m_atanRatio);
             m_sceneSize = Scene::Get()->GetSize();
@@ -598,10 +614,9 @@ namespace ezp
                     }
                     cnt++;
                     if(cnt>=M) cnt = 0;
-                    uint8_t cndx = bz & 0xFF;
-                    pBuff[dst] =  (bz==-1L)?  m_bkcolor: m_palGray[cndx];
-                    //uint8_t col8 = (bc & 0x0000FF00)>>8;
-                    //pBuff[dst] =  (bz==0xFFFFFFFF)?  m_bkcolor: m_palClass[col8];
+                    uint8_t cndx = bz & 0xFF;  
+                    uint8_t clc  = ((bz & 0xFF00)>>8) & 0xF; 
+                    pBuff[dst] =  (bz==-1L)?  m_bkcolor:m_UniPal[clc][cndx];
                 }
             } 
         }

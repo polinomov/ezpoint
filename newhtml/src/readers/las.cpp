@@ -239,6 +239,7 @@ namespace ezp
         // Fill chunks
         //
         pS = pSrc;
+        int ptf = (int)lh->pointDataFormatId;
         for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength){
             PointFormat1 *pf1 = (PointFormat1*)pS;
             float xf = (float)(pf1->x )*float(lh->xScale) + lh->xOffset;
@@ -256,7 +257,7 @@ namespace ezp
                     pPoint[chk->aux].y = yf;
                     pPoint[chk->aux].z = zf;
                     // colors
-                   if((int)lh->pointDataFormatId==6){
+                   if((ptf==6)||(ptf==7)){
                         PointFormat6 *pt6 = (PointFormat6*)pS;
                         Point6Flags flg = pt6->flg;
                         //edgeOfFlight
@@ -327,45 +328,6 @@ namespace ezp
             //pIntens[c] += 1.0f;
         }
     }
-    // Process intensity data
-    static void ProcessIntens( float *pIntens, int num, float &min, float &max ){
-        float sum = 0.0f;
-        for( int i = 0; i<num; i++) sum+=pIntens[i];
-        int first = 0, last = num-1;
-        float sums = sum*0.9f;
-        float tot = 0.0f,tot_prev = 0.0f;
-        for( int i = 0; i<num; i++){
-            /*
-            tot+=pIntens[i];
-             if( i>0){
-                if((tot_prev < sum*0.33f) && (tot>=sum*0.33f)){
-                    first = i;   
-                }
-                if((tot_prev < sum*0.66f) && (tot>=sum*0.66f)){
-                    last = i;   
-                }
-
-            }
-            tot_prev = tot;
-            */
-            
-            if(pIntens[first]<pIntens[last]){
-                sum-=pIntens[first];
-                first++;
-            }
-            else{
-                sum-=pIntens[last];
-                last--;
-            }
-            if((sum<sums) || ( last<=first)){
-                break;
-            }
-            
-
-        }
-        min = (float)first/(float)num;
-        max = (float)last/(float)num;
-    }
 
    // void ApplyIntems(FPoint4 *pDst,int numPoints, float min, float max){
     void ApplyIntems(std::vector<std::shared_ptr<Chunk>> &chs, float min, float max){
@@ -393,7 +355,7 @@ namespace ezp
         }
     }
 
-    FBdBox ReadLasFile( void *pData, std::size_t sz,int &numPt,std::vector<std::shared_ptr<Chunk>> &chOut){
+    FBdBox ReadLasFile( void *pData, std::size_t sz,int &numPt,std::vector<std::shared_ptr<Chunk>> &chOut,LasInfo &Info){
         std::cout<<"=== READING LAS ==="<<std::endl;
         FBdBox retBox;
         //auto ch = std::make_shared<Chunk>();
@@ -451,6 +413,10 @@ namespace ezp
            // ApplyIntems(chOut,min, max);
         }
         numPt = numPoints;
+        Info.vMajor = vMajor;
+        Info.vMinor = vMinor;
+        Info.numPoints = numPoints;
+        Info.vertType =  ptFormat;
         return retBox; 
     }
 

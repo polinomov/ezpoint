@@ -35,7 +35,8 @@ function OnMouseMove(e) {
 }
 
 function OnFileSelected(input) {
-    document.getElementById('GFG').innerHTML = 'Reading: ' + input.files[0].name;
+    //document.getElementById('GFG').innerHTML = 'Reading: ' + input.files[0].name;
+    document.getElementById('GFG').innerHTML = 'Reading ... '
     var file = input.files[0];
     if (!file) {
         console.log("NO FILE");

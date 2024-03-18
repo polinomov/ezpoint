@@ -2,6 +2,7 @@
 #include <iostream>
 #include "ezpoint.h"
 #include "readers\readers.h"
+#include <string>
 
 namespace ezp 
 {
@@ -24,6 +25,9 @@ namespace ezp
         }
   
         void SetCamera(){
+            if(m_allChunks.size() == 0){
+                return;
+            }
             float pos[3],dim[3];
             dim[0] = m_box.xMax - m_box.xMin;
             dim[1] = m_box.yMax - m_box.yMin;
@@ -51,6 +55,8 @@ namespace ezp
             m_size = std::max(m_size,m_box.yMax-m_box.yMin);
             m_size = std::max(m_size,m_box.zMax-m_box.zMin);
         }
+
+        void SetCameraOrto(){}
  
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {
@@ -63,12 +69,18 @@ namespace ezp
                 return;
             }
             if(fType==1){  //las
+                LasInfo lasInf;
                 pUI->SetColorModeState(-1, false);
-                m_box  = ReadLasFile( pData, sz,numPt,m_allChunks); 
+                m_box  = ReadLasFile( pData, sz,numPt,m_allChunks,lasInf); 
                 if(m_allChunks.size() >0){
                     SetCamera();
                 }
                 pUI->SetColorModeState(COLOR_INTENS|COLOR_HMAP, true);
+                std::string msg = std::string("Las: ") +  
+                                  std::to_string(lasInf.vMajor)+ std::string(".")+
+                                  std::to_string(lasInf.vMinor) +
+                                  std::string(" v=")+ std::to_string(lasInf.vertType);
+                pUI->PrintMessage(msg.c_str());
             }
             if(m_allChunks.size() >0){
                 m_pChAuxPos  = new FPoint4[m_allChunks.size()];
@@ -79,7 +91,7 @@ namespace ezp
                     m_pChPos[i].z = m_allChunks[i]->cz;
                 }
             }
-            UI::Get()->SetRenderEvent(100);
+            UI::Get()->SetRenderEvent(20);
         }
 
         FPoint4* GetChunkPos(){

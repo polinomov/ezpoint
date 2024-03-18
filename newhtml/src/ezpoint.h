@@ -25,7 +25,9 @@ namespace ezp
 			UICOLOR_RGB,
 			UICOLOR_HMAP,
 			UICOLOR_MIX,
-			UIRENDER_ALL
+			UIRENDER_ALL,
+			UICAM_RESET,
+			UICAM_ORTO
 		};
 
 		virtual void PrintMessage( const char *pMsg) = 0;
@@ -77,6 +79,8 @@ namespace ezp
 		virtual void GetZMax(float &zmin, float &zmax) = 0;
 		virtual FPoint4* GetChunkPos() = 0;
 		virtual FPoint4* GetChunkAuxPos() = 0;
+		virtual void SetCamera() = 0;
+	    virtual void SetCameraOrto() = 0;
 		static Scene *Get();
 	};
 
