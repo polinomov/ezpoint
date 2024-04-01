@@ -11,12 +11,14 @@
 namespace ezp
 {
     //  0x000000FF -blue ,0x0000FF00- green, 0x00FF0000- red
+    /*
     static uint32_t classColors[16]={
         0x0000FF00,0x0000FF80,0x00FF0000,0x0080FF00,
         0x000000FF,0x000000FF,0x000000FF,0x000000FF,
         0x00FF0000,0x00FF0000,0x00FF0000,0x00FF0000,
         0x0000FFFF,0x0000FFFF,0x0000FFFF,0x0000FFFF
      };
+     */
 
     #pragma pack (1)
     struct LasHeader
@@ -109,6 +111,58 @@ namespace ezp
         uint8_t classification;   
     };
 
+    #pragma pack (1)
+    struct PointFormat7
+    {
+        int32_t x;
+        int32_t y;
+        int32_t z;
+        uint16_t intensity;
+        uint16_t flg;
+        uint8_t classification;   
+        uint8_t userData;   
+        int16_t scanAngle;   
+        uint16_t pointSourceId; 
+        double gpsTime;
+        uint16_t red; 
+        uint16_t green; 
+        uint16_t blue; 
+    };
+
+    bool ptHasColor( int ptf){
+        if((ptf==7)||(ptf==3)) return true;
+        return false;
+    }
+    bool ptHasClass( int ptf){
+        if((ptf==7)||(ptf==6)) return true;
+        return false;
+    }
+
+    uint32_t ptGetClass( int ptf,void *pt){
+        if((ptf==7)||(ptf==6)){
+            PointFormat6 *pt6 = (PointFormat6*)pt;
+            Point6Flags flg = pt6->flg;
+            uint8_t c2 = pt6->classification;
+            return c2;
+        }
+        return 0;
+    }
+
+    void ptGetColor( uint16_t &r,uint16_t &g,uint16_t &b, int ptType,void *pt ){
+        if(ptType==7){
+            PointFormat7 *p7 = (PointFormat7*)pt;
+            r = p7->red;
+            g = p7->green;
+            b = p7->blue;
+        }
+        if(ptType==3){
+            PointFormat3 *p3 = (PointFormat3*)pt;
+            r = p3->red;
+            g = p3->green;
+            b = p3->blue;
+        }
+    }
+
     static uint32_t GetNdx(uint32_t ssz,float val,float valMin, float delta){
         int32_t ndx= (int32_t)((float)ssz*(val -valMin)/delta);
         if(ndx<0) ndx = 0;
@@ -120,24 +174,34 @@ namespace ezp
         std::vector<std::shared_ptr<Chunk>> &chOut){
 
         int ptFormat = (int)lh->pointDataFormatId;
-        if(ptFormat == 6){
-            std::cout<<"PTIS6"<<std::endl;
-        }
-        else{
-            std::cout<<"PT="<<ptFormat<<std::endl;
-        }
+        bool hasClass = ptHasClass(ptFormat);
+        bool hasColor = ptHasColor(ptFormat);
     
         unsigned char *pS = pSrc;
         //float *itmp_16 = new float[256*256];
         std::unique_ptr<float[]> itmp_16(new float[256*256]);
-        for(int i= 0; i<256*256; i++) itmp_16[i] = 0.0f;
+        std::unique_ptr<float[]> r_16(new float[256*256]);
+        std::unique_ptr<float[]> g_16(new float[256*256]);
+        std::unique_ptr<float[]> b_16(new float[256*256]);
+        uint16_t rMin,gMin,bMin; 
+        uint16_t rMax,gMax,bMax;
+        rMin=gMin=bMin = 0xFFFF;
+        rMax=gMax=bMax = 0;
+        for(int i= 0; i<256*256; i++){
+            r_16[i] = 0;
+            g_16[i] = 0;
+            b_16[i] = 0;
+            itmp_16[i] = 0.0f;
+        }
         int32_t xmin,xmax,ymin,ymax,zmin,zmax;
         xmin = ymin = zmin  = INT_MAX;
         xmax = ymax = zmax  = INT_MIN;
         uint16_t intens_max = 0;
         uint16_t intens_min = 0xFFFF;
         uint32_t classHist[256];
-        for( int n = 0; n<256; n++) classHist[n] = 0;
+        for( int n = 0; n<256; n++) {
+            classHist[n] = 0;
+        }
         for(int i = 0; i< numPoints; i++,pS+=lh->poitDataRecordLength){
             PointFormat1 *pf1 = (PointFormat1*)pS;
             xmin = std::min(pf1->x,xmin);
@@ -152,15 +216,27 @@ namespace ezp
             uint8_t c = (uint8_t)(vf*255.0f);
             pIntens[c] += 1.0f;
             itmp_16[pf1->intensity] += 1.0f;
+            if(hasColor){
+                uint16_t rr,gg,bb;
+                ptGetColor( rr,gg,bb, ptFormat,pf1);
+                rMin  = std::min(rMin,rr);
+                rMax  = std::max(rMax,rr);
+                gMin  = std::min(gMin,gg);
+                gMax  = std::max(gMax,gg);
+                bMin  = std::min(bMin,bb);
+                bMax  = std::max(bMax,bb);
+                r_16[rr] += 1.0f;
+                g_16[gg] += 1.0f;
+                b_16[bb] += 1.0f;
+            }
             if((int)lh->pointDataFormatId==6){
                 PointFormat6 *pt6 = (PointFormat6*)pS;
                 classHist[pt6->classification]++;
             }
         }
-        for( int n = 0; n<256; n++){
-           // std::cout<<"["<<n<<"]"<<classHist[n]<<std::endl;
+        if(hasColor){
+            printf("---- rMin=%d rMax=%d gMin=%d gMax = %d bMin = %d bMax = %d\n", rMin,rMax,gMin,gMax,bMin,bMax);
         }
-
         FBdBox Res;
         Res.xMin = (float)xmin * float(lh->xScale) + lh->xOffset;
         Res.yMin = (float)ymin * float(lh->yScale) + lh->yOffset;
@@ -172,14 +248,28 @@ namespace ezp
         std::cout<<"Y:"<<Res.yMin<<":"<<Res.yMax<<std::endl;
         std::cout<<"Z:"<<Res.zMin<<":"<<Res.zMax<<std::endl;
         std::cout<<"IMIN="<<intens_min<<" IMAX="<<intens_max<<std::endl;
-        float s = itmp_16[0];
+       // normalize colors
         for( int i =1; i<256*256; i++){
-            s+=itmp_16[i];
-            itmp_16[i] = s;
+            itmp_16[i] +=  itmp_16[i-1];
+            r_16[i] += r_16[i-1];
+            g_16[i] += g_16[i-1];
+            b_16[i] += b_16[i-1];
         }
         for( int i =0; i<256*256; i++){
-            itmp_16[i] *= (255.0f/s);
+            if( itmp_16[256*256-1]>0.f){
+                itmp_16[i] *= (255.0f/itmp_16[256*256-1]);
+            }
+            if( r_16[256*256-1]>0.f){
+                r_16[i] *= (31.0f/r_16[256*256-1]);
+            }
+            if( g_16[256*256-1]>0.f){
+                g_16[i] *= (31.0f/g_16[256*256-1]);
+            }
+            if( b_16[256*256-1]>0.f){
+                b_16[i] *= (31.0f/b_16[256*256-1]);
+            }
         }
+
         //
         // Allocate temp array to collect chunks
         //
@@ -257,21 +347,22 @@ namespace ezp
                     pPoint[chk->aux].y = yf;
                     pPoint[chk->aux].z = zf;
                     // colors
-                   if((ptf==6)||(ptf==7)){
-                        PointFormat6 *pt6 = (PointFormat6*)pS;
-                        Point6Flags flg = pt6->flg;
-                        //edgeOfFlight
-                        uint16_t c1 = pf1->intensity;
-                        uint8_t c = (uint8_t)itmp_16[c1]; 
-                        if(flg.edgeOfFlight) c = 255;
-                        uint8_t c2 = pt6->classification;
-                        pPoint[chk->aux].col = c | (c2<<8) ;
+                    uint8_t cint = 0, cls = 0;
+                    uint16_t col16 = 0;
+                    uint16_t c1 = pf1->intensity;
+                    cint = (uint8_t)itmp_16[c1]; 
+                    if(hasClass){
+                         cls = (uint8_t)ptGetClass(ptFormat,pS); 
                     }
-                    else{
-                        uint16_t c1 = pf1->intensity;
-                        uint8_t c = (uint8_t)itmp_16[c1]; 
-                        pPoint[chk->aux].col = c |(c<<8)|(c<<16)|(c<<24);
+                    if(hasColor){
+                        uint16_t rv,gv,bv;
+                        ptGetColor( rv,gv,bv,ptFormat, pS);
+                        uint8_t r8 = (rv>>3) & 0x1f;
+                        uint8_t g8 = (gv>>3) & 0x1f;
+                        uint8_t b8 = (bv>>3) & 0x1f;
+                        col16  = r8 | (g8<<5) | (b8<<10);
                     }
+                    pPoint[chk->aux].col = cint | (cls<<8) | (col16<<16);
                     chk->aux++;
                 }
                 else{

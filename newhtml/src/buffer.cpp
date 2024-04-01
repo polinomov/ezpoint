@@ -56,6 +56,7 @@ namespace ezp
         uint32_t m_palHMap[256];
         uint32_t m_palClass[256];
         uint32_t m_UniPal[16][256];
+        uint32_t m_pal16[256*256];
         int m_sceneSize;
         float m_zmax;
         float m_zmin;
@@ -106,14 +107,18 @@ namespace ezp
                 }
                 m_palClass[i] = 0xFFFFFFFF;
             }
+            
             m_palClass[0] = 0xFFFFFFFF;
-            m_palClass[1] = 0xFF00;
-            m_palClass[2] = 0xFFFF00;
-            m_palClass[3] = 0x00FF10;
-            m_palClass[4] = 0x40FF40;
-            m_palClass[5] = 0x90FF90;
-            m_palClass[6] = 0xFF0000;
-            m_palClass[9] = 0xFF;
+            m_palClass[1] = 0xFF00FF00;
+            m_palClass[2] = 0xFFFFFF00; //ground
+            m_palClass[3] = 0xFF008000; //low v
+            m_palClass[4] = 0xFF00A000; //med v
+            m_palClass[5] = 0xFF20FF20; // high v
+            m_palClass[6] = 0xFFFF0000; // building
+            m_palClass[7] = 0xFF808080; //Noise
+            m_palClass[8] = 0xFF808080; //Model Key
+            m_palClass[9] = 0xFF0000FF; // Water
+            
             
             for(int i =0; i<16; i++){
                 uint32_t cc = m_palClass[i];
@@ -127,6 +132,23 @@ namespace ezp
                     float bf = bb*prd;
                     m_UniPal[i][k] = (uint8_t)rf | (((uint8_t)gf)<<8) | (((uint8_t)bf)<<16);;
                }
+            }
+            buildPal16();
+        }
+
+        void buildPal16(){
+            uint16_t msk1= 0x001f;
+            uint16_t msk2= 0x03E0;
+            uint16_t msk3= 0xF800;
+            printf(" msk %x %x %x\n", msk1,msk2,msk3);
+            for( uint32_t t = 0; t<256*256; t++){
+                uint8_t r = ((t & msk1)) *8 ;
+                uint8_t g = ((t & msk2)>>5) *8;
+                uint8_t b = ((t & msk3)>>10) *8 ;
+                m_pal16[t] = b | (g<<8) |(r<<16);
+                if( t==msk2){
+                  printf(" ---t=%x  r=%x g=%x b=%x PAL=%x\n",t,r,g*8,b,m_pal16[t]);
+                }
             }
         }
        
@@ -509,80 +531,8 @@ namespace ezp
             if(m_showfr){
                 DbgShowFrameRate(m_visPoints,rndMs);  
             }         
-        }
-        
-#if 1  
-        template <unsigned int M>
-        void PostProcess(unsigned int *pBuff, int winW, int winH, int N){
-            uint32_t pTmp[N*N];
-            uint64_t pV[N*N];
- 
-            for (int y = 0; y < winH-N; y++) {
+        }  
 
-                for(int i =0; i<N;  i++){
-                    for(int j =0; j<N; j++){
-                        int addr = 0 +i + (y+j)*m_canvasW;
-                        int k = j + i*N;
-                        pTmp[k]  = m_frbuff[addr];
-                        pV[k]  = m_auxBuff[addr];
-                    }
-                }
-                int column = N-1; 
-		        for (int x = 0; x < winW-N; x++) {
-                    int dst = x + y * m_canvasW;
-                    uint32_t z_min = m_frbuff[dst];
-                    uint64_t v_min = m_auxBuff[dst];
-                    
-                    for(int j =0; j<N; j++){
-                        int addr = x + (y+j)*m_canvasW;
-                        int k = j + column*N;
-                        pTmp[k]  = m_frbuff[addr];
-                        pV[k]  = m_auxBuff[addr];
-                    }
-                    column++;
-                    if( column==N) column = 0;
-                   
-                    for(int i =0; i<N;  i++){
-                        for(int j =0; j<N; j++){
-                            int k = j + i*N;
-                            if(pTmp[k]<z_min) {
-                                z_min = pTmp[k];
-                                v_min = pV[k];
-                            }
-                        }
-                    }
-                   uint8_t coli = z_min & 0xFF;
-                    if( z_min == 0xFFFFFFFF){
-                        pBuff[dst] = m_bkcolor;
-                    }else{
-                        FPoint4 *pV4  = (FPoint4*)v_min;
-                        if(m_frbuff[dst] != 0xFFFFFFFF){
-                           //pV4  = (FPoint4*) m_auxBuff[dst];
-                        }
- 
-                        if(M==0){ //:UICOLOR_INTENS
-                            uint8_t col8 = pV4->col & 0x000000FF;
-                            pBuff[dst] = m_palGray[col8];
-                        }
-                        if(M==1){ //UI::UICOLOR_CLASS
-                            uint8_t col8 = (pV4->col & 0x0000FF00)>>8;
-                            pBuff[dst] = m_palClass[col8];
-                        }
-                        if(M==2){ //UI::UICOLOR_MIX
-                            float coli = (float(pV4->col & 0x000000FF))/255.9f;
-                            uint8_t col8 = (pV4->col & 0x0000FF00)>>8;
-                            uint32_t cc = m_palClass[col8];
-                            float rr = coli*(float)(cc&0xFF);
-                            float gg = coli*(float)((cc&0xFF00)>>8);
-                            float bb = coli*(float)((cc&0xFF0000)>>16);
-                            pBuff[dst] = (uint8_t)rr | (((uint8_t)gg)<<8) | (((uint8_t)bb)<<16);
-                        }
-                       // pBuff[dst] = m_palGray[coli];
-                    }
-                }
-            }
-        }
-#endif
         template <unsigned int M>
         void XERR1(unsigned int *pBuff, int winW, int winH){
             uint64_t minZ[16];
@@ -613,10 +563,15 @@ namespace ezp
                         }
                     }
                     cnt++;
-                    if(cnt>=M) cnt = 0;
+                    if(cnt>=M) cnt = 0;                   
                     uint8_t cndx = bz & 0xFF;  
                     uint8_t clc  = ((bz & 0xFF00)>>8) & 0xF; 
                     pBuff[dst] =  (bz==-1L)?  m_bkcolor:m_UniPal[clc][cndx];
+                    /*
+                    uint16_t ndx16 = bz >>16;  
+                    uint32_t c16 = m_pal16[ndx16];
+                    pBuff[dst] =  (bz==-1L)?  m_bkcolor:c16;
+                    */
                 }
             } 
         }
