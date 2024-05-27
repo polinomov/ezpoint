@@ -385,6 +385,7 @@ namespace ezp
         return Res;
     }
 
+#if 0
     static void FillXYZ(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh ){
         unsigned char *pS = pSrc;
         FPoint4 *pD = (FPoint4*)pDst;
@@ -445,6 +446,7 @@ namespace ezp
             }
         }
     }
+    #endif
 
     FBdBox ReadLasFile( void *pData, std::size_t sz,int &numPt,std::vector<std::shared_ptr<Chunk>> &chOut,LasInfo &Info){
         std::cout<<"=== READING LAS ==="<<std::endl;

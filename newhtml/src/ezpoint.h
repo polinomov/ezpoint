@@ -27,7 +27,8 @@ namespace ezp
 			UICOLOR_MIX,
 			UIRENDER_ALL,
 			UICAM_RESET,
-			UICAM_ORTO
+			UICAM_ORTO,
+			UIDATA_SAMPLE
 		};
 
 		virtual void PrintMessage( const char *pMsg) = 0;

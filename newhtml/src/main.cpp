@@ -191,7 +191,7 @@ extern "C" {
         static const float PI = 3.1415f;
         ezp::Camera *pCam = ezp::Camera::Get();
         ezp::Scene *pSc = ezp::Scene::Get();
-        float scaleShift = pSc->GetSize()*0.01f;
+        float scaleShift = 0.1f;
         float shift = (float)val * 2.0f * PI/10000.0f;
         if(lr==1){
             pCam->RotRight(shift);
@@ -262,6 +262,7 @@ namespace ezp
             m_strToId["rdAll"] = UIRENDER_ALL;
             m_strToId["camReset"] = UICAM_RESET;
             m_strToId["camOrto"] = UICAM_ORTO;
+            m_strToId["SampleId"] = UIDATA_SAMPLE;
         }
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");
@@ -300,7 +301,7 @@ namespace ezp
         void OnUIEvent(const char *pEvent, int val){
 
             if(pEvent==NULL) return;
-            //std::cout<<"OnUIEvent:"<<pEvent<<" val="<<val<<std::endl;
+            std::cout<<"OnUIEvent:"<<pEvent<<" val="<<val<<std::endl;
             auto u_iter = m_strToId.find(pEvent);
             if( u_iter == m_strToId.end()){
                 return;
@@ -341,6 +342,9 @@ namespace ezp
                 break;
                 case UICAM_ORTO:
                    ezp::Scene::Get()->SetCameraOrto();
+                break;
+                case UIDATA_SAMPLE:
+                   ezp::Scene::Get()->BuildTest(0);
                 break;
                 default:
                     std::cout<<"UNKNOWN"<<std::endl;

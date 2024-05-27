@@ -563,15 +563,18 @@ namespace ezp
                         }
                     }
                     cnt++;
-                    if(cnt>=M) cnt = 0;                   
+                    if(cnt>=M) cnt = 0;   
+                                  
                     uint8_t cndx = bz & 0xFF;  
                     uint8_t clc  = ((bz & 0xFF00)>>8) & 0xF; 
                     pBuff[dst] =  (bz==-1L)?  m_bkcolor:m_UniPal[clc][cndx];
+                    
                     /*
                     uint16_t ndx16 = bz >>16;  
                     uint32_t c16 = m_pal16[ndx16];
                     pBuff[dst] =  (bz==-1L)?  m_bkcolor:c16;
                     */
+                    
                 }
             } 
         }

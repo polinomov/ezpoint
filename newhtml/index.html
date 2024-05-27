@@ -104,8 +104,8 @@
             <button class="dropbtn" id="fbtn" onclick="myFunction('fbtn','fileDropdown')">File</button>
             <div class="dropdown-content" id="fileDropdown">
                 <button type="button"  onclick="OnFileOpen()"class="thebutton">Load Local File</button>
-                <button type="button"  class="thebutton">Load Http</button>
-                <button type="button"  class="thebutton">Sample</button>
+                <button type="button"  class="thebutton" disabled="true">Load Http1</button>
+                <button type="button" id="SampleId"  onclick="OnSampleLoad()" class="thebutton">SampleZ</button>
             </div>
             <!-- camera -->
             <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
@@ -115,7 +115,7 @@
                 <input type="checkbox"    id="camOrto"  onclick="OnUIEvent1(this)" title="Orthographic" id="camOrto" />
             </div>
              <!-- colors -->
-            <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">Colors</button>
+            <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">View</button>
             <div class="dropdown-content" id="viewDropdown">
                 <div style="color:0x333; height:5px;" ></div>
                 <label for="colrgb" class="thelabel"><input type="radio" name="grp1" value="0" id="colrgbId" class="theradio" onclick="OnUIEvent1(this)">rgb</label><br>
@@ -145,7 +145,7 @@
             <small class="thetext">DrawAll:</small>
             <input type="checkbox"  title="Render All" id="rdAll"  onchange="OnUIEvent1(this)"/>
 
-            <input type="color" title="Background Color" id="bkcolor" value="#0780AA">
+            <input type="color" title="Background Color" id="bkcolor" value="#808080">
             <small id="GFG" class="thetext"> </small>
            </div> 
     </div>

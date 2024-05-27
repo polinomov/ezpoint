@@ -2,7 +2,6 @@
 #include <iostream>
 #include "ezpoint.h"
 
-
 namespace ezp 
 {
     struct vector3 {
@@ -162,11 +161,18 @@ namespace ezp
             RotAroudHor(-val);
         }
 
+        float GetDistance(){
+            vector3 T = m_P - m_L;
+            return sqrt(T*T);
+        }
+
         virtual void ZoomIn( float val){
-            m_P = m_P + (m_D * val);
+            float sh = val * GetDistance();
+            m_P = m_P + (m_D * sh);
         }
         virtual void ZoomOut( float val){
-            m_P = m_P - (m_D * val);
+            float sh = val * GetDistance();
+            m_P = m_P - (m_D * sh);
         }
 
         void MoveLeftOrRight( float val){

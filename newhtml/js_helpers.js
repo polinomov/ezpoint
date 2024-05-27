@@ -67,6 +67,37 @@ function OnFileSelected(input) {
     reader.readAsArrayBuffer(input.files[0]);
 }
 
+function OnSampleLoad(){
+    console.log("-OnSampleLoad-");
+    //const req = new XMLHttpRequest();
+    //req.open("GET", "https://drive.google.com/file/d/1HYSlnX1xQ79pwgYSU50yz7uguVv9iSpb/view?usp=sharing");
+    //req.open("GET", "/sample.las", true);
+    /*
+    req.responseType = "arraybuffer";
+     req.onload = (event) => {
+        const arrayBuffer = req.response; // Note: not req.responseText
+        if (arrayBuffer) {
+            const byteArray = new Uint8Array(arrayBuffer);
+                console.log(" here byteArray" + byteArray.length)
+                byteArray.forEach((element, index) => {
+             });
+        }
+    };
+    req.send();
+    */
+   /*
+    req.onload = function() {
+        var content = req.responseText;
+        console.log(" Download Size" + content.length);
+         console.log("Yes Download " + content);
+    };
+    req.onerror = function() {
+        alert("Download failure.");
+    };
+    req.send();
+    */
+}
+
 function OnFileOpen() {
     document.getElementById('attachment').click();
 }
@@ -113,6 +144,23 @@ function OnUIEvent1(input){
         gUIChangeCB(123,document.getElementById(input.id).checked );
     }else{
         gUIChangeCB(123, document.getElementById(input.id).value);
+    }
+    // gray out some UI elements
+    if( input.id == "camOrto"){
+        fovEl = document.getElementById("fovVal");
+        if(document.getElementById(input.id).checked==true){
+            fovEl.setAttribute("disabled", true);
+        }else{
+            fovEl.removeAttribute('disabled');
+        }
+    }
+    if( input.id == "rdAll"){
+        budgetEl = document.getElementById("budVal");
+        if(document.getElementById(input.id).checked==true){
+            budgetEl.setAttribute("disabled", true);
+        }else{
+            budgetEl.removeAttribute('disabled');
+        }
     }
 }
 
