@@ -136,29 +136,12 @@ namespace ezp
                 if(zz < zmin) zmin = zz;
             }
         }
-        static void EMSCRIPTEN_KEEPALIVE  downloadSucceeded(emscripten_fetch_t *fetch) {
-            printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
-            // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-            ezp::Scene::Get()->SetFileImage( (void*)fetch->data, fetch->numBytes,1); 
-            emscripten_fetch_close(fetch); // Free data associated with the fetch.
-        }
 
-        static void downloadFailed(emscripten_fetch_t *fetch) {
-            printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
-            emscripten_fetch_close(fetch); // Also free data on failure.
-        }
-
-        void EMSCRIPTEN_KEEPALIVE  BuildTest( int n) {
-            std::cout<<"BuildTest--"<<std::endl;
-            emscripten_fetch_attr_t attr;
-            emscripten_fetch_attr_init(&attr);
-            strcpy(attr.requestMethod, "GET");
-            attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-            attr.onsuccess = downloadSucceeded;
-            attr.onerror = downloadFailed;
-            emscripten_fetch_t  *ft = emscripten_fetch(&attr, "https://drive.google.com/file/d/1HYSlnX1xQ79pwgYSU50yz7uguVv9iSpb/view?usp=sharing");
-           // for( int i = 0; i<1000000; i++){}
-            std::cout<<"DoneTest--status="<< ft->status<<std::endl;
+        void  BuildTest( int n) {
+            std::cout<<"---BuildTest--"<<std::endl;
+            void *pData = GenerateSampleLas();
+            std::size_t sz;
+            SetFileImage( pData, sz, 1); 
         }
 
     }; //SceneImpl

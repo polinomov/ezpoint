@@ -17,6 +17,7 @@ namespace ezp
 
     FPoint4* BuildTestScene(int &numPoints);
     FBdBox ReadLasFile( void *pData, std::size_t sz, int &numPt,std::vector<std::shared_ptr<Chunk>> &chOut,LasInfo &li);
+    void* GenerateSampleLas();
 }
 
 #endif

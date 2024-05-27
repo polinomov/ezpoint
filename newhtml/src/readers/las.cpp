@@ -385,70 +385,7 @@ namespace ezp
         return Res;
     }
 
-#if 0
-    static void FillXYZ(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh ){
-        unsigned char *pS = pSrc;
-        FPoint4 *pD = (FPoint4*)pDst;
-        for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength,pD++)
-        {
-            PointFormat1 *pf1 = (PointFormat1*)pS;
-            pD->x = (float)(pf1->x )*float(lh->xScale) + lh->xOffset;
-            pD->y = (float)(pf1->y )*float(lh->yScale) + lh->yOffset;
-            pD->z = (float)(pf1->z )*float(lh->zScale) + lh->zOffset;
-            float vf = (float)(pf1->intensity)/(256.0f*256.0f);
-            uint8_t c = (uint8_t)(vf*255.0f);
-            pD->col = c<<24;
-           // pIntens[c] += 1.0f;
-        }
-    }
-
-    static void FillXYZ3(unsigned char *pSrc,FPoint4 *pDst,int numPoints, const LasHeader *lh){
-        unsigned char *pS = pSrc;
-        FPoint4 *pD = (FPoint4*)pDst;
-        for(int i = 0; i<numPoints; i++,pS+=lh->poitDataRecordLength,pD++)
-        {
-            PointFormat3 *pf3 = (PointFormat3*)pS;
-            pD->x = (float)(pf3->x )*float(lh->xScale) + lh->xOffset;
-            pD->y = (float)(pf3->y )*float(lh->yScale) + lh->yOffset;
-            pD->z = (float)(pf3->z )*float(lh->zScale) + lh->zOffset;
-            float vf = (float)(pf3->intensity)/(256.0f*256.0f);
-            uint8_t c = (uint8_t)(vf*255.0f);
-            uint8_t r = pf3->red;
-            uint8_t g = pf3->green;
-            uint8_t b = pf3->blue;
-            pD->col = b | (g<<8) | (r<<16);
-            //pIntens[c] += 1.0f;
-        }
-    }
-
-   // void ApplyIntems(FPoint4 *pDst,int numPoints, float min, float max){
-    void ApplyIntems(std::vector<std::shared_ptr<Chunk>> &chs, float min, float max){
-        float var1 = 0.1f;
-        float var2 = 0.7f;
-        float prd1 = (min>0.0f) ? var1/min : 0.0f;
-        float prd2 = (max<1.0f) ? (1.0f-var2)/(1.0f-max) : 0.0f;
-        float prd3 = (var2- var1)/(max-min);
-        for(int k = 0; k<chs.size(); k++) {
-            FPoint4 *pD = (FPoint4*)chs[k]->pVert;
-            for(int i = 0; i<chs[k]->numVerts; i++,pD++) {
-                uint8_t cin = pD->col>>24;
-                float vf = ((float)(cin))/256.0f;
-                float vf1;
-                if(vf < min){
-                    vf1 = vf * prd1;
-                }else if( vf > max){
-                    vf1 = var2 +(vf-max)*prd2;
-                }else{
-                    vf1 = var1 + (vf-min)*prd3;
-                }
-                uint8_t c = (uint8_t)(vf1 * 255.0f);
-                pD->col = c|(c<<8)|(c<<16)|(c<<24);
-            }
-        }
-    }
-    #endif
-
-    FBdBox ReadLasFile( void *pData, std::size_t sz,int &numPt,std::vector<std::shared_ptr<Chunk>> &chOut,LasInfo &Info){
+    FBdBox ReadLasFile( void *pData, std::size_t sz_,int &numPt,std::vector<std::shared_ptr<Chunk>> &chOut,LasInfo &Info){
         std::cout<<"=== READING LAS ==="<<std::endl;
         FBdBox retBox;
         //auto ch = std::make_shared<Chunk>();
@@ -462,6 +399,7 @@ namespace ezp
             std::cout<<"wrong magic:"<<magic<<std::endl;
             return retBox;
         }
+
         int vMajor = (int)lh->verMajor;
         int vMinor = (int)lh->verMinor;
         int ptFormat = (int)lh->pointDataFormatId;
@@ -511,6 +449,43 @@ namespace ezp
         Info.numPoints = numPoints;
         Info.vertType =  ptFormat;
         return retBox; 
+    }
+
+    void* GenerateSampleLas(){
+        uint32_t sx = 1024, sy = 1024;
+        uint32_t totSize = sizeof(LasHeader) + (sx*sy)*sizeof(PointFormat3);
+        uint8_t *pD = new uint8_t[totSize];
+        LasHeader *pLh = (LasHeader*)pD;
+        memset(pLh,0,sizeof(LasHeader));
+        const char *magic = "LASF";
+        memcpy(pLh->magic,magic,4) ;
+        pLh->verMajor = 1;
+        pLh->verMinor = 4;
+        pLh->pointDataFormatId = 3;
+        pLh->poitDataRecordLength = sizeof(PointFormat3);
+        pLh->pointOfst = sizeof(LasHeader);
+        pLh->numOfPointRecords14 = sx*sy;
+        pLh->xScale = 10.0f;
+        pLh->yScale = 10.0f;
+        pLh->zScale = 10.0f;
+        pLh->xOffset = 0.0f;
+        pLh->yOffset = 0.0f;
+        pLh->zOffset = 0.0f;
+
+        PointFormat3 *pt = (PointFormat3*)(pD+sizeof(LasHeader));
+        for( int y = 0; y<sy; y++){
+            for( int x = 0; x<sx; x++){
+              pt->x= (float)x;
+              pt->y= (float)y;
+              pt->z = (x&1)? 1.0f : -1.0f;
+              pt->intensity= (x>y) ? x: y;
+              pt->red = 255;
+              pt->green = 255;
+              pt->blue = 255;
+              pt++;  
+            }
+        }
+        return pD;
     }
 
  }//namespace ezp
