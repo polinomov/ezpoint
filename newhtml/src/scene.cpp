@@ -139,9 +139,10 @@ namespace ezp
 
         void  BuildTest( int n) {
             std::cout<<"---BuildTest--"<<std::endl;
-            void *pData = GenerateSampleLas();
+            uint8_t *pData = GenerateSampleLas();
             std::size_t sz;
             SetFileImage( pData, sz, 1); 
+            delete []pData;
         }
 
     }; //SceneImpl

@@ -451,9 +451,27 @@ namespace ezp
         return retBox; 
     }
 
-    void* GenerateSampleLas(){
-        uint32_t sx = 1024, sy = 1024;
-        uint32_t totSize = sizeof(LasHeader) + (sx*sy)*sizeof(PointFormat3);
+    static void Sphere(PointFormat3* pt, int num, float rad, int x, int y, int z )
+    {
+        srand(12345);
+        for( int i = 0; i<num ; i++){
+            float rx = -0.499f + (double)rand()/(double)RAND_MAX;
+            float ry = -0.499f + (double)rand()/(double)RAND_MAX;
+            float rz = -0.499f + (double)rand()/(double)RAND_MAX;
+            float flen = rad/sqrt(rx*rx + ry*ry + rz*rz);
+            pt[i].x = ((float)x + rx*flen ) *100;
+            pt[i].y = ((float)y + ry*flen ) *100;
+            pt[i].z = ((float)z + rz*flen ) *100;
+            pt[i].intensity= (uint16_t)((rz+ 0.5f) * 255.0f);
+            pt[i].red = 255;
+            pt[i].green = 255;
+            pt[i].blue = 255;
+        }
+    }
+
+    uint8_t* GenerateSampleLas(){
+        uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
+        uint32_t totSize = sizeof(LasHeader) + (sx*sy*sfPoints)*sizeof(PointFormat3);
         uint8_t *pD = new uint8_t[totSize];
         LasHeader *pLh = (LasHeader*)pD;
         memset(pLh,0,sizeof(LasHeader));
@@ -464,26 +482,19 @@ namespace ezp
         pLh->pointDataFormatId = 3;
         pLh->poitDataRecordLength = sizeof(PointFormat3);
         pLh->pointOfst = sizeof(LasHeader);
-        pLh->numOfPointRecords14 = sx*sy;
+        pLh->numOfPointRecords14 = sx*sy*sfPoints;
         pLh->xScale = 10.0f;
         pLh->yScale = 10.0f;
         pLh->zScale = 10.0f;
         pLh->xOffset = 0.0f;
         pLh->yOffset = 0.0f;
         pLh->zOffset = 0.0f;
-
         PointFormat3 *pt = (PointFormat3*)(pD+sizeof(LasHeader));
         for( int y = 0; y<sy; y++){
             for( int x = 0; x<sx; x++){
-              pt->x= (float)x;
-              pt->y= (float)y;
-              pt->z = (x&1)? 1.0f : -1.0f;
-              pt->intensity= (x>y) ? x: y;
-              pt->red = 255;
-              pt->green = 255;
-              pt->blue = 255;
-              pt++;  
-            }
+                Sphere(pt, sfPoints, 0.4f, x, y, 0);
+                pt += sfPoints;  
+             }
         }
         return pD;
     }
