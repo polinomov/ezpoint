@@ -35,41 +35,105 @@ function OnMouseMove(e) {
 }
 
 function OnFileSelected(input) {
-    //document.getElementById('GFG').innerHTML = 'Reading: ' + input.files[0].name;
     document.getElementById('GFG').innerHTML = 'Reading ... '
     var file = input.files[0];
     if (!file) {
         console.log("NO FILE");
         return;
     }
+    var readMemBlock = null;
+    var chunkSz_ = 1024*1024;
+    var currSz_ = 0;
     var ext = input.files[0].name.split('.').pop();
-    console.log("YES FILE size=" + input.files[0].size + " ext=" + ext);
-    var fz = input.files[0].size;
-    var reader = new FileReader();
-    reader.onload = function (e) {
-        var data = reader.result;
-        var array = new Uint8Array(data);
-        var res_ptr = Module._malloc(fz);
-        Module.HEAPU8.set(array, res_ptr);
-        file_cb = Module.cwrap('FileBinDataJS', 'number', ['arrayPointer', 'number', 'number'], { async: true });
-        switch (ext) {
-            case "xyz": file_cb(res_ptr, fz, 0); break;
-            case "las": file_cb(res_ptr, fz, 1); break;
-        }
-        Module._free(res_ptr);
-    };
-    reader.onloadend = function (e) {
-        console.log("load done");
+    var totSz_ = input.files[0].size;
+    if(totSz_>=2147483648){
+        alert('File exceeds size limit');
+        return;
     }
-    reader.onerror = function (e) {
+    console.log("##### Reading file size ###### " + totSz_);
+    load_file_cb = Module.cwrap('LoadFileDataJS', 'number', ['arrayPointer', 'number', 'number'], { async: true });
+    var s_ptr = Module._malloc(1);
+    load_file_cb(s_ptr, 0, totSz_/2);
+
+    var readerOnLoad = function (e) {      
+        var data = e.target.result;
+        var dtsize = e.target.result.byteLength;
+        console.log("#### Reading -->>>>>>>>> " + dtsize);
+        var array = new Uint8Array(data);
+        var res_ptr = Module._malloc(dtsize);
+        Module.HEAPU8.set(array, res_ptr);  
+        load_file_cb(res_ptr, 1, dtsize); // 1 =copy 
+        Module._free(res_ptr);
+        currSz_ +=  dtsize;
+        //load_file_cb(res_ptr, 2, totSz_);
+    };
+
+    var readerDoneLoad = function (e) {
+        if(currSz_ ==  totSz_){
+            console.log("#### load done currSz_ ="+ currSz_); 
+            var v_ptr = Module._malloc(1);
+            load_file_cb(v_ptr, 2, totSz_);
+        }else{
+            var nextPos = currSz_ + chunkSz_;
+            if( nextPos <= totSz_){
+                var rdp = Math.floor(100* currSz_/totSz_);
+                document.getElementById('GFG').innerHTML = "Reading " +  rdp + "%";
+                readMemBlock(currSz_,chunkSz_);
+            }else{
+                console.log("#### load last currSz_ ="+ currSz_); 
+                readMemBlock(currSz_, totSz_ - currSz_); 
+            }
+        }
+    }
+
+    var readerOnError = function (e) {
         console.log('Error : ' + e.type);
     };
-    reader.readAsArrayBuffer(input.files[0]);
+
+    readMemBlock = function(_offset, length){
+        var reader = new FileReader();
+        reader.onload = readerOnLoad;
+        reader.onloadend  = readerDoneLoad;
+        reader.onerror = readerOnError;    
+        //var blob = _file.slice(_offset, length + _offset);
+        var blob = input.files[0].slice(_offset, length + _offset);
+        reader.readAsArrayBuffer(blob);
+    }
+
+    //readMemBlock(currSz_,totSz_);
+    readMemBlock(currSz_, chunkSz_);
+  
 }
 
 function OnSampleLoad(){
     console.log("-OnSampleLoad-");
- 
+    //const req = new XMLHttpRequest();
+    //req.open("GET", "https://drive.google.com/file/d/1HYSlnX1xQ79pwgYSU50yz7uguVv9iSpb/view?usp=sharing");
+    //req.open("GET", "/sample.las", true);
+    /*
+    req.responseType = "arraybuffer";
+     req.onload = (event) => {
+        const arrayBuffer = req.response; // Note: not req.responseText
+        if (arrayBuffer) {
+            const byteArray = new Uint8Array(arrayBuffer);
+                console.log(" here byteArray" + byteArray.length)
+                byteArray.forEach((element, index) => {
+             });
+        }
+    };
+    req.send();
+    */
+   /*
+    req.onload = function() {
+        var content = req.responseText;
+        console.log(" Download Size" + content.length);
+         console.log("Yes Download " + content);
+    };
+    req.onerror = function() {
+        alert("Download failure.");
+    };
+    req.send();
+    */
 }
 
 function OnFileOpen() {

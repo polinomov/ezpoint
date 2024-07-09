@@ -128,7 +128,7 @@ extern "C" {
 #if 0
         int numVerts = numFloats/4;
         float x_min = pF[0];
-        for(int k = 0;k<numVerts;k+=4){
+     for(int k = 0;k<numVerts;k+=4){
             //std::cout <<"here---------"<<std::endl;
             float x_min = std::min(x_min,pF[k]);
             sprintf(ts,"processing %d from %d",k,numVerts);
@@ -143,9 +143,39 @@ extern "C" {
         return 0;
     }
 
-    void foo()
-    {
-      std::cout<<"OnThread"<<std::endl;
+    int LoadFileDataJS( void* pData, int action, int sz){
+        static uint8_t *pmem = NULL;
+        static uint32_t shift = 0; 
+        std::cout<<"--LoadFileDataJS-- "<<action<<" " <<sz<<std::endl;
+  
+        if(action == 0){
+            if( sz<=0){
+                emscripten_run_script("alert('Failed to allocate negative')");
+                return -1;
+            }
+            pmem = new uint8_t[sz*2];
+            if(pmem==NULL){
+                emscripten_run_script("alert('Failed to allocate memory')");
+                return -1;
+            }
+            std::cout<<"--LoadFileDataJS MEM ALLOC-- "<<action<<" " <<sz<<std::endl;
+            return 0;
+        }
+        if( action==1){
+            if(pmem){
+                memcpy(pmem + shift,pData,sz);
+                shift += sz;
+            }
+            return 0;
+        }
+        if( action==2){
+            if(pmem){
+                FileBinDataJS(pmem, sz, 1);
+            }
+            shift = 0;
+            return 0;
+        }
+        return 0;
     }
 
     int CallCFunc2(int w, int h) 
@@ -224,7 +254,7 @@ extern "C" {
     }
 
     int CameraMoveJS(int xval, int yval){
-        ezp::Camera *pCam = ezp::Camera::Get();
+     ezp::Camera *pCam = ezp::Camera::Get();
         float sx= (float)xval;
         pCam->MoveLeftOrRight(-sx);
         float sy= (float)yval;
@@ -234,7 +264,15 @@ extern "C" {
     }
 
     int  main() {
-       // printf("-----MAIN----\n");
+        /*
+        printf("-----MAIN----\n");
+        unsigned char *pMem = new unsigned char[3441664020];
+        if(pMem==NULL){
+             printf("-----Fail to alloc----\n");
+        }else{
+            printf("-----alloc OK----\n");
+        }
+        */
         OutLine("MAIN");
         InitSDL();
         SDL_DestroyRenderer(m_renderer);

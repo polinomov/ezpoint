@@ -447,8 +447,8 @@ namespace ezp
    	        for (int y = 0; y < winH; y++) {
                 for (int x = 0; x < winW; x++) {
                     int dst = x + y * m_canvasW;
-                    //p32[dst] = 0xFFFFFFFF;
-                    m_colorBuff[dst] = 0;//m_bkcolor;
+                    p32[dst] = 0xFFFFFFFF;
+                    //m_colorBuff[dst] = m_bkcolor;
                 }
             }
             #endif
@@ -464,6 +464,7 @@ namespace ezp
             Scene::Get()->GetZMax(m_zmin,m_zmax);
             if(m_zmax<=m_zmin){
                // PostProcess<0>(pBuff, winW, winH,1);
+                XERR1<1>(pBuff, winW, winH);
                 return;
             }
             uint32_t rndMs = 0;
