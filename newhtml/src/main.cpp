@@ -7,6 +7,8 @@
 #include <iostream>
 #include <thread>
 #include <emscripten.h>
+#include <stdio.h>
+#include <string.h>
 
 
 extern "C" {
@@ -15,7 +17,7 @@ extern "C" {
     SDL_Surface* surface;
     SDL_Texture* screenTexture;
     SDL_Texture* m_screenTexture;
-    int gCanvasW = 2048, gCanvasH = 1024;
+    int gCanvasW = 2048*2, gCanvasH = 1024;
     int gWinW = 1290, gWinH = 454;
     int gRenderEvent = 1;
     int gAlwaysRender = 0;
@@ -115,7 +117,7 @@ extern "C" {
         return 0;
     }
 
-    int FileBinDataJS(void* pData, int sz, int type) // JS call
+    int FileBinDataJS(void* pData, int sz, int type) 
     {
         static char ts[1024];
         unsigned char* p8 = (unsigned char*)pData;		
@@ -143,10 +145,20 @@ extern "C" {
         return 0;
     }
 
+extern "C" {
     int LoadFileDataJS( void* pData, int action, int sz){
         static uint8_t *pmem = NULL;
         static uint32_t shift = 0; 
-        std::cout<<"--LoadFileDataJS-- "<<action<<" " <<sz<<std::endl;
+        std::cout<<"==LoadFileDataJS== "<<action<<" " <<sz<<std::endl;
+
+        if( action == 10){
+            const char *pCmd= (char*)pData;
+            std::cout<<pCmd<<std::endl;
+            if ( !strncmp(pCmd,"hdrsz",5)){
+                return 555;
+            }            
+            return 123;
+        }
   
         if(action == 0){
             if( sz<=0){
@@ -177,6 +189,7 @@ extern "C" {
         }
         return 0;
     }
+}
 
     int CallCFunc2(int w, int h) 
     {

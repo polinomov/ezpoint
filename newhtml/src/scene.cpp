@@ -4,7 +4,7 @@
 #include "readers\readers.h"
 #include <string>
 #include <emscripten/fetch.h>
-
+#include "chunker.tpp"
 namespace ezp 
 {
     struct SceneImpl : public Scene

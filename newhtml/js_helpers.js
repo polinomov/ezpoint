@@ -52,13 +52,20 @@ function OnFileSelected(input) {
     }
     console.log("##### Reading file size ###### " + totSz_);
     load_file_cb = Module.cwrap('LoadFileDataJS', 'number', ['arrayPointer', 'number', 'number'], { async: true });
+
+    var s_tmp = Module._malloc(128);
+    array8 = new TextEncoder().encode("hdrsize");
+    Module.HEAPU8.set(array8, s_tmp); 
+    xaxa =load_file_cb(s_tmp, 10, 0); 
+    console.log("xoxo="+xaxa);
+
     var s_ptr = Module._malloc(1);
     load_file_cb(s_ptr, 0, totSz_/2);
 
     var readerOnLoad = function (e) {      
         var data = e.target.result;
         var dtsize = e.target.result.byteLength;
-        console.log("#### Reading -->>>>>>>>> " + dtsize);
+        //console.log("#### Reading -->>>>>>>>> " + dtsize);
         var array = new Uint8Array(data);
         var res_ptr = Module._malloc(dtsize);
         Module.HEAPU8.set(array, res_ptr);  
