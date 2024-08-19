@@ -395,7 +395,8 @@ namespace ezp
                    ezp::Scene::Get()->SetCameraOrto();
                 break;
                 case UIDATA_SAMPLE:
-                   ezp::Scene::Get()->BuildTest(0);
+                   //ezp::Scene::Get()->BuildTest(0);
+                   ezp::Scene::Get()->GenerateSample();
                 break;
                 default:
                     std::cout<<"UNKNOWN"<<std::endl;

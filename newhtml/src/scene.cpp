@@ -29,6 +29,7 @@ namespace ezp
             if(m_allChunks.size() == 0){
                 return;
             }
+            std::cout<<"== SetCamera === "<<std::endl;
             float pos[3],dim[3];
             dim[0] = m_box.xMax - m_box.xMin;
             dim[1] = m_box.yMax - m_box.yMin;
@@ -114,7 +115,7 @@ namespace ezp
         FBdBox GetBdBox(){
             return m_box;
         }
-
+#if 1
         void GetZMax(float &zmin, float &zmax){
             float pP[3],pD[3],x[8],y[8],z[8];
             Camera *pCam = Camera::Get();
@@ -136,6 +137,17 @@ namespace ezp
                 if(zz < zmin) zmin = zz;
             }
         }
+#endif
+        void onChunk(FPoint4*pt, int num){
+            static uint32_t stot = 0;
+            stot+=num;
+            //std::cout<<"=== onChunk === "<<num<< "tot="<<stot<<std::endl;
+            std::shared_ptr<Chunk> chk = std::make_shared<Chunk>();
+            chk->pVert = (float*)pt;
+            chk->numVerts = num;
+            chk->BuildBdBox();
+            m_allChunks.push_back(chk);
+        }
 
         void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z )
         {
@@ -148,43 +160,30 @@ namespace ezp
                 pt[i].x = ((float)x + rx*flen ) *100;
                 pt[i].y = ((float)y + ry*flen ) *100;
                 pt[i].z = ((float)z + rz*flen ) *100;
-                pt[i].intensity= (uint16_t)((rz+ 0.5f) * 255.0f);
-                pt[i].red = 255;
-                pt[i].green = 255;
-                pt[i].blue = 255;
+                pt[i].col = 0xF0FFFFF0;
             }
         }
-#if 0
-    uint8_t* GenerateSampleLas(){
-        uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
-        uint32_t totSize = sizeof(LasHeader) + (sx*sy*sfPoints)*sizeof(PointFormat3);
-        uint8_t *pD = new uint8_t[totSize];
-        LasHeader *pLh = (LasHeader*)pD;
-        memset(pLh,0,sizeof(LasHeader));
-        const char *magic = "LASF";
-        memcpy(pLh->magic,magic,4) ;
-        pLh->verMajor = 1;
-        pLh->verMinor = 4;
-        pLh->pointDataFormatId = 3;
-        pLh->poitDataRecordLength = sizeof(PointFormat3);
-        pLh->pointOfst = sizeof(LasHeader);
-        pLh->numOfPointRecords14 = sx*sy*sfPoints;
-        pLh->xScale = 10.0f;
-        pLh->yScale = 10.0f;
-        pLh->zScale = 10.0f;
-        pLh->xOffset = 0.0f;
-        pLh->yOffset = 0.0f;
-        pLh->zOffset = 0.0f;
-        PointFormat3 *pt = (PointFormat3*)(pD+sizeof(LasHeader));
-        for( int y = 0; y<sy; y++){
-            for( int x = 0; x<sx; x++){
-                Sphere(pt, sfPoints, 0.4f, x, y, 0);
-                pt += sfPoints;  
-             }
+
+        void GenerateSample(){
+            uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
+            uint32_t totPoints = sx*sy*sfPoints;
+            UI::Get()->PrintMessage("Sample");
+             UI::Get()->SetRenderEvent(1);
+            FPoint4* pv = new FPoint4[totPoints];  
+            FPoint4* pt = pv; 
+            for( int y = 0; y<sy; y++){
+                for( int x = 0; x<sx; x++){
+                    Sphere(pt, sfPoints, 0.4f, x, y, 0);
+                    pt += sfPoints;  
+                }
+            }            
+            m_box = getBdBox<FPoint4>(pv, 0, totPoints-1);
+            doChunks<FPoint4>(pv, 0, totPoints-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
+            SetCamera(); 
+            std::cout<<"=== done generating sample === "<<totPoints<< std::endl;  
+            UI::Get()->SetRenderEvent(20);
         }
-        return pD;
-    }
-#endif    
+  
         void  BuildTest( int n) {
             std::cout<<"---BuildTest--"<<std::endl;
             uint8_t *pData = GenerateSampleLas();
