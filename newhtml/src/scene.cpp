@@ -149,6 +149,14 @@ namespace ezp
             m_allChunks.push_back(chk);
         }
 
+        void addVertData(FPoint4* pt, int num){
+            m_box = getBdBox<FPoint4>(pt, 0, num-1);
+            doChunks<FPoint4>(pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
+            SetCamera(); 
+            std::cout<<"=== done generating sample === "<<num<< std::endl;  
+            UI::Get()->SetRenderEvent(20);
+        }
+
         void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z )
         {
             srand(12345);
@@ -168,7 +176,7 @@ namespace ezp
             uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
             uint32_t totPoints = sx*sy*sfPoints;
             UI::Get()->PrintMessage("Sample");
-             UI::Get()->SetRenderEvent(1);
+            UI::Get()->SetRenderEvent(1);
             FPoint4* pv = new FPoint4[totPoints];  
             FPoint4* pt = pv; 
             for( int y = 0; y<sy; y++){
@@ -176,22 +184,10 @@ namespace ezp
                     Sphere(pt, sfPoints, 0.4f, x, y, 0);
                     pt += sfPoints;  
                 }
-            }            
-            m_box = getBdBox<FPoint4>(pv, 0, totPoints-1);
-            doChunks<FPoint4>(pv, 0, totPoints-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
-            SetCamera(); 
-            std::cout<<"=== done generating sample === "<<totPoints<< std::endl;  
-            UI::Get()->SetRenderEvent(20);
-        }
-  
-        void  BuildTest( int n) {
-            std::cout<<"---BuildTest--"<<std::endl;
-            uint8_t *pData = GenerateSampleLas();
-            std::size_t sz;
-            SetFileImage( pData, sz, 1); 
-            delete []pData;
-        }
-
+            }  
+            addVertData(pv, totPoints);
+        }  
+ 
     }; //SceneImpl
 
     Scene* Scene::Get(){

@@ -9,6 +9,7 @@
 #include <emscripten.h>
 #include <stdio.h>
 #include <string.h>
+#include "readers\readers.h"
 
 
 extern "C" {
@@ -189,7 +190,29 @@ extern "C" {
         }
         return 0;
     }
+
+    int LoadFileDataLas(void* pData, void *pAction, int sz){
+        static ezp::LasBuilder *pLasBuilder = NULL;
+        if(pAction == NULL){
+            return 0;
+        }
+        const char *pCmd= (char*)pAction;
+        std::cout<<"LoadFileDataLas pCmd="<<pCmd<< " sz="<<sz<<std::endl;
+        if ( !strncmp(pCmd,"hdrsize",7)){
+            std::cout<<"LoadFileDataLas HeaderSize"<<std::endl;
+            pLasBuilder = ezp::LasBuilder::Get();
+            return  (int)pLasBuilder->GetHeaderSize();
+        }
+        
+        if ( !strncmp(pCmd,"datchunk",8)){
+            pLasBuilder->SetHeader(pData);
+            return 0;
+        }
+        
+        return 0;
+    }
 }
+
 
     int CallCFunc2(int w, int h) 
     {

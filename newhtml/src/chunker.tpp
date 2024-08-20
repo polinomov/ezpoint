@@ -1,10 +1,6 @@
 #include <iostream>
 #include <functional>
-//#include <type_traits>
-//#include <limits>
-//#include <numeric>
 static int depth = 0;
-
 
 template <class T>
 static ezp::FBdBox getBdBox(T* pVerts, uint32_t first, uint32_t last){
@@ -72,7 +68,8 @@ static uint32_t doPartition(T* pV , uint32_t first, uint32_t last, decltype(pV->
     return nl+first-1;
 }
 
-template <class T> void doChunks(T* pV, uint32_t first, uint32_t last, uint32_t chSz, std::function<void(T *pFirst,uint32_t n )>  onDone )
+template <class T> 
+void doChunks(T* pV, uint32_t first, uint32_t last, uint32_t chSz, std::function<void(T *pFirst,uint32_t n )>  onDone )
 {
     static_assert(std::is_same<decltype(pV->x), decltype(pV->y)>::value );
     static_assert(std::is_same<decltype(pV->x), decltype(pV->z)>::value );

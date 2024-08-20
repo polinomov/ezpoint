@@ -34,8 +34,75 @@ function OnMouseMove(e) {
     OnDraw();
 }
 
+
+function OnLoadLas(input) {
+    document.getElementById('GFG').innerHTML = 'Reading ... '
+    var file = input.files[0];
+    if (!file) {
+        console.log("NO FILE");
+        return;
+    }
+    var readMemBlock = null;
+    var chunkSz_ = 1024*1024;
+    var currSz_ = 0;
+    var ext = input.files[0].name.split('.').pop();
+    var totSz_ = input.files[0].size; 
+    console.log("##### Reading file size ###### " + totSz_);
+    load_file_cb = Module.cwrap('LoadFileDataLas', 'number', ['arrayPointer', 'arrayPointer', 'number'], { async: true });
+
+    var s_action = Module._malloc(128);
+    hdrsize8 = new TextEncoder().encode("hdrsize");
+    Module.HEAPU8.set(hdrsize8, s_action); 
+    chunkSz_ =load_file_cb(s_action, s_action, 0); 
+    console.log("hdrSz->"+chunkSz_);
+
+    var s_action_chunk = Module._malloc(128);
+    Module.HEAPU8.set(new TextEncoder().encode("datchunk"), s_action_chunk); 
+ 
+    var readerOnLoad = function (e) {      
+        var data = e.target.result;
+        var dtsize = e.target.result.byteLength;
+        console.log("#### Reading -->>>>>>>>> " + dtsize);
+        var array = new Uint8Array(data);
+        var res_ptr = Module._malloc(dtsize);
+        Module.HEAPU8.set(array, res_ptr);  
+        chunkSz_ = load_file_cb(res_ptr, s_action_chunk, dtsize); // 1 =copy 
+        Module._free(res_ptr);
+        currSz_ +=  dtsize;
+    };
+
+    var readerDoneLoad = function (e) {
+        if(chunkSz_=0){
+            return;
+        }
+    }
+
+    var readerOnError = function (e) {
+        console.log('Error : ' + e.type);
+    };
+
+    readMemBlock = function(_offset, length){
+        var reader = new FileReader();
+        reader.onload = readerOnLoad;
+        reader.onloadend  = readerDoneLoad;
+        reader.onerror = readerOnError;    
+        //var blob = _file.slice(_offset, length + _offset);
+        var blob = input.files[0].slice(_offset, length + _offset);
+        reader.readAsArrayBuffer(blob);
+    }
+
+    //readMemBlock(currSz_,totSz_);
+    readMemBlock(currSz_, chunkSz_);  
+} //OnLoadLas
+
+
+
+
 function OnFileSelected(input) {
     document.getElementById('GFG').innerHTML = 'Reading ... '
+    //OnLoadLas(input);
+    //return;
+
     var file = input.files[0];
     if (!file) {
         console.log("NO FILE");
@@ -57,7 +124,7 @@ function OnFileSelected(input) {
     array8 = new TextEncoder().encode("hdrsize");
     Module.HEAPU8.set(array8, s_tmp); 
     xaxa =load_file_cb(s_tmp, 10, 0); 
-    console.log("xoxo="+xaxa);
+    console.log("xoxo->"+xaxa);
 
     var s_ptr = Module._malloc(1);
     load_file_cb(s_ptr, 0, totSz_/2);
@@ -108,9 +175,11 @@ function OnFileSelected(input) {
     }
 
     //readMemBlock(currSz_,totSz_);
-    readMemBlock(currSz_, chunkSz_);
-  
-}
+    readMemBlock(currSz_, chunkSz_);  
+} //OnFileSelected
+
+
+
 
 function OnSampleLoad(){
     console.log("-OnSampleLoad-");

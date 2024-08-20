@@ -499,4 +499,49 @@ namespace ezp
         return pD;
     }
 
+    struct LasBuilderImpl: public LasBuilder{
+        LasHeader m_hdr;
+        uint32_t  m_numPoints;
+        uint32_t GetHeaderSize(){
+            return sizeof(LasHeader);
+        }
+        uint32_t SetHeader( void *pHdr ){
+            memcpy(&m_hdr,pHdr, sizeof(LasHeader));
+            int vMajor = (int)m_hdr.verMajor;
+            int vMinor = (int)m_hdr.verMinor;
+            int ptFormat = (int)m_hdr.pointDataFormatId;
+            int recLength = (int)m_hdr.poitDataRecordLength;
+            if((vMajor==1)&&(vMinor==1)){
+                m_numPoints = m_hdr.numOfPointRecords12;
+            }
+            if((vMajor==1)&&(vMinor==2)){
+                m_numPoints = m_hdr.numOfPointRecords12;
+            }
+            if((vMajor==1)&&(vMinor==3)){
+                m_numPoints = m_hdr.numOfPointRecords12;
+            }
+            if((vMajor==1)&&(vMinor==4)){
+                m_numPoints = m_hdr.numOfPointRecords14;
+            }
+            std::cout<<"== LAS == "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<std::endl;
+            return 0;
+        }
+
+        uint32_t GetVertOffset() {
+            return m_hdr.pointOfst;
+        }
+        uint32_t GetNumVerts(){
+            return m_numPoints;
+        }
+        uint32_t SetVertChunk(void *pSrc, uint32_t first, uint32_t last, FPoint4 *pDst){
+            return 0;
+        }
+    };//struct LasBuilderImpl
+
+    LasBuilder * LasBuilder::Get(){
+        static LasBuilder *pRet  = new LasBuilderImpl();
+        return pRet;
+    }
+
+
  }//namespace ezp

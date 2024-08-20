@@ -72,7 +72,6 @@ namespace ezp
 	struct Scene
 	{
         virtual bool IsLoading() = 0;
-		virtual void BuildTest( int n) = 0;
 		virtual void GenerateSample() = 0;
 		virtual float GetSize() = 0;
 		virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
