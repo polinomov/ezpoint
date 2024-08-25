@@ -20,11 +20,7 @@ namespace ezp
     uint8_t* GenerateSampleLas();
 
     struct LasBuilder{
-        virtual uint32_t GetHeaderSize() = 0;;
-        virtual uint32_t SetHeader( void *pHdr ) = 0;
-        virtual uint32_t GetVertOffset() = 0;
-        virtual uint32_t GetNumVerts() = 0;
-        virtual uint32_t SetVertChunk(void *pSrc, uint32_t first, uint32_t last, FPoint4 *pDst) = 0;
+        virtual uint32_t SetChunkData(void *pData) = 0;
         static LasBuilder *Get();
     };
 }

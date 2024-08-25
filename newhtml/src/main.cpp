@@ -190,26 +190,19 @@ extern "C" {
         }
         return 0;
     }
-
-    int LoadFileDataLas(void* pData, void *pAction, int sz){
-        static ezp::LasBuilder *pLasBuilder = NULL;
-        if(pAction == NULL){
-            return 0;
-        }
-        const char *pCmd= (char*)pAction;
-        std::cout<<"LoadFileDataLas pCmd="<<pCmd<< " sz="<<sz<<std::endl;
-        if ( !strncmp(pCmd,"hdrsize",7)){
-            std::cout<<"LoadFileDataLas HeaderSize"<<std::endl;
+    
+    // Call from JS
+    int LdLasCPP(void* pData, int action, int sz){
+        int ret = 0;
+         static ezp::LasBuilder *pLasBuilder = NULL;
+         if ( action ==0 ){
             pLasBuilder = ezp::LasBuilder::Get();
-            return  (int)pLasBuilder->GetHeaderSize();
+            ret = (int)pLasBuilder->SetChunkData(NULL);
         }
-        
-        if ( !strncmp(pCmd,"datchunk",8)){
-            pLasBuilder->SetHeader(pData);
-            return 0;
-        }
-        
-        return 0;
+        if ( action == 1){
+            ret = (int)pLasBuilder->SetChunkData(pData);
+        }  
+        return ret;
     }
 }
 

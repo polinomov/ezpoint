@@ -500,11 +500,71 @@ namespace ezp
     }
 
     struct LasBuilderImpl: public LasBuilder{
+        enum{
+            RD_NONE = 0,
+            RD_SKIP,
+            RD_HEARED,
+            RD_VERTS
+        };
+        uint32_t m_state;
         LasHeader m_hdr;
         uint32_t  m_numPoints;
-        uint32_t GetHeaderSize(){
-            return sizeof(LasHeader);
+        uint32_t  m_procPoints;
+        uint32_t  m_rdStep;
+        uint32_t  m_numInCurrRead;
+
+        LasBuilderImpl(){
+            Reset();
         }
+
+        void Reset(){
+           std::cout<<"LasBuilder:Reset"<<std::endl;
+           m_state= RD_NONE; 
+           m_numPoints = 0;
+           m_procPoints = 0;
+           m_rdStep = 100000;
+           m_numInCurrRead = 0;
+        }
+        
+        uint32_t SetChunkData(void *pData){
+            if(m_state == RD_NONE){
+                m_state = RD_HEARED;
+                return sizeof(LasHeader);
+            }
+            if(m_state == RD_HEARED){
+                SetHeader(pData);
+                if(m_hdr.pointOfst > sizeof(LasHeader)){
+                    m_state = RD_SKIP;
+                    return m_hdr.pointOfst - sizeof(LasHeader);
+                }
+                else{
+                    m_state = RD_VERTS;
+                    m_numInCurrRead = GetNextVets();
+                    return m_numInCurrRead * m_hdr.poitDataRecordLength;
+                }
+            }
+            if(m_state == RD_SKIP){
+                m_state = RD_VERTS;
+                m_numInCurrRead = GetNextVets();
+                return m_numInCurrRead * m_hdr.poitDataRecordLength;
+            }
+            if(m_state == RD_VERTS){
+                SetVerts(pData, m_numInCurrRead);
+                m_numInCurrRead = GetNextVets();
+                return  m_numInCurrRead * m_hdr.poitDataRecordLength;
+            }
+            return 0;
+        }
+
+        uint32_t GetNextVets(){
+           uint32_t nextV = m_procPoints + m_rdStep;
+            if(nextV<=m_numPoints){
+                return  m_rdStep;
+            }else{
+                return m_numPoints - m_procPoints;
+            }
+        }
+       
         uint32_t SetHeader( void *pHdr ){
             memcpy(&m_hdr,pHdr, sizeof(LasHeader));
             int vMajor = (int)m_hdr.verMajor;
@@ -527,16 +587,12 @@ namespace ezp
             return 0;
         }
 
-        uint32_t GetVertOffset() {
-            return m_hdr.pointOfst;
-        }
-        uint32_t GetNumVerts(){
-            return m_numPoints;
-        }
-        uint32_t SetVertChunk(void *pSrc, uint32_t first, uint32_t last, FPoint4 *pDst){
+        int32_t SetVerts(void *pSrc, uint32_t numInSrc){
+            m_procPoints+=numInSrc;
+            std::cout<<"Processed "<<m_procPoints <<" from"<<m_numPoints;
             return 0;
         }
-    };//struct LasBuilderImpl
+   };//struct LasBuilderImpl
 
     LasBuilder * LasBuilder::Get(){
         static LasBuilder *pRet  = new LasBuilderImpl();
