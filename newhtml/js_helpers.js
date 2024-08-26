@@ -61,9 +61,11 @@ function OnLoadLas(input) {
         chunkSz_ = load_file_cb(res_ptr, 1, dtsize); 
         Module._free(res_ptr);
         currSz_ +=  dtsize;
+        //console.log("JS-readerOnLoad chunkSz="+ chunkSz_ + " tot="+currSz_);
     };
 
     var readerDoneLoad = function (e) {
+       // console.log("JS-readerDoneLoad " + chunkSz_);
         if(chunkSz_=== 0){
             document.getElementById('GFG').innerHTML = "Done"
             return;

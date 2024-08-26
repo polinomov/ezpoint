@@ -512,6 +512,9 @@ namespace ezp
         uint32_t  m_procPoints;
         uint32_t  m_rdStep;
         uint32_t  m_numInCurrRead;
+        std::function<int (uint32_t n )> m_allocFunc;
+        std::function<FPoint4 *()> m_getVertsFunc;
+        std::function<void( const std::string &msg)> m_onErrFunc;
 
         LasBuilderImpl(){
             Reset();
@@ -522,11 +525,24 @@ namespace ezp
            m_state= RD_NONE; 
            m_numPoints = 0;
            m_procPoints = 0;
-           m_rdStep = 100000;
+           m_rdStep = 1000000;
            m_numInCurrRead = 0;
+           m_allocFunc = NULL;
+           m_getVertsFunc = NULL;
+           m_onErrFunc = NULL;
         }
-        
+        void RegisterCallbacks(
+            std::function<int (uint32_t n )> alloc,
+            std::function<FPoint4 *()> getVerts,
+            std::function<void( const std::string &msg)> onErr
+        ){
+            m_allocFunc = alloc;
+            m_getVertsFunc = getVerts;
+            m_onErrFunc = onErr;
+        }
+
         uint32_t SetChunkData(void *pData){
+            std::cout<<"@@@@ SetChunkData state="<<m_state<<std::endl;
             if(m_state == RD_NONE){
                 m_state = RD_HEARED;
                 return sizeof(LasHeader);
@@ -561,6 +577,7 @@ namespace ezp
             if(nextV<=m_numPoints){
                 return  m_rdStep;
             }else{
+                std::cout<<"@@@ Last"<< m_numPoints - m_procPoints<<std::endl;
                 return m_numPoints - m_procPoints;
             }
         }
@@ -583,13 +600,24 @@ namespace ezp
             if((vMajor==1)&&(vMinor==4)){
                 m_numPoints = m_hdr.numOfPointRecords14;
             }
-            std::cout<<"== LAS == "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<std::endl;
+            std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<std::endl;
+            if( m_allocFunc){
+                m_allocFunc(m_numPoints);
+            }
+            if(m_onErrFunc){
+               // m_onErrFunc("Header is ready");
+            }
             return 0;
         }
 
         int32_t SetVerts(void *pSrc, uint32_t numInSrc){
+           // if(m_getVertsFunc){
+           //     return 0;
+           // }
+           // FPoint4 *pDst = m_getVertsFunc();
+ 
             m_procPoints+=numInSrc;
-            std::cout<<"Processed "<<m_procPoints <<" from"<<m_numPoints;
+            std::cout<<"Processed------> "<<m_procPoints <<" from"<<m_numPoints<<std::endl;
             return 0;
         }
    };//struct LasBuilderImpl

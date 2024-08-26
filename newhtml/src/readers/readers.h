@@ -1,7 +1,7 @@
 //
 #ifndef _READERS_H
 #define _READERS_H
-
+#include <functional>
 #include "..\chunk.h"
 namespace ezp 
 {
@@ -20,6 +20,11 @@ namespace ezp
     uint8_t* GenerateSampleLas();
 
     struct LasBuilder{
+        virtual void RegisterCallbacks(
+            std::function<int (uint32_t n )> alloc,
+            std::function<FPoint4 *()> getVerts,
+            std::function<void( const std::string &msg)> onErr
+        ) = 0;
         virtual uint32_t SetChunkData(void *pData) = 0;
         static LasBuilder *Get();
     };

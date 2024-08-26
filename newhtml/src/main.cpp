@@ -194,10 +194,26 @@ extern "C" {
     // Call from JS
     int LdLasCPP(void* pData, int action, int sz){
         int ret = 0;
-         static ezp::LasBuilder *pLasBuilder = NULL;
-         if ( action ==0 ){
+        static ezp::LasBuilder *pLasBuilder = NULL;
+
+        auto allocVerts = [](uint32_t num){ 
+            std::cout<<"LdLasCPP: Alloc verts "<<num<<std::endl;
+            ezp::Scene::Get()->AllocVerts(num);
+            return 0;
+        };
+        auto getVerts = [](){ 
+            std::cout<<"LdLasCPP: getVerts "<<std::endl;
+            return ezp::Scene::Get()->GetVerts();
+        };
+        auto onError = [](const std::string &msg){
+            std::string m = std::string("alert(") + "\"" + msg + "\"" + std::string(")");
+            emscripten_run_script(m.c_str());
+        };
+
+        if ( action ==0 ){
             pLasBuilder = ezp::LasBuilder::Get();
-            ret = (int)pLasBuilder->SetChunkData(NULL);
+            pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError);
+            ret = (int)pLasBuilder->SetChunkData(NULL); // returns the size of the next chunk or 0 if done.
         }
         if ( action == 1){
             ret = (int)pLasBuilder->SetChunkData(pData);

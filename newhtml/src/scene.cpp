@@ -13,6 +13,8 @@ namespace ezp
         std::vector<std::shared_ptr<Chunk>> m_allChunks;
         FBdBox m_box;
         FPoint4 *m_modelData;
+        FPoint4 *m_allVerts;
+        uint32_t m_numAllVerts;
         bool m_isLoading;
         float m_size;
         FPoint4 * m_pChPos;
@@ -23,6 +25,23 @@ namespace ezp
         SceneImpl(){
             m_modelData = NULL;
             m_size = 1.0f;
+            m_allVerts = NULL;
+            m_numAllVerts = 0;
+        }
+
+        uint32_t AllocVerts( uint32_t num){
+            m_allVerts = new FPoint4[num];
+            std::cout<<"SCENE ############## Allocating verts "<<num<<std::endl;
+            m_numAllVerts = num;
+            return num;
+        }
+
+        FPoint4 *GetVerts(){
+            return m_allVerts;
+        }
+
+        uint32_t GetNumVerts(){
+            return m_numAllVerts;
         }
   
         void SetCamera(){
@@ -149,11 +168,12 @@ namespace ezp
             m_allChunks.push_back(chk);
         }
 
-        void addVertData(FPoint4* pt, int num){
+        void processVertData(){
+            FPoint4* pt = GetVerts();
+            int num = GetNumVerts();
             m_box = getBdBox<FPoint4>(pt, 0, num-1);
             doChunks<FPoint4>(pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
             SetCamera(); 
-            std::cout<<"=== done generating sample === "<<num<< std::endl;  
             UI::Get()->SetRenderEvent(20);
         }
 
@@ -177,15 +197,17 @@ namespace ezp
             uint32_t totPoints = sx*sy*sfPoints;
             UI::Get()->PrintMessage("Sample");
             UI::Get()->SetRenderEvent(1);
-            FPoint4* pv = new FPoint4[totPoints];  
-            FPoint4* pt = pv; 
+            AllocVerts(totPoints);
+            FPoint4* pt = GetVerts(); 
+            FPoint4* pv = pt;
             for( int y = 0; y<sy; y++){
                 for( int x = 0; x<sx; x++){
                     Sphere(pt, sfPoints, 0.4f, x, y, 0);
                     pt += sfPoints;  
                 }
-            }  
-            addVertData(pv, totPoints);
+            } 
+            processVertData(); 
+            //addVertData(pv, totPoints);
         }  
  
     }; //SceneImpl

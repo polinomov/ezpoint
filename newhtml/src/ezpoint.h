@@ -72,6 +72,10 @@ namespace ezp
 	struct Scene
 	{
         virtual bool IsLoading() = 0;
+		virtual uint32_t AllocVerts( uint32_t num) = 0;
+		virtual FPoint4 *GetVerts() = 0;
+		virtual uint32_t GetNumVerts() = 0;
+		virtual void processVertData() = 0;
 		virtual void GenerateSample() = 0;
 		virtual float GetSize() = 0;
 		virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
