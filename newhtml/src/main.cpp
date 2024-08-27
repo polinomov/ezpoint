@@ -218,6 +218,10 @@ extern "C" {
         if ( action == 1){
             ret = (int)pLasBuilder->SetChunkData(pData);
         }  
+        if(ret==0){
+            std::cout<<"@@@@@@@@@@@@@@@@@@@ DONE @@@@@@@@@@@@@@@@@@@"<<std::endl;
+            ezp::Scene::Get()->processVertData();
+        }
         return ret;
     }
 }

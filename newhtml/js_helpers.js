@@ -100,8 +100,8 @@ function OnLoadLas(input) {
 
 function OnFileSelected(input) {
     document.getElementById('GFG').innerHTML = 'Reading ... '
-    //OnLoadLas(input);
-    //return;
+    OnLoadLas(input);
+    return;
 
     var file = input.files[0];
     if (!file) {

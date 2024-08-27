@@ -506,12 +506,14 @@ namespace ezp
             RD_HEARED,
             RD_VERTS
         };
+        static const uint32_t sz16 = 256*256;
         uint32_t m_state;
         LasHeader m_hdr;
         uint32_t  m_numPoints;
         uint32_t  m_procPoints;
         uint32_t  m_rdStep;
         uint32_t  m_numInCurrRead;
+        float intHist[sz16];
         std::function<int (uint32_t n )> m_allocFunc;
         std::function<FPoint4 *()> m_getVertsFunc;
         std::function<void( const std::string &msg)> m_onErrFunc;
@@ -530,6 +532,7 @@ namespace ezp
            m_allocFunc = NULL;
            m_getVertsFunc = NULL;
            m_onErrFunc = NULL;
+           memset(intHist,0,sz16*sizeof(float));
         }
         void RegisterCallbacks(
             std::function<int (uint32_t n )> alloc,
@@ -584,6 +587,12 @@ namespace ezp
        
         uint32_t SetHeader( void *pHdr ){
             memcpy(&m_hdr,pHdr, sizeof(LasHeader));
+            char magic[5] = {0,0,0,0,0};
+            memcpy(magic,m_hdr.magic,4);
+            if(strcmp(magic,"LASF")){
+                if(m_onErrFunc) m_onErrFunc("Can not detect LASF");
+                return  0;
+            }           
             int vMajor = (int)m_hdr.verMajor;
             int vMinor = (int)m_hdr.verMinor;
             int ptFormat = (int)m_hdr.pointDataFormatId;
@@ -600,25 +609,49 @@ namespace ezp
             if((vMajor==1)&&(vMinor==4)){
                 m_numPoints = m_hdr.numOfPointRecords14;
             }
+            if(m_numPoints == 0){
+                if(m_onErrFunc) m_onErrFunc("Can not detect LAS version");
+            }
             std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<std::endl;
             if( m_allocFunc){
                 m_allocFunc(m_numPoints);
-            }
-            if(m_onErrFunc){
-               // m_onErrFunc("Header is ready");
+            }          
+            return 0;
+        }
+
+        int32_t SetVerts(void *pSrc, uint32_t numInSrc){            
+            FPoint4 *pDst = m_getVertsFunc();
+            uint8_t *pS  = (uint8_t*)pSrc;
+            for( int i = m_procPoints; i< m_procPoints + numInSrc;i++,pS+=m_hdr.poitDataRecordLength){
+                PointFormat1 *pf1 = (PointFormat1*)pS;
+                pDst[i].x = (float)(pf1->x )*float(m_hdr.xScale) + m_hdr.xOffset;
+                pDst[i].y = (float)(pf1->y )*float(m_hdr.yScale) + m_hdr.yOffset;
+                pDst[i].z = (float)(pf1->z )*float(m_hdr.zScale) + m_hdr.zOffset; 
+                pDst[i].col = pf1->intensity;
+                intHist[pf1->intensity] += 1.0f;              
+            } 
+            m_procPoints+=numInSrc;
+            if(m_procPoints == m_numPoints){
+                std::cout<<"Processed------> "<<m_procPoints <<" from"<<m_numPoints<<std::endl;
+                PostProcessColors();
             }
             return 0;
         }
 
-        int32_t SetVerts(void *pSrc, uint32_t numInSrc){
-           // if(m_getVertsFunc){
-           //     return 0;
-           // }
-           // FPoint4 *pDst = m_getVertsFunc();
- 
-            m_procPoints+=numInSrc;
-            std::cout<<"Processed------> "<<m_procPoints <<" from"<<m_numPoints<<std::endl;
-            return 0;
+        void PostProcessColors(){
+            for( int i =1; i<sz16; i++){
+                intHist[i] +=  intHist[i-1];
+            }
+            for( int i =0; i<sz16; i++){
+                if( intHist[sz16-1]>0.f){
+                    intHist[i] *= (255.0f/intHist[sz16-1]);
+                }
+            } 
+            FPoint4 *pDst = m_getVertsFunc();
+            for(int i=0; i<m_numPoints; i++){
+                uint16_t intensity  = pDst[i].col;
+                pDst[i].col  = intHist[intensity];
+            }
         }
    };//struct LasBuilderImpl
 

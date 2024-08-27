@@ -160,11 +160,11 @@ namespace ezp
         void onChunk(FPoint4*pt, int num){
             static uint32_t stot = 0;
             stot+=num;
-            //std::cout<<"=== onChunk === "<<num<< "tot="<<stot<<std::endl;
             std::shared_ptr<Chunk> chk = std::make_shared<Chunk>();
             chk->pVert = (float*)pt;
             chk->numVerts = num;
             chk->BuildBdBox();
+            chk->Randomize();
             m_allChunks.push_back(chk);
         }
 
