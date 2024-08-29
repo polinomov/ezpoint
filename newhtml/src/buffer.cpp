@@ -92,21 +92,18 @@ namespace ezp
             m_pointSize = pUI->GetPtSize();
             m_budget = pUI->GetBudget();
             SetFov(pUI->GetFov());
+            uint8_t r,g,b;
             for( int i = 0; i<256; i++){
                 m_palGray[i] = i | (i<<8) | (i<<16) | (i<<24);
-                if( i<128){
-                    float t = (float)i/128.0f;
-                    uint8_t r = (uint8_t)(t*255.0f);
-                    uint8_t g =  (uint8_t)((1.0f-t) * 255.0f);
-                    m_palHMap[i] = (g<<8) | (r<<16);
-                }else{
-                    float t = (float)(i-128)/128.0f;
-                    uint8_t g = (uint8_t)(t*255.0f);
-                    uint8_t b = (uint8_t)((1.0f-t) * 255.0f);
-                    m_palHMap[i] = b | (g<<8) ;
-                }
+                float ang = (float)i * 3.1415f/512.0f;
+                r = (uint8_t)((float)i  * sin(ang));
+                g = (uint8_t)((float)i  * cos(ang));
+                b = r+g;
+                m_palHMap[i] =  m_palGray[i];
                 m_palClass[i] = 0xFFFFFFFF;
             }
+            m_palHMap[0] = 0xFF0000;
+           
             
             m_palClass[0] = 0xFFFFFFFF;
             m_palClass[1] = 0xFF00FF00;
@@ -565,10 +562,16 @@ namespace ezp
                     }
                     cnt++;
                     if(cnt>=M) cnt = 0;   
-                                  
+                          
                     uint8_t cndx = bz & 0xFF;  
                     uint8_t clc  = ((bz & 0xFF00)>>8) & 0xF; 
                     pBuff[dst] =  (bz==-1L)?  m_bkcolor:m_UniPal[clc][cndx];
+                    
+                    /*
+                    uint8_t cndx = (bz>>16) & 0xFF;  
+                    pBuff[dst] =  (bz==-1L)?  m_bkcolor:m_palHMap[cndx];
+                    */
+
                     
                     /*
                     uint16_t ndx16 = bz >>16;  

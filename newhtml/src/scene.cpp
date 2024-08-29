@@ -81,6 +81,7 @@ namespace ezp
  
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {
+        #if 0
             int numPt = 0;
             ezp::UI *pUI = ezp::UI::Get();
             if( fType == 0){
@@ -113,6 +114,7 @@ namespace ezp
                 }
             }
             UI::Get()->SetRenderEvent(20);
+            #endif
         }
 
         FPoint4* GetChunkPos(){
