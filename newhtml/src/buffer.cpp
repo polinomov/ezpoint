@@ -53,7 +53,7 @@ namespace ezp
         int m_colorMode;
         uint32_t m_bkcolor;
         uint32_t m_palGray[256];
-        uint32_t m_palHMap[256];
+        uint32_t m_palHMap[256*16];
         uint32_t m_palClass[256];
         uint32_t m_UniPal[16][256];
         uint32_t m_pal16[256*256];
@@ -92,19 +92,24 @@ namespace ezp
             m_pointSize = pUI->GetPtSize();
             m_budget = pUI->GetBudget();
             SetFov(pUI->GetFov());
-            uint8_t r,g,b;
+
+            for( int i = 0; i<256*16; i++){
+                float ang1 = (float)i * 3.1415f/(256.0f*16.0f);
+                float ang2 = ang1 + 3.1415f/3.0f;
+                float ang3 = ang1 + 2.0f* 3.1415f/3.0f;
+                float rf =  cos(ang1);
+                float gf  = cos(ang2);
+                float bf  = cos(ang3);
+                uint8_t r = (uint8_t)(rf*rf * 255.0f);
+                uint8_t g = (uint8_t)(gf*gf * 255.0f);
+                uint8_t b = (uint8_t)(bf*bf * 255.0f);
+                m_palHMap[i] = (b|(g<<8)|(r<<16));
+            }
             for( int i = 0; i<256; i++){
                 m_palGray[i] = i | (i<<8) | (i<<16) | (i<<24);
-                float ang = (float)i * 3.1415f/512.0f;
-                r = (uint8_t)((float)i  * sin(ang));
-                g = (uint8_t)((float)i  * cos(ang));
-                b = r+g;
-                m_palHMap[i] =  m_palGray[i];
                 m_palClass[i] = 0xFFFFFFFF;
             }
             m_palHMap[0] = 0xFF0000;
-           
-            
             m_palClass[0] = 0xFFFFFFFF;
             m_palClass[1] = 0xFF00FF00;
             m_palClass[2] = 0xFFFFFF00; //ground
@@ -188,7 +193,6 @@ namespace ezp
         }
 
         void  SetBkColor( uint32_t val){
-            //std::cout<<"SetBkColor:"<<val<<std::endl;
             m_bkcolor = val;
         }
 
@@ -197,6 +201,7 @@ namespace ezp
         }
 
         void SetColorMode( uint32_t val) {
+            std::cout<<"color mode"<<val<<std::endl;
             m_colorMode = val;
         }
         void SetRenderAll( uint32_t val){
@@ -493,22 +498,6 @@ namespace ezp
                 auto after = std::chrono::system_clock::now();
                 m_postTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
             }
-            /*
-            switch(m_colorMode){
-                case UI::UICOLOR_INTENS:
-                    PostProcess<0>(pBuff, winW, winH,m_pointSize);
-                break;
-                case UI::UICOLOR_CLASS: 
-                    PostProcess<1>(pBuff, winW, winH,m_pointSize);
-                break;
-                case UI::UICOLOR_MIX: 
-                    PostProcess<2>(pBuff, winW, winH,m_pointSize);
-                break;
-                default: 
-                    PostProcess<0>(pBuff, winW, winH,m_pointSize);
-                break;
-            }
-            */
             // helpers
             if(0)
             {
@@ -533,6 +522,23 @@ namespace ezp
 
         template <unsigned int M>
         void XERR1(unsigned int *pBuff, int winW, int winH){
+            uint32_t *pUPal,msk,shift;
+            switch(m_colorMode){
+                case UI::UICOLOR_HMAP :
+                    pUPal = (uint32_t*)m_palHMap;
+                    msk = 0xFFF;
+                    shift = 16;
+                break;
+                case UI::UICOLOR_INTENS:
+                    pUPal = (uint32_t*)m_UniPal;
+                    msk = 0xFF;
+                    shift = 0;
+                break;
+                default:
+                    pUPal = (uint32_t*)m_UniPal;
+                    msk = 0xFFF;
+                    shift = 0;
+            }
             uint64_t minZ[16];
             for(int m = 0; m<M; m++) minZ[m] = -1;
             for (int y = 0; y < winH-M; y++) {
@@ -562,27 +568,13 @@ namespace ezp
                     }
                     cnt++;
                     if(cnt>=M) cnt = 0;   
-                          
-                    uint8_t cndx = bz & 0xFF;  
-                    uint8_t clc  = ((bz & 0xFF00)>>8) & 0xF; 
-                    pBuff[dst] =  (bz==-1L)?  m_bkcolor:m_UniPal[clc][cndx];
-                    
-                    /*
-                    uint8_t cndx = (bz>>16) & 0xFF;  
-                    pBuff[dst] =  (bz==-1L)?  m_bkcolor:m_palHMap[cndx];
-                    */
-
-                    
-                    /*
-                    uint16_t ndx16 = bz >>16;  
-                    uint32_t c16 = m_pal16[ndx16];
-                    pBuff[dst] =  (bz==-1L)?  m_bkcolor:c16;
-                    */
-                    
+                  
+                    uint16_t cndx = (bz>>shift) & msk;  
+                    pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx];                 
                 }
             } 
         }
-
+#if 0
         void XERR(unsigned int *pBuff, int winW, int winH){
             static const int nsz = 3;
             for (int y = 0; y < winH; y++) {
@@ -593,7 +585,7 @@ namespace ezp
                 }
             } 
         }
-
+#endif
         void DbgShowFrameRate( int num_rnd,uint32_t rndMs){
             static unsigned char cnt = 0,nn =0;
             static std::chrono::time_point<std::chrono::system_clock> prev;

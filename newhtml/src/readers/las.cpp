@@ -169,8 +169,11 @@ namespace ezp
         uint32_t  m_numInCurrRead;
         float intHist[sz16];
         bool m_hasClass;
+        bool m_hasRgb;
         float m_hMin;
         float m_hMax;
+        int m_Iminx,m_Imaxx,m_Iminy,m_Imaxy,m_Iminz,m_Imaxz;
+        uint16_t m_rMin,m_rMax,m_gMin, m_gMax,m_bMin, m_bMax;
         std::function<int (uint32_t n )> m_allocFunc;
         std::function<FPoint4 *()> m_getVertsFunc;
         std::function<void( const std::string &msg)> m_onErrFunc;
@@ -180,7 +183,6 @@ namespace ezp
         }
 
         void Reset(){
-           //std::cout<<"LasBuilder:Reset"<<std::endl;
            m_state= RD_NONE; 
            m_numPoints = 0;
            m_procPoints = 0;
@@ -191,8 +193,17 @@ namespace ezp
            m_onErrFunc = NULL;
            memset(intHist,0,sz16*sizeof(float));
            m_hasClass = false;
+           m_hasRgb = false;
            m_hMin = std::numeric_limits<float>::max();
            m_hMax = std::numeric_limits<float>::min();
+           m_Iminx  = std::numeric_limits<int>::max();
+           m_Iminy  = std::numeric_limits<int>::max();
+           m_Iminz  = std::numeric_limits<int>::max();
+           m_Imaxx  = std::numeric_limits<int>::min();
+           m_Imaxy  = std::numeric_limits<int>::min();
+           m_Imaxz  = std::numeric_limits<int>::min();
+           m_rMin = m_gMin= m_bMin = 0xFFFF;
+           m_rMax = m_gMax= m_bMax = 0;
         }
 
         void RegisterCallbacks(
@@ -276,8 +287,9 @@ namespace ezp
             if( m_allocFunc){
                 m_allocFunc(m_numPoints);
             }   
-            m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId);  
-            std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<<std::endl;    
+            m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId); 
+            m_hasRgb =  ptHasColor((int)m_hdr.pointDataFormatId);
+            std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl;    
             return 0;
         }
 
@@ -289,6 +301,12 @@ namespace ezp
                 pDst[i].x = (float)(pf1->x )*float(m_hdr.xScale) + m_hdr.xOffset;
                 pDst[i].y = (float)(pf1->y )*float(m_hdr.yScale) + m_hdr.yOffset;
                 pDst[i].z = (float)(pf1->z )*float(m_hdr.zScale) + m_hdr.zOffset; 
+                m_Iminx  = std::min(m_Iminx,pf1->x);
+                m_Iminy  = std::min(m_Iminy,pf1->y);
+                m_Iminz  = std::min(m_Iminz,pf1->z);
+                m_Imaxx  = std::max(m_Imaxx,pf1->x);
+                m_Imaxy  = std::max(m_Imaxy,pf1->y);
+                m_Imaxz  = std::max(m_Imaxz,pf1->z);
                 m_hMin = std::min(m_hMin,pDst[i].z);
                 m_hMax = std::max(m_hMax,pDst[i].z);
                 pDst[i].col = pf1->intensity;
@@ -296,11 +314,24 @@ namespace ezp
                     uint8_t cls = (uint8_t)ptGetClass((int)m_hdr.pointDataFormatId,pS); 
                     pDst[i].col |= (cls<<16);
                 }
+                if(m_hasRgb){
+                    uint16_t r16,g16,b16;
+                    ptGetColor(r16,g16,b16, (int)m_hdr.pointDataFormatId,pf1);
+                    m_rMin = std::min(m_rMin,r16);
+                    m_gMin = std::min(m_gMin,g16);
+                    m_bMin = std::min(m_bMin,b16);
+                    m_rMax = std::max(m_rMax,r16);
+                    m_gMax = std::max(m_gMax,g16);
+                    m_bMax = std::max(m_bMax,b16);
+                }
                 intHist[pf1->intensity] += 1.0f;              
             } 
             m_procPoints+=numInSrc;
             if(m_procPoints == m_numPoints){
-                std::cout<<"Processed------> "<<m_procPoints <<" from"<<m_numPoints<<std::endl;
+                std::cout<<"Start Processing"<<std::endl;
+                std::cout<<m_Iminx<<" "<<m_Imaxx<<"|";
+                std::cout<<m_Iminy<<" "<<m_Imaxy<<"|";
+                std::cout<<m_Iminz<<" "<<m_Imaxz<<std::endl;
                 PostProcessColors();
             }
             return 0;
@@ -308,6 +339,12 @@ namespace ezp
 
         void PostProcessColors(){
             std::cout<<"hmin="<<m_hMin<<" hmax="<<m_hMax<<std::endl;
+            if(m_hasRgb){
+                std::cout<<"m_rMin="<<m_rMin<<" m_rMin="<<m_rMax<<std::endl;
+                std::cout<<"m_gMin="<<m_gMin<<" m_gMin="<<m_gMax<<std::endl;
+                std::cout<<"m_bMin="<<m_bMin<<" m_bMin="<<m_bMax<<std::endl;
+            }
+            
             for( int i =1; i<sz16; i++){
                 intHist[i] +=  intHist[i-1];
             }
@@ -318,34 +355,35 @@ namespace ezp
             } 
             FPoint4 *pDst = m_getVertsFunc();
             // Hmap
-            float hHist[256];
-            memset(hHist, 0, 256*sizeof(float));
-            float hDiff  = 255.0f/(m_hMax - m_hMin);
+            const uint32_t hsz = 0xFFF;
+            float hHist[hsz];
+            memset(hHist, 0, hsz*sizeof(float));
+            float prd = (float)hsz-1.0f;
+            float hDiff  = prd/(m_hMax - m_hMin);
             for(int i=0; i<m_numPoints; i++){
-                uint8_t h8 = (uint8_t)((pDst[i].z -  m_hMin) *  hDiff);
+                uint32_t h8 = (uint32_t)((pDst[i].z - m_hMin) *  hDiff);
+                h8 &= 0xFFF;
                 hHist[h8] += 1.0f;
             }
-            for( int i =1; i<256; i++){
+            for( int i =1; i<hsz; i++){
                 hHist[i] +=hHist[i-1];
             }
-            for( int i = 0; i<256; i++){
-                if(hHist[255]>0.0f){
-                    hHist[i] *= (255.0f/hHist[255]);
+            for( int i = 0; i<hsz; i++){
+                if(hHist[hsz-1]>0.0f){
+                    hHist[i] *= (prd/hHist[hsz-1]);
                 }
-            }
-            for( int i = 0; i<256; i++){
-                std::cout<<hHist[i]<<","<<std::endl;;
             }
             // Colors
             for(int i=0; i<m_numPoints; i++){
                 uint16_t intensity  = pDst[i].col & 0xFFFF;
                 uint8_t cls = 0;
-                uint8_t hcol = 0;
+                uint32_t hcol = 0;
                 if(m_hasClass){
                     cls = (pDst[i].col >>16) & 0xFF;
                 }
-                uint8_t h8 = (uint8_t)((pDst[i].z -  m_hMin) *  hDiff);
-                hcol = (uint8_t)hHist[h8];
+                uint32_t h8 = (uint32_t)((pDst[i].z -  m_hMin) *  hDiff);
+                hcol = (uint32_t)hHist[h8 & hsz];
+   
                 pDst[i].col  = (uint8_t)intHist[intensity];
                 pDst[i].col |= (cls<<8);
                 pDst[i].col |= (hcol<<16);

@@ -14,6 +14,7 @@ var gCamMoveCb;
 var gCamDbClickCB;
 var gUIChangeCB;
 var gIdChanged = "unknown"
+var gDisableRdb = 0;
 
 function callWasm1() {
     console.log("CallWasm");
@@ -251,7 +252,26 @@ function GetUIString(){
     return gIdChanged;
 }
 
+function SetColorMode(){
+    gDisableRdb = 1;
+}
+
+function UpdateColorModeUI(){
+    var el = document.getElementById("colrgbId");
+    if(gDisableRdb === 1){
+        console.log("-----here1===========*");
+        //el.disabled = true;
+        el.setAttribute("disabled", true);
+    }else{
+        console.log("-----here2===========*");
+        el.removeAttribute('disabled');
+        //el.disabled = false;
+        //el.setAttribute("disabled", false);      
+    }
+}
+
 function OnUIEvent1(input){
+    //SetColorMode();
     gIdChanged = input.id;
     var elType = document.getElementById(input.id).type;
     if(elType == "checkbox"){

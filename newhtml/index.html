@@ -127,10 +127,10 @@
                 <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colhtmId" class="theradio" onclick="OnUIEvent1(this)">heightmap  </label><br>
 
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colclassId" class="theradio" onclick="OnUIEvent1(this)">classification</label><br>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="3" id="colclassId" class="theradio" onclick="OnUIEvent1(this)">classification</label><br>
 
                 <div style="color:0x333; height:5px;" ></div>
-                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="2" id="colmix" class="theradio" onclick="OnUIEvent1(this)">mixc</label><br>
+                <label for="colhtm" class="thelabel"><input type="radio" name="grp1" value="4" id="colmix" class="theradio" onclick="OnUIEvent1(this)">mixc</label><br>
                 <div style="color:0x333; height:5px; width:200px" ></div>
             </div> 
             <small class="thetext">Fov:</small>
@@ -145,7 +145,7 @@
             <small class="thetext">DrawAll:</small>
             <input type="checkbox"  title="Render All" id="rdAll"  onchange="OnUIEvent1(this)"/>
 
-            <input type="color" title="Background Color" id="bkcolor" value="#A08080">
+            <input type="color" title="Background Color" id="bkcolor" value="#010181">
             <small id="GFG" class="thetext"> </small>
            </div> 
     </div>
@@ -180,6 +180,7 @@
                 myEl.style.left = lpos + "px";
                 document.getElementById(dropId).classList.toggle("show");
                 openedDropDownid = dropId;
+                UpdateColorModeUI();
             }
             
             // Close the dropdown if the user clicks outside of it

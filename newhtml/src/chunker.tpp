@@ -1,6 +1,13 @@
 #include <iostream>
 #include <functional>
 static int depth = 0;
+static bool hasError = false;
+
+static void ShowBdBox(ezp::FBdBox &fb){
+  std::cout<<"BDBOX: "<<fb.xMin<<" "<<fb.xMax<<"|";
+  std::cout<<fb.yMin<<" "<<fb.yMax<<"|";
+  std::cout<<fb.zMin<<" "<<fb.zMax<<std::endl;
+}
 
 template <class T>
 static ezp::FBdBox getBdBox(T* pVerts, uint32_t first, uint32_t last){
@@ -19,6 +26,7 @@ static ezp::FBdBox getBdBox(T* pVerts, uint32_t first, uint32_t last){
         fb.zMin = std::min(fb.zMin,pVerts[i].z);
         fb.zMax = std::max(fb.zMax,pVerts[i].z);
     }
+   // ShowBdBox(fb);
     return fb;
 }
 
@@ -65,6 +73,15 @@ static uint32_t doPartition(T* pV , uint32_t first, uint32_t last, decltype(pV->
             nl++;
         }
     }
+    uint32_t ret = nl+first-1;
+    if((nl==0)||(nl==last-first+1)){
+        ezp::FBdBox fb =getBdBox(pV, first, last);
+        std::cout<<"@@@@@@@@@ FAILED TO PARITION N="<<N<<" nl="<<nl<<std::endl;
+        ShowBdBox(fb);
+        std::cout<<"first="<<first<<" last="<<last<<" mid="<<mid<<std::endl;
+        return -1;
+    }
+
     return nl+first-1;
 }
 
@@ -75,10 +92,19 @@ void doChunks(T* pV, uint32_t first, uint32_t last, uint32_t chSz, std::function
     static_assert(std::is_same<decltype(pV->x), decltype(pV->z)>::value );
     uint32_t t;
     uint32_t num = last-first + 1;
+    if(hasError){
+        return;
+    }
     if(depth>100){
         std::cout<<"depth "<<depth << " num="<<num<<std::endl;
     }
-    if(num <= chSz){
+
+    if(first>last){
+        std::cout<<"@@@@@@@@@@@@@ doChunks HERR @@@@@@@ first ="<<first<<" last"<< last<< std::endl;
+        //hasError = true;
+        return;
+    }
+    if((num <= chSz)||(first==last)){
         onDone(pV + first,num);
         depth--;
         return;
@@ -97,6 +123,8 @@ void doChunks(T* pV, uint32_t first, uint32_t last, uint32_t chSz, std::function
         break;
     }
     depth++;
-    doChunks(pV, first,  left, chSz, onDone);
-    doChunks(pV, left+1, last, chSz, onDone);
+    if(left != -1){
+        doChunks(pV, first,  left, chSz, onDone);
+        doChunks(pV, left+1, last, chSz, onDone);
+    }
 }

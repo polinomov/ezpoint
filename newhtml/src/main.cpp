@@ -219,8 +219,11 @@ extern "C" {
             ret = (int)pLasBuilder->SetChunkData(pData);
         }  
         if(ret==0){
-            std::cout<<"@@@@@@@@@@@@@@@@@@@ DONE @@@@@@@@@@@@@@@@@@@"<<std::endl;
+            std::cout<<"@@@@@@@@ PROCESSING @@@@@@@@@@@@@"<<std::endl;
             ezp::Scene::Get()->processVertData();
+            std::cout<<"@@@@@@@@ PROCESSING DONE @@@@@@@@@@@@@"<<std::endl;
+            ezp::UI *pUI = ezp::UI::Get();
+            pUI->SetColorModeState(COLOR_MODEL_RGB, true);
         }
         return ret;
     }
@@ -449,18 +452,19 @@ namespace ezp
         }
 
         void SetColorModeState(uint32_t flg, bool state){
-            std::cout<<"SetColorModeState"<<std::endl;
+            emscripten_run_script("SetColorMode()");
+            std::cout<<"SetColorModeState "<<flg<<std::endl;
             if(flg & COLOR_MODEL_RGB){
-                //SetElementState("colrgbId", state);
+                SetElementState("colrgbId", state);
             }
             if(flg & COLOR_INTENS){
-                //SetElementState("colintId", state);
+                SetElementState("colintId", state);
             }
             if(flg & COLOR_HMAP){
-                //SetElementState("colhtmId", state);
+                SetElementState("colhtmId", state);
             }
             if(flg & COLOR_CLASS){
-                //SetElementState("colclassId", state);
+                SetElementState("colclassId", state);
             }
         }
     };

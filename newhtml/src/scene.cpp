@@ -160,6 +160,10 @@ namespace ezp
         }
 #endif
         void onChunk(FPoint4*pt, int num){
+            if(num==0){
+                std::cout<<"OnChunk @@@@@@@@@@@@@@@@@@@@@ num="<<num<<std::endl;
+                return;
+            }
             static uint32_t stot = 0;
             stot+=num;
             std::shared_ptr<Chunk> chk = std::make_shared<Chunk>();
@@ -168,14 +172,17 @@ namespace ezp
             chk->BuildBdBox();
             chk->Randomize();
             m_allChunks.push_back(chk);
+           // std::cout<<"OnChunk num="<<num<<std::endl;
         }
 
         void processVertData(){
             FPoint4* pt = GetVerts();
             int num = GetNumVerts();
             m_box = getBdBox<FPoint4>(pt, 0, num-1);
+           // std::cout<<"@@@@@@@@@@@@ doChunks-1 @@@@@@@ num="<<num<<std::endl;
             doChunks<FPoint4>(pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
-            SetCamera(); 
+            //std::cout<<"@@@@@@@@@@@@ doChunks-2 @@@@@@@"<<std::endl;
+            SetCamera();
             UI::Get()->SetRenderEvent(20);
         }
 
