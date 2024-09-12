@@ -29,7 +29,6 @@ function OnTest( v) {
 }
 
 function OnMouseMove(e) {
-
     gv.mouseX = e.offsetX;
     gv.mouseY = e.offsetY;
     OnDraw();
@@ -90,6 +89,8 @@ function OnLoadLas(input) {
     }
     
     // Start reading
+    //confirm('Are you sure ?');
+    //prompt('Are you sure ?');
     console.log("JS#### Start here ");
     chunkSz_ =load_file_cb(s_action_chunk, 0, 0); 
     console.log("JS hdrSz->"+chunkSz_);

@@ -23,9 +23,11 @@ namespace ezp
         virtual void RegisterCallbacks(
             std::function<int (uint32_t n )> alloc,
             std::function<FPoint4 *()> getVerts,
-            std::function<void( const std::string &msg)> onErr
+            std::function<void( const std::string &msg)> onErr,
+            std::function<int( const LasInfo &info)> onInfo
         ) = 0;
         virtual uint32_t SetChunkData(void *pData) = 0;
+        virtual void Reset() = 0;
         static LasBuilder *Get();
     };
 }

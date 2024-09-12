@@ -180,14 +180,12 @@
                 myEl.style.left = lpos + "px";
                 document.getElementById(dropId).classList.toggle("show");
                 openedDropDownid = dropId;
-                UpdateColorModeUI();
+                //UpdateColorModeUI();
             }
             
             // Close the dropdown if the user clicks outside of it
             window.onclick = function(e) {
                 if(e.target.getAttribute('id')=='canvas'){
-                    //console.log("---click---- " + e.target.getAttribute('id')); 
-                   // console.log("---click---- " + e.btnCode); 
                     var myDropdown1 = document.getElementById(openedDropDownid);
                     if(myDropdown1 != null){
                         if (myDropdown1.classList.contains('show')) {

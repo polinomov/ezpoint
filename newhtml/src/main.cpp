@@ -192,27 +192,40 @@ extern "C" {
     }
     
     // Call from JS
+    // Process LAS data in chunks
     int LdLasCPP(void* pData, int action, int sz){
         int ret = 0;
         static ezp::LasBuilder *pLasBuilder = NULL;
 
         auto allocVerts = [](uint32_t num){ 
-            std::cout<<"LdLasCPP: Alloc verts "<<num<<std::endl;
             ezp::Scene::Get()->AllocVerts(num);
             return 0;
         };
         auto getVerts = [](){ 
-            std::cout<<"LdLasCPP: getVerts "<<std::endl;
             return ezp::Scene::Get()->GetVerts();
         };
         auto onError = [](const std::string &msg){
             std::string m = std::string("alert(") + "\"" + msg + "\"" + std::string(")");
             emscripten_run_script(m.c_str());
         };
+        auto onInfo = [](const ezp::LasInfo &info){
+            int needRgb = 0;
+            if(info.hasRgb){
+                std::string txt = "Colorized LAS detected.\\n Press OK to keep colors";
+                std::string m = std::string("confirm(") + "\"" + txt + "\"" + std::string(")");
+                needRgb = emscripten_run_script_int(m.c_str());
+                if(needRgb){
+                    ezp::Renderer::Get()->SetColorMode(ezp::UI::UICOLOR_RGB);
+                }
+            }
+            return needRgb;
+        };
 
-        if ( action ==0 ){
+
+        if ( action ==0 ){// start loading
             pLasBuilder = ezp::LasBuilder::Get();
-            pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError);
+            pLasBuilder->Reset();
+            pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
             ret = (int)pLasBuilder->SetChunkData(NULL); // returns the size of the next chunk or 0 if done.
         }
         if ( action == 1){
@@ -306,7 +319,7 @@ extern "C" {
     }
 
     int CameraMoveJS(int xval, int yval){
-     ezp::Camera *pCam = ezp::Camera::Get();
+        ezp::Camera *pCam = ezp::Camera::Get();
         float sx= (float)xval;
         pCam->MoveLeftOrRight(-sx);
         float sy= (float)yval;
@@ -316,15 +329,6 @@ extern "C" {
     }
 
     int  main() {
-        /*
-        printf("-----MAIN----\n");
-        unsigned char *pMem = new unsigned char[3441664020];
-        if(pMem==NULL){
-             printf("-----Fail to alloc----\n");
-        }else{
-            printf("-----alloc OK----\n");
-        }
-        */
         OutLine("MAIN");
         InitSDL();
         SDL_DestroyRenderer(m_renderer);
@@ -411,7 +415,7 @@ namespace ezp
                 break;
                 case UICOLOR_INTENS:
                     ezp::Renderer::Get()->SetColorMode(UICOLOR_INTENS);
-                break;
+                 break;
                 case UICOLOR_CLASS:
                     ezp::Renderer::Get()->SetColorMode(UICOLOR_CLASS);
                 break;
