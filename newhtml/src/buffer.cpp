@@ -285,14 +285,15 @@ namespace ezp
 			pCam->GetDir(pD[0],pD[1],pD[2]);
 
 			uint32_t tbi = 0;
-			const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
+			const std::vector<Chunk*>& chunks = Scene::Get()->GetChunks();
 			rp->m_totalRdPoints = 0;
 			float sumAux = 0.0f;
 			float distMax = std::numeric_limits<float>::min();
 			float distMin = std::numeric_limits<float>::max();
 			float zTr = rp->m_sceneSize/sqrt((float)chunks.size());
 			for( int m = 0; m<chunks.size()-1; m++) {
-				std::shared_ptr<Chunk> pCh= chunks[m];
+				//std::shared_ptr<Chunk> pCh= chunks[m];
+				Chunk* pCh= chunks[m];
 			   // __m128 xss = _mm_set1_ps(pCh->cx);
 			   // __m128 yss = _mm_set1_ps(pCh->cy);
 			   // __m128 zss = _mm_set1_ps(pCh->cz);
@@ -343,7 +344,7 @@ namespace ezp
 				float end =  pow(distMin/distMax,4);
 				float sSum = 0.0f;
 				for( int m = 0; m<chunks.size()-1; m++) {
-					std::shared_ptr<Chunk> pCh = chunks[m];
+					Chunk* pCh = chunks[m];
 					if(pCh->numToRender<=1) continue;
 					float wt =  (pCh->reduction - distMin)/delta; 
 					pCh->reduction = (1.0f-wt) * begin + wt * end;
@@ -353,7 +354,7 @@ namespace ezp
 
 				float pprd = (float)rp->m_budget/sSum;
 				for( int m = 0; m<chunks.size()-1; m++) {
-					std::shared_ptr<Chunk> pCh = chunks[m];
+					Chunk* pCh = chunks[m];
 					if(pCh->numToRender<=0) continue;
 					float nr = (float)pCh->numToRender * pprd * pCh->reduction;
 					if( (uint32_t)nr <= pCh->numToRender)  pCh->numToRender = (uint32_t)nr;
@@ -489,13 +490,14 @@ namespace ezp
 					case 5:  XERR1<5>(pBuff, winW, winH); break;
 					case 6:  XERR1<6>(pBuff, winW, winH); break;
 					case 7:  XERR1<7>(pBuff, winW, winH); break;
-				}
-			   
+				}		   
 				auto after = std::chrono::system_clock::now();
 				m_postTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
 			}
 			// helpers
-			if(0)
+			//RenderPoint(pBuff,m_canvasW, m_canvasH, 0, 0 );
+			RenderString( "123450-BLINN",300,200,pBuff,m_canvasW, m_canvasH);
+			#if 0
 			{
 				const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
 				float swf = (float)winW *0.5f;
@@ -509,6 +511,7 @@ namespace ezp
 					}                            
 				}
 			}
+			#endif
 
 
 			if(m_showfr){
@@ -540,8 +543,6 @@ namespace ezp
 					msk = 0xFFF;
 					shift = 0;
 			}
-
-	
 			uint64_t minZ[16];
 			for(int m = 0; m<M; m++) minZ[m] = -1;
 			for (int y = 0; y < winH-M; y++) {

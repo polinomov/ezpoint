@@ -1,9 +1,8 @@
 #include <stdlib.h>
-//#include <iostream>
-//#include <chrono>
-//#include <thread>
 #include "ezpoint.h"
+//#include <SDL\SDL_ttf.h>
 #include <SDL2\SDL.h>
+
 #include <iostream>
 #include <thread>
 #include <emscripten.h>
@@ -223,6 +222,7 @@ extern "C" {
 
 
         if ( action ==0 ){// start loading
+            ezp::Scene::Get()->Clear();
             pLasBuilder = ezp::LasBuilder::Get();
             pLasBuilder->Reset();
             pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);

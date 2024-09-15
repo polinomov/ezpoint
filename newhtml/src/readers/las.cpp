@@ -295,7 +295,7 @@ namespace ezp
 			}   
 			m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId); 
 			m_hasRgb =  ptHasColor((int)m_hdr.pointDataFormatId);
-			std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
+			//std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
 			LasInfo inf;  
 			inf.numPoints = m_numPoints;
 			inf.hasRgb = m_hasRgb;

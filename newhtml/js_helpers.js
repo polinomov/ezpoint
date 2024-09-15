@@ -218,7 +218,13 @@ function OnFileOpen() {
     document.getElementById('attachment').click();
 }
 
-
+/*
+'2d'
+'webgl'
+'webgl2'
+'experimental-webgl'
+'bitmaprenderer'
+*/
 function resizeCanvas() {
     resize_cb = Module.cwrap('CallCFunc', 'number', ['number', 'number']);
     document.getElementById('canvas').height = window.innerHeight;

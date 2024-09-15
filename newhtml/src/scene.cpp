@@ -3,16 +3,13 @@
 #include "ezpoint.h"
 #include "readers\readers.h"
 #include <string>
-#include <emscripten/fetch.h>
 #include "chunker.tpp"
 namespace ezp 
 {
     struct SceneImpl : public Scene
     {
-        //std::vector<std::shared_ptr<Chunk>> m_chunks;
-        std::vector<std::shared_ptr<Chunk>> m_allChunks;
+        std::vector<Chunk*> m_allChunks;
         FBdBox m_box;
-        FPoint4 *m_modelData;
         FPoint4 *m_allVerts;
         uint32_t m_numAllVerts;
         bool m_isLoading;
@@ -23,7 +20,6 @@ namespace ezp
         bool IsLoading() { return m_isLoading;}
 
         SceneImpl(){
-            m_modelData = NULL;
             m_size = 1.0f;
             m_allVerts = NULL;
             m_numAllVerts = 0;
@@ -34,6 +30,18 @@ namespace ezp
             std::cout<<"SCENE ############## Allocating verts "<<num<<std::endl;
             m_numAllVerts = num;
             return num;
+        }
+
+        void Clear(){
+            for( int m = 0; m<m_allChunks.size(); m++) {
+                delete m_allChunks[m];
+            }
+            m_allChunks.clear();
+            if(m_numAllVerts>0){
+                delete[] m_allVerts;
+                m_numAllVerts = 0;
+                m_allVerts = NULL;
+            }
         }
 
         FPoint4 *GetVerts(){
@@ -81,40 +89,7 @@ namespace ezp
  
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {
-        #if 0
-            int numPt = 0;
-            ezp::UI *pUI = ezp::UI::Get();
-            if( fType == 0){
-                int numFloats = sz/sizeof(float);
-                numPt = numFloats/4; 
-                //fileXYZ( pData, numPt);
-                return;
-            }
-            if(fType==1){  //las
-                LasInfo lasInf;
-                pUI->SetColorModeState(-1, false);
-                m_box  = ReadLasFile( pData, sz,numPt,m_allChunks,lasInf); 
-                if(m_allChunks.size() >0){
-                    SetCamera();
-                }
-                pUI->SetColorModeState(COLOR_INTENS|COLOR_HMAP, true);
-                std::string msg = std::string("Las: ") +  
-                                  std::to_string(lasInf.vMajor)+ std::string(".")+
-                                  std::to_string(lasInf.vMinor) +
-                                  std::string(" v=")+ std::to_string(lasInf.vertType);
-                pUI->PrintMessage(msg.c_str());
-            }
-            if(m_allChunks.size() >0){
-                m_pChAuxPos  = new FPoint4[m_allChunks.size()];
-                m_pChPos  = new FPoint4[m_allChunks.size()];
-                for( int i = 0; i<m_allChunks.size(); i++){
-                    m_pChPos[i].x = m_allChunks[i]->cx;
-                    m_pChPos[i].y = m_allChunks[i]->cy;
-                    m_pChPos[i].z = m_allChunks[i]->cz;
-                }
-            }
-            UI::Get()->SetRenderEvent(20);
-            #endif
+            
         }
 
         FPoint4* GetChunkPos(){
@@ -125,7 +100,7 @@ namespace ezp
             return m_pChAuxPos;
         }
 
-        const std::vector<std::shared_ptr<Chunk>>&  GetChunks() {
+        const std::vector<Chunk*>&  GetChunks() {
             return m_allChunks;
         }
 
@@ -136,7 +111,7 @@ namespace ezp
         FBdBox GetBdBox(){
             return m_box;
         }
-#if 1
+
         void GetZMax(float &zmin, float &zmax){
             float pP[3],pD[3],x[8],y[8],z[8];
             Camera *pCam = Camera::Get();
@@ -158,7 +133,7 @@ namespace ezp
                 if(zz < zmin) zmin = zz;
             }
         }
-#endif
+
         void onChunk(FPoint4*pt, int num){
             if(num==0){
                 std::cout<<"OnChunk @@@@@@@@@@@@@@@@@@@@@ num="<<num<<std::endl;
@@ -166,7 +141,7 @@ namespace ezp
             }
             static uint32_t stot = 0;
             stot+=num;
-            std::shared_ptr<Chunk> chk = std::make_shared<Chunk>();
+            Chunk* chk = new Chunk();
             chk->pVert = (float*)pt;
             chk->numVerts = num;
             chk->BuildBdBox();
@@ -186,9 +161,8 @@ namespace ezp
             UI::Get()->SetRenderEvent(20);
         }
 
-        void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z )
+        void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z,uint16_t col )
         {
-            srand(12345);
             for( int i = 0; i<num ; i++){
                 float rx = -0.499f + (double)rand()/(double)RAND_MAX;
                 float ry = -0.499f + (double)rand()/(double)RAND_MAX;
@@ -197,11 +171,12 @@ namespace ezp
                 pt[i].x = ((float)x + rx*flen ) *100;
                 pt[i].y = ((float)y + ry*flen ) *100;
                 pt[i].z = ((float)z + rz*flen ) *100;
-                pt[i].col = 0xF0FFFFF0;
+                pt[i].col = col;
             }
         }
 
         void GenerateSample(){
+            Clear();
             uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
             uint32_t totPoints = sx*sy*sfPoints;
             UI::Get()->PrintMessage("Sample");
@@ -209,14 +184,15 @@ namespace ezp
             AllocVerts(totPoints);
             FPoint4* pt = GetVerts(); 
             FPoint4* pv = pt;
+            srand(12345);
             for( int y = 0; y<sy; y++){
                 for( int x = 0; x<sx; x++){
-                    Sphere(pt, sfPoints, 0.4f, x, y, 0);
+                    Sphere(pt, sfPoints, 0.4f, x, y, 0,rand()&0xFFFF);
                     pt += sfPoints;  
                 }
             } 
             processVertData(); 
-            //addVertData(pv, totPoints);
+            Renderer::Get()->SetColorMode(UI::UICOLOR_RGB);
         }  
  
     }; //SceneImpl
