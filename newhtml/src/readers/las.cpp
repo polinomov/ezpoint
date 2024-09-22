@@ -361,14 +361,6 @@ namespace ezp
 		}
 
 		void PostProcessColors(){
-			/*
-			std::cout<<"hmin="<<m_hMin<<" hmax="<<m_hMax<<std::endl;
-			if(m_hasRgb){
-				std::cout<<"m_rMin="<<m_rMin<<" m_rMin="<<m_rMax<<std::endl;
-				std::cout<<"m_gMin="<<m_gMin<<" m_gMin="<<m_gMax<<std::endl;
-				std::cout<<"m_bMin="<<m_bMin<<" m_bMin="<<m_bMax<<std::endl;
-			}
-			*/
 			int shift_rgb = 3;
 			if( ((m_rMax - m_rMin)>256) || ((m_gMax - m_gMin))>256  || ((m_bMax - m_bMin))>256 ){
 				shift_rgb  = 11;

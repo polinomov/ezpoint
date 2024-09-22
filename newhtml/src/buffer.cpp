@@ -43,7 +43,6 @@ namespace ezp
 	struct RendererImpl : public Renderer
 	{
 		uint64_t *m_frbuff;
-	   // uint32_t *m_colorBuff;
 		uint64_t *m_auxBuff;
 		int m_canvasW, m_canvasH;
 		float m_atanRatio;
@@ -207,7 +206,6 @@ namespace ezp
 			m_bdClickX = x;
 			m_bdClickY = y;
 			m_hasDbClick = true;
-//            std::cout<<"DbClick: "<<x<<" "<<y<<std::endl;
 		}
 
 		void MoveCameraOnDbClick(){
@@ -442,21 +440,11 @@ namespace ezp
 			static FPoint4 pt4;
 			uint64_t addrd = (uint64_t)(&pt4);
 			uint64_t *p32 = (uint64_t*)m_frbuff;
-			#if 0
-   			for (int y = 0; y < winH; y++) {
-				for (int x = 0; x < winW; x++) {
-					int dst = x + y * m_canvasW;
-					p32[dst] = 0xFFFFFFFF;
-					//m_colorBuff[dst] = m_bkcolor;
-				}
-			}
-			#endif
 
 			memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
 			if(m_hasDbClick){
 				memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
 			}
-			//m_palGray[0] = m_bkcolor;
 		   
 			BuildProjMatrix(winW,winH,  m_atanRatio);
 			m_sceneSize = Scene::Get()->GetSize();
@@ -496,23 +484,14 @@ namespace ezp
 			}
 			// helpers
 			//RenderPoint(pBuff,m_canvasW, m_canvasH, 0, 0 );
-			RenderString( "123450-BLINN",300,200,pBuff,m_canvasW, m_canvasH);
-			#if 0
 			{
-				const std::vector<std::shared_ptr<Chunk>>& chunks = Scene::Get()->GetChunks();
-				float swf = (float)winW *0.5f;
-				float shf = (float)winH *0.5f;
-				for( int m = 0; m<chunks.size(); m++) {
-					FPoint4 *res = &chunks[m]->proj;
-					if((res->z>0.001f)){
-						int x = (int) (swf + res->x/res->z );
-						int y = (int) (shf + res->y/res->z ); 
-						RenderPoint(pBuff,m_canvasW, m_canvasH, x, y );
-					}                            
-				}
+				float pvx,pvy,pvz;
+				Camera *pCam = Camera::Get();
+				pCam->GetPivot(pvx,pvy,pvz);
+				RenderString( std::to_string(pvx),3,2,pBuff,m_canvasW, m_canvasH);
+				RenderString( std::to_string(pvy),3,17,pBuff,m_canvasW, m_canvasH);
+				RenderString( std::to_string(pvz),3,32,pBuff,m_canvasW, m_canvasH);
 			}
-			#endif
-
 
 			if(m_showfr){
 				DbgShowFrameRate(m_visPoints,rndMs);  
