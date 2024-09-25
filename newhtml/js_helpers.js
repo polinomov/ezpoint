@@ -23,7 +23,6 @@ function callWasm1() {
 }
 
 function OnTest( v) {
-    console.log("Hello TestMe JS-\n");
     test_cb = Module.cwrap('OnTestJS', 'number', ['number']);
     test_cb(v);
 }
@@ -89,8 +88,6 @@ function OnLoadLas(input) {
     }
     
     // Start reading
-    //confirm('Are you sure ?');
-    //prompt('Are you sure ?');
     console.log("JS#### Start here ");
     chunkSz_ =load_file_cb(s_action_chunk, 0, 0); 
     console.log("JS hdrSz->"+chunkSz_);
@@ -386,6 +383,9 @@ class ProscessEventsClass {
     onKeyUp(e) {
         if (e.key == "Control") {
             this.ctrlOn = 0;
+        }
+        if(e.key == " "){
+            OnTest(1); // toggle measurement mpde
         }
     }
 

@@ -257,8 +257,7 @@ extern "C" {
     }
 
     int OnTestJS(int val){ //JS call
-        std::cout<<"onTest "<<val<<std::endl;
-        //ezp::Scene *pRnd = ezp::Renderer::Get();
+         //ezp::Scene *pRnd = ezp::Renderer::Get();
         if(val== -1){
             if(gAlwaysRender==0){
                 gAlwaysRender = 1;
@@ -272,6 +271,9 @@ extern "C" {
             ezp::Renderer::Get()->SetDebugParam(-2);
         }
         gRenderEvent = 2;
+        if(val==1){
+            ezp::Renderer::Get()->ToggleMeasurement();
+        }
         return 0;
     }
 
