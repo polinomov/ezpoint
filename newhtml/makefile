@@ -12,6 +12,7 @@ EXP_FUNC = _CallCFunc,_CallCFunc2,_main,_malloc,_free,_OnDebugCheckBox,_OnTestJS
 EXP_FUNC := $(EXP_FUNC),_OnUIChangeJS
 EXP_FUNC := $(EXP_FUNC),_LdLasCPP
 EXP_FUNC := $(EXP_FUNC),_LoadFileDataJS
+EXP_FUNC := $(EXP_FUNC),_MouseMoveJS
 
 EMFLAGS = -O3 \
 -s DISABLE_EXCEPTION_CATCHING=1 \

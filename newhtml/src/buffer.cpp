@@ -1,3 +1,7 @@
+/*
+  lasinspector - online point cloud viwer
+  Copyright (c) 2020-2024 ezpoint3d
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,14 +13,7 @@
 #include "rdhelpers.h"
 #include "wasm_simd128.h"
 #include "xmmintrin.h"
-/*
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#define KEEPALIVE EMSCRIPTEN_KEEPALIVE
-#else
-#define KEEPALIVE
-#endif
-*/
+
 #define MPROJ(_m0,_m1,_m2,_m3,_vx,_vy,_vz,_res) \
            {\
           __m128 r0 = _mm_mul_ps(_vx, _m0);\
@@ -71,6 +68,8 @@ namespace ezp
     bool m_hasDbClick;
     uint32_t m_bdClickX;
     uint32_t m_bdClickY;
+    uint32_t m_mouseX;
+    uint32_t m_mouseY;
     char m_outsrt[1024];
  
     void Init(int canvasW, int canvasH){
@@ -80,14 +79,14 @@ namespace ezp
       m_frbuff  = new uint64_t[canvasW *canvasH + 128];
       uint64_t addr = (uint64_t)m_frbuff;
       addr = (addr +128) &(~127);
-      m_frbuff =(uint64_t*)addr;//new float[pBf[i]*4];
-      //m_colorBuff = new uint32_t[canvasW *canvasH];
+      m_frbuff =(uint64_t*)addr;
       m_showfr = false;
       m_measurement = false;
       m_sceneSize = 1;
       m_dbgFlf = false;
       m_zmax = m_zmin = 0.0f;
       m_hasDbClick = false;
+      m_mouseX = m_mouseY = -1;
       ezp::UI *pUI = ezp::UI::Get();
       m_bkcolor = pUI->GetBkColor();
       m_pointSize = pUI->GetPtSize();
@@ -150,24 +149,6 @@ namespace ezp
       }
     }
      
-#if 0
-    void TestSimd(){
-       float va[4] = {1.0f,2.0f,3.0f,4.0f};
-       float vb[4] = {1.0f,2.0f,3.0f,4.0f};
-       float out[4];
-       __m128 x =  _mm_loadu_ps((const float*)va);
-       __m128 y =  _mm_loadu_ps((const float*)vb);
-       //__m128 sum_01 = _mm_hadd_ps(m0, m1);
-       __m128 result = _mm_mul_ps(x, y);
-       _mm_storeu_ps((float*)out, result);
-       std::cout<<"XXXXXXX"<<out[0]<<","<<out[1]<<","<<out[2]<<","<<out[3]<<std::endl;
-       float s = 7.0f;
-       const __m128 scalar = _mm_set1_ps(s);
-      __m128 r = _mm_mul_ps(x, scalar);
-       _mm_storeu_ps((float*)out, r);
-      std::cout<<"XXXXXXX"<<out[0]<<","<<out[1]<<","<<out[2]<<","<<out[3]<<std::endl;
-    }
-#endif
     void ShowFrameRate(bool val){
       m_showfr = val;
     }
@@ -210,15 +191,20 @@ namespace ezp
       m_hasDbClick = true;
     }
 
-    void ToggleMeasurement(){
-      m_measurement = !m_measurement;
+    void MouseMoveEvent( uint32_t x, uint32_t y){
+      m_mouseX = x;
+      m_mouseY = y;
+    } 
+
+    void SetRuler(int val){
+      m_measurement = (val>0)? true:false;
     }
 
     void MoveCameraOnDbClick(){
       uint32_t addr = m_bdClickX + m_canvasW *m_bdClickY;
       uint64_t ptPtr = m_auxBuff[addr];
       if(ptPtr != -1){
-        FPoint4 pos,piv;
+        FPoint4 pos,piv;  
         Camera *pCam = Camera::Get();
         pCam->GetPivot(piv.x,piv.y,piv.z);
         pCam->GetPos(pos.x,pos.y,pos.z);
@@ -229,8 +215,6 @@ namespace ezp
         pCam->SetPos(pos.x + dx,pos.y + dy,pos.z + dz);
         pCam->SetPivot(pT->x,pT->y,pT->z);
         UI::Get()->SetRenderEvent(2);
-        //printf("pr= %f,%f,%f,%xd\n",pT->x,pT->y,pT->z,pT->col);
-         // printf("piv= %f,%f,%f\n",pP[0],pP[1],pP[2]);
       }
       else{
         printf("****\n");
@@ -309,7 +293,9 @@ namespace ezp
         for( int n = 0; n<5; n++){ //normals
           int cntb = 0;
           for( int k =0; k<8; k++){// bddox
-            float v = (bdd[k].x - pP[0]) * rp->CNorm[n].x + (bdd[k].y - pP[1]) * rp->CNorm[n].y + (bdd[k].z - pP[2]) * rp->CNorm[n].z; 
+            float v = (bdd[k].x - pP[0]) * rp->CNorm[n].x + 
+                      (bdd[k].y - pP[1]) * rp->CNorm[n].y + 
+                      (bdd[k].z - pP[2]) * rp->CNorm[n].z; 
             if(v>0.f){
               cntb++;
             }else{
@@ -416,7 +402,7 @@ namespace ezp
     }
 
     void HintString(const std::string &hint,unsigned int *pBuff,int winW, int winH){
-      RenderString(hint,5,winH-20,pBuff,m_canvasW, m_canvasH);
+      RenderString(hint,5,5,pBuff,m_canvasW, m_canvasH);
     }
 
     void Render(unsigned int *pBuff, int winW, int winH,int evnum){
@@ -466,11 +452,9 @@ namespace ezp
         m_postTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
       }
       // helpers
-      if(!m_measurement){
-        HintString(" Press Space to switch to the measurement mode ",pBuff, winW, winH);
-      }
-      else{
-        HintString(" Measurement mode. Press Space to exit ",pBuff, winW, winH);
+      if(m_measurement){
+        HintString(" MEASURMENT MODE.Move mouse and click to select point.Use arrow to rotate camera. ",pBuff, winW, winH);
+        RenderPoint(pBuff,  m_canvasW, m_canvasH, m_mouseX, m_mouseY);
       }
       #if 0
       {
@@ -488,6 +472,7 @@ namespace ezp
       }         
     }  
 
+    /* Post process. Apply point size*/
     template <unsigned int M>
     void XERR1(unsigned int *pBuff, int winW, int winH){
       uint32_t *pUPal,msk,shift;
@@ -547,18 +532,7 @@ namespace ezp
         }
       } 
     }
-#if 0
-    void XERR(unsigned int *pBuff, int winW, int winH){
-      static const int nsz = 3;
-      for (int y = 0; y < winH; y++) {
-        for (int x = 0,n = 0; x < winW; x++, n++){
-          int dst = x + y * m_canvasW;
-           // uint8_t cndx = m_colorBuff[dst] & 0xFF;
-           // pBuff[dst] = m_palGray[cndx];
-        }
-      } 
-    }
-#endif
+
     void DbgShowFrameRate( int num_rnd,uint32_t rndMs){
       static unsigned char cnt = 0,nn =0;
       static std::chrono::time_point<std::chrono::system_clock> prev;

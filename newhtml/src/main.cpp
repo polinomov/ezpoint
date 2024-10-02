@@ -271,9 +271,6 @@ extern "C" {
             ezp::Renderer::Get()->SetDebugParam(-2);
         }
         gRenderEvent = 2;
-        if(val==1){
-            ezp::Renderer::Get()->ToggleMeasurement();
-        }
         return 0;
     }
 
@@ -330,6 +327,12 @@ extern "C" {
         return 0;
     }
 
+    int MouseMoveJS(int xval, int yval){
+        ezp::Renderer::Get()->MouseMoveEvent( (uint32_t) xval, (uint32_t)yval-gMenuShift);
+        gRenderEvent = 1;
+        return 0;
+    }
+
     int  main() {
         OutLine("MAIN");
         InitSDL();
@@ -359,6 +362,7 @@ namespace ezp
             m_strToId["camReset"] = UICAM_RESET;
             m_strToId["camOrto"] = UICAM_ORTO;
             m_strToId["SampleId"] = UIDATA_SAMPLE;
+            m_strToId["ruler"] = UIRULER;
         }
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");
@@ -440,8 +444,10 @@ namespace ezp
                    ezp::Scene::Get()->SetCameraOrto();
                 break;
                 case UIDATA_SAMPLE:
-                   //ezp::Scene::Get()->BuildTest(0);
                    ezp::Scene::Get()->GenerateSample();
+                break;
+                case UIRULER:
+                   ezp::Renderer::Get()->SetRuler(val);
                 break;
                 default:
                     std::cout<<"UNKNOWN"<<std::endl;

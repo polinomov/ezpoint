@@ -28,7 +28,8 @@ namespace ezp
       UIRENDER_ALL,
       UICAM_RESET,
       UICAM_ORTO,
-      UIDATA_SAMPLE
+      UIDATA_SAMPLE,
+      UIRULER
     };
 
     virtual void PrintMessage( const char *pMsg) = 0;
@@ -104,7 +105,8 @@ namespace ezp
     virtual void SetColorMode( uint32_t val) = 0;
     virtual void SetRenderAll( uint32_t val) = 0;
     virtual void SetDbClickEvent( uint32_t x, uint32_t y) = 0;
-    virtual void ToggleMeasurement() =0;
+    virtual void SetRuler(int val) =0;
+    virtual void MouseMoveEvent( uint32_t x, uint32_t y) = 0;
     static Renderer* Get();
   };
 }

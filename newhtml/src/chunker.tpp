@@ -1,3 +1,8 @@
+/*
+  lasinspector - online point cloud viewer
+  Copyright (c) 2020-2024 ezpoint3d
+*/
+
 #include <iostream>
 #include <functional>
 static int depth = 0;
@@ -76,9 +81,9 @@ static uint32_t doPartition(T* pV , uint32_t first, uint32_t last, decltype(pV->
     uint32_t ret = nl+first-1;
     if((nl==0)||(nl==last-first+1)){
         ezp::FBdBox fb =getBdBox(pV, first, last);
-        std::cout<<"@@@@@@@@@ FAILED TO PARITION N="<<N<<" nl="<<nl<<std::endl;
+        //std::cout<<"@@@@@@@@@ FAILED TO PARITION N="<<N<<" nl="<<nl<<std::endl;
         ShowBdBox(fb);
-        std::cout<<"first="<<first<<" last="<<last<<" mid="<<mid<<std::endl;
+        //std::cout<<"first="<<first<<" last="<<last<<" mid="<<mid<<std::endl;
         return -1;
     }
 
