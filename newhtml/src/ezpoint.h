@@ -67,6 +67,7 @@ namespace ezp
     virtual void ZoomOut( float val) = 0;
     virtual void MoveLeftOrRight( float val) = 0;
     virtual void MoveUpOrDown( float val) = 0;
+    virtual void Project( float x, float y, float z,float &d, float &u, float &r) = 0;
     static Camera  *Get();
   };
 
@@ -107,7 +108,17 @@ namespace ezp
     virtual void SetDbClickEvent( uint32_t x, uint32_t y) = 0;
     virtual void SetRuler(int val) =0;
     virtual void MouseMoveEvent( uint32_t x, uint32_t y) = 0;
+    virtual void MouseClickEvent() = 0;
     static Renderer* Get();
+  };
+
+  struct RenderHelper{
+    virtual void Init()= 0;
+    virtual  uint32_t getClosePoint(uint32_t mx, uint32_t my,uint64_t *pt,int cW,int cH) = 0;
+    virtual void Render(unsigned int *pBuff, int cW,int cH,int winW,int winH) = 0;
+    virtual void MouseMove(uint32_t mx, uint32_t my,uint64_t *pt,int cW,int cH) = 0;
+    virtual void MouseClick() = 0;
+    static RenderHelper* Get();
   };
 }
 

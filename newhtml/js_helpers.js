@@ -14,6 +14,7 @@ var gCamMoveCb;
 var gCamDbClickCB;
 var gUIChangeCB;
 var gMouseMoveCB;
+var gMouseClickCB;
 var gIdChanged = "unknown"
 var gDisableRdb = 0;
 
@@ -342,6 +343,9 @@ class ProscessEventsClass {
         this.posY = e.clientY;
         if(e.button==0){//left
             this.action = 1; //rotate
+            if(this.isRuler===1){
+                gMouseClickCB(0,0);
+            }
         }
         if(e.button==2){//right
             console.log("btnCode="+ e.button);
@@ -447,6 +451,7 @@ function OnStart() {
     gCamDbClickCB = Module.cwrap('CameraMoveDbClickJS', 'number', ['number','number']);
     gUIChangeCB = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
     gMouseMoveCB = Module.cwrap('MouseMoveJS', 'number', ['number', 'number']);
+    gMouseClickCB =  Module.cwrap('MouseClickJS', 'number', ['number', 'number']);
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas, false);
     window.addEventListener('keydown', (event) => { ProcessEvents.onKeyDown(event); }, false);

@@ -333,6 +333,12 @@ extern "C" {
         return 0;
     }
 
+    int MouseClickJS(){
+        ezp::Renderer::Get()->MouseClickEvent();
+        gRenderEvent = 1;
+        return 0;
+    }
+
     int  main() {
         OutLine("MAIN");
         InitSDL();

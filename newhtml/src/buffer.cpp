@@ -62,19 +62,19 @@ namespace ezp
     bool m_showfr;
     bool m_dbgFlf;
     bool m_measurement;
+    uint32_t m_rdPt;
     uint32_t m_postTime;
     uint32_t m_totalRdPoints;
     uint32_t m_renderAll;
     bool m_hasDbClick;
     uint32_t m_bdClickX;
     uint32_t m_bdClickY;
-    uint32_t m_mouseX;
-    uint32_t m_mouseY;
     char m_outsrt[1024];
  
     void Init(int canvasW, int canvasH){
       m_canvasW = canvasW;
       m_canvasH = canvasH;
+      m_rdPt = 0;
       m_auxBuff = new uint64_t[canvasW *canvasH];
       m_frbuff  = new uint64_t[canvasW *canvasH + 128];
       uint64_t addr = (uint64_t)m_frbuff;
@@ -86,7 +86,6 @@ namespace ezp
       m_dbgFlf = false;
       m_zmax = m_zmin = 0.0f;
       m_hasDbClick = false;
-      m_mouseX = m_mouseY = -1;
       ezp::UI *pUI = ezp::UI::Get();
       m_bkcolor = pUI->GetBkColor();
       m_pointSize = pUI->GetPtSize();
@@ -134,6 +133,7 @@ namespace ezp
          }
       }
       buildPal16();
+      RenderHelper::Get()->Init();
     }
 
     void buildPal16(){
@@ -189,21 +189,31 @@ namespace ezp
       m_bdClickX = x;
       m_bdClickY = y;
       m_hasDbClick = true;
+      m_rdPt = 1;
     }
 
     void MouseMoveEvent( uint32_t x, uint32_t y){
-      m_mouseX = x;
-      m_mouseY = y;
+      RenderHelper::Get()->MouseMove(x,y,m_auxBuff,m_canvasW ,m_canvasH);
     } 
 
+    void MouseClickEvent(){
+      RenderHelper::Get()->MouseClick();
+    }
+
     void SetRuler(int val){
-      m_measurement = (val>0)? true:false;
+      if(val >0 ){
+        m_measurement = true;
+        m_rdPt =1;
+      }else{
+        m_measurement = false;
+        m_rdPt =0;      
+      }
     }
 
     void MoveCameraOnDbClick(){
-      uint32_t addr = m_bdClickX + m_canvasW *m_bdClickY;
-      uint64_t ptPtr = m_auxBuff[addr];
-      if(ptPtr != -1){
+      uint32_t addr =RenderHelper::Get()->getClosePoint(m_bdClickX,m_bdClickY,m_auxBuff,m_canvasW,m_canvasH);
+      if(addr != -1){
+        uint64_t ptPtr = m_auxBuff[addr];
         FPoint4 pos,piv;  
         Camera *pCam = Camera::Get();
         pCam->GetPivot(piv.x,piv.y,piv.z);
@@ -381,7 +391,7 @@ namespace ezp
               uint64_t pr = (zi<zb)? -1L:0;
               uint64_t pr1 = ~pr;
               *pAddr = (zi & pr) + (zb & pr1);
-              if(rp->m_hasDbClick){
+              if(rp->m_rdPt){
                 uint64_t oldPt = m_auxBuff[dst];
                 m_auxBuff[dst]  = (((uint64_t)pV4) & pr) + (oldPt & pr1);
               }
@@ -401,9 +411,11 @@ namespace ezp
       }
     }
 
+    /*
     void HintString(const std::string &hint,unsigned int *pBuff,int winW, int winH){
       RenderString(hint,5,5,pBuff,m_canvasW, m_canvasH);
     }
+    */
 
     void Render(unsigned int *pBuff, int winW, int winH,int evnum){
       static int val = 0;
@@ -412,7 +424,7 @@ namespace ezp
       uint64_t *p32 = (uint64_t*)m_frbuff;
 
       memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
-      if(m_hasDbClick){
+      if((m_hasDbClick)||(m_rdPt)){
         memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
       }
        
@@ -435,6 +447,7 @@ namespace ezp
           MoveCameraOnDbClick();
         }
         m_hasDbClick = false;
+        if(m_measurement == false) m_rdPt = 0;
       }
       // postprocess
       {
@@ -453,8 +466,9 @@ namespace ezp
       }
       // helpers
       if(m_measurement){
-        HintString(" MEASURMENT MODE.Move mouse and click to select point.Use arrow to rotate camera. ",pBuff, winW, winH);
-        RenderPoint(pBuff,  m_canvasW, m_canvasH, m_mouseX, m_mouseY);
+        //HintString(" MEASURMENT MODE.Move mouse and click to select point.Use arrow to rotate camera. ",pBuff, winW, winH);
+        //RenderPoint(pBuff,  m_canvasW, m_canvasH, m_mouseX, m_mouseY);
+        RenderHelper::Get()->Render(pBuff,  m_canvasW, m_canvasH,winW,winH);
       }
       #if 0
       {

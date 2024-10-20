@@ -107,6 +107,14 @@ namespace ezp
       x = m_L[0]; y = m_L[1]; z = m_L[2];
     }
 
+    void Project( float x, float y, float z,float &d, float &u, float &r){
+      vector3 P(x,y,z);
+      vector3 V = P-m_P;
+      d = V*m_D;
+      u = V*m_U;
+      r = V*m_R;
+    }
+
     void SetWorldUpAxis(float x, float y, float  z) {
       m_worldUp[0] = x;
       m_worldUp[1] = y;
