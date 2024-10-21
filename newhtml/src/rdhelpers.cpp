@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <algorithm>
+#include <string.h>
 #include "ezpoint.h"
 #include "rdhelpers.h"
 #include "fonts.h"
@@ -72,6 +73,7 @@ struct RenderHelperIml: public RenderHelper{
  
   void Init(){
     uint32_t h2 = m_ptSz/2;
+    //point shape
     for( uint32_t iy = 0; iy<m_ptSz; iy++){
       for( uint32_t ix = 0; ix<m_ptSz; ix++){
         uint32_t dx = (ix>h2) ? ix-h2 : h2-ix;
@@ -85,18 +87,34 @@ struct RenderHelperIml: public RenderHelper{
     m_hasPoint = false;
   }
 
+  void Reset(){
+    m_hasPoint = false;
+    for( int i = 0; i<m_maxLines; i++){
+      m_lines[i].m_isActive = false;
+      m_lines[i].m_isDone = false;
+    }
+  }
+
   uint32_t  getClosePoint(uint32_t mx, uint32_t my,uint64_t *pt,int cW,int cH){
-    static int sz = 7;
+    static int sz = 11;
     uint32_t ret = -1;
-    uint32_t dmin = 0xFFFFFFFF;
+    float dmin = std::numeric_limits<float>::max();
+    int maxAddr = cW*cH;
+    float camX,camY,camZ;
+    Camera::Get()->GetPos(camX,camY,camZ);
     for( int iy = my-sz/2; iy<my + sz/2;iy++){
       for( int ix = mx-sz/2;  ix<mx + sz/2;ix++){
         uint32_t addr = ix + cW *iy;
-        uint64_t ptPtr = pt[addr];
+        uint64_t ptPtr = -1;
+        if((addr>=0) &&(addr<maxAddr)){
+          ptPtr = pt[addr];
+        }
         if(ptPtr != -1){
-          uint32_t dx = mx - ix;
-          uint32_t dy = my - iy;
-          uint32_t dd = dx*dx + dy*dy;
+          FPoint4 *pT  = (FPoint4*)ptPtr;
+          float dx = camX - pT->x;
+          float dy = camY - pT->y;
+          float dz = camZ - pT->z;
+          float dd = dx*dx + dy*dy + dz*dz;
           if(dd<dmin){
             dmin  = dd;
             ret = addr;
@@ -127,7 +145,8 @@ struct RenderHelperIml: public RenderHelper{
     }
   }
 
-  void MouseClick(){
+  void OnSelectPoint(){
+    //std::cout<<"====SELECT===="<<std::endl;
     if(m_hasPoint){
       int ndx = -1;
       for( int i = 0; i<m_maxLines; i++){
@@ -170,7 +189,6 @@ struct RenderHelperIml: public RenderHelper{
   }
 
   void Render(unsigned int *pBuff, int cW,int cH,int winW,int winH){
-    RenderString("blah",5,5,pBuff,cW, cH);
     if(m_hasPoint){
       DrawPoint(pBuff,  cW, cH, m_mouseX, m_mouseY);
     }
@@ -181,6 +199,11 @@ struct RenderHelperIml: public RenderHelper{
         DrawPoint(pBuff,  cW, cH, pixX, pixY);
       }
     }
+    if(m_hasPoint){
+      char stmp[1024];
+      sprintf(stmp," PRESS M TO SELECT POINT ( x:%f  y:%f  z:%f ) ",m_currPoint.x,m_currPoint.y,m_currPoint.z);
+      RenderString(stmp,3,2, pBuff,cW,cH);
+     }
   }
   
 };

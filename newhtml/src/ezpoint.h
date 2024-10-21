@@ -114,10 +114,11 @@ namespace ezp
 
   struct RenderHelper{
     virtual void Init()= 0;
+    virtual void Reset() = 0;
     virtual  uint32_t getClosePoint(uint32_t mx, uint32_t my,uint64_t *pt,int cW,int cH) = 0;
     virtual void Render(unsigned int *pBuff, int cW,int cH,int winW,int winH) = 0;
     virtual void MouseMove(uint32_t mx, uint32_t my,uint64_t *pt,int cW,int cH) = 0;
-    virtual void MouseClick() = 0;
+    virtual void OnSelectPoint() = 0;
     static RenderHelper* Get();
   };
 }

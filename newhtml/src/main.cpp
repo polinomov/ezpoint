@@ -223,6 +223,7 @@ extern "C" {
 
         if ( action ==0 ){// start loading
             ezp::Scene::Get()->Clear();
+            ezp::RenderHelper::Get()->Reset();
             pLasBuilder = ezp::LasBuilder::Get();
             pLasBuilder->Reset();
             pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
@@ -269,6 +270,10 @@ extern "C" {
         }
         if(val== -2){
             ezp::Renderer::Get()->SetDebugParam(-2);
+        }
+        if(val==1){
+            std::cout<<"============= HA ==============="<<std::endl;
+            ezp::RenderHelper::Get()->OnSelectPoint(); 
         }
         gRenderEvent = 2;
         return 0;
@@ -334,9 +339,7 @@ extern "C" {
     }
 
     int MouseClickJS(){
-        ezp::Renderer::Get()->MouseClickEvent();
-        gRenderEvent = 1;
-        return 0;
+         return 0;
     }
 
     int  main() {

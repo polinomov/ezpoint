@@ -197,7 +197,7 @@ namespace ezp
     } 
 
     void MouseClickEvent(){
-      RenderHelper::Get()->MouseClick();
+     // RenderHelper::Get()->MouseClick();
     }
 
     void SetRuler(int val){

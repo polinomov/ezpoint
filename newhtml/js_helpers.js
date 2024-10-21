@@ -344,7 +344,7 @@ class ProscessEventsClass {
         if(e.button==0){//left
             this.action = 1; //rotate
             if(this.isRuler===1){
-                gMouseClickCB(0,0);
+               // gMouseClickCB(0,0);
             }
         }
         if(e.button==2){//right
@@ -356,7 +356,6 @@ class ProscessEventsClass {
     onMouseMove(e) {
         if(this.isRuler===1){
            gMouseMoveCB( e.clientX,e.clientY);
-           return;
         }
         if (this.mouseOn == 1) {
             let dx = e.clientX - this.posX;
@@ -396,8 +395,8 @@ class ProscessEventsClass {
         if (e.key == "Control") {
             this.ctrlOn = 0;
         }
-        if(e.key == " "){
-            OnTest(1); // toggle measurement mpde
+        if((e.key == "m")||(e.key == "M")){
+            OnTest(1); // Select
         }
     }
 
