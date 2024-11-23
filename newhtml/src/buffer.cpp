@@ -186,6 +186,7 @@ namespace ezp
     }
 
     void SetDbClickEvent( uint32_t x, uint32_t y){
+      std::cout<<"SetDbClickEvent"<<std::endl;
       m_bdClickX = x;
       m_bdClickY = y;
       m_hasDbClick = true;
@@ -362,7 +363,7 @@ namespace ezp
       float swf = (float)sw *0.5f;
       float shf = (float)sh *0.5f;
       rp->m_visPoints= 0;
-      for( int m = 0; m<chunks.size()-1; m++) {
+      for( int m = 0; m<chunks.size(); m++) {
         if(chunks[m]->numToRender<=1) continue;
         FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
         __m128 xss = _mm_set1_ps(pV4->x);

@@ -64,6 +64,23 @@ namespace ezp
   };
 
   #pragma pack (1)
+  struct PointFormat2
+  {
+    int x;
+    int y;
+    int z;
+    uint16_t intensity;
+    uint8_t pad8;
+    uint8_t classification;
+    uint8_t scanAngle;
+    uint8_t usrData;
+    uint16_t pointSourceId;
+    uint16_t red;
+    uint16_t green;
+    uint16_t blue;   
+  };
+
+  #pragma pack (1)
   struct PointFormat3
   {
     int32_t x;
@@ -120,7 +137,7 @@ namespace ezp
   };
 
   bool ptHasColor( int ptf){
-    if((ptf==7)||(ptf==3)) return true;
+    if((ptf==7)||(ptf==3)||(ptf==2)) return true;
     return false;
   }
   bool ptHasClass( int ptf){
@@ -150,6 +167,12 @@ namespace ezp
       r = p3->red;
       g = p3->green;
       b = p3->blue;
+    }
+   if(ptType==2){
+      PointFormat2 *p2 = (PointFormat2*)pt;
+      r = p2->red;
+      g = p2->green;
+      b = p2->blue;
     }
   }
 
@@ -295,7 +318,8 @@ namespace ezp
       }   
       m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId); 
       m_hasRgb =  ptHasColor((int)m_hdr.pointDataFormatId);
-      //std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
+      std::cout<<"=== LAS === verttype "<< (int)m_hdr.pointDataFormatId<<std::endl;
+      std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
       LasInfo inf;  
       inf.numPoints = m_numPoints;
       inf.hasRgb = m_hasRgb;
@@ -351,7 +375,7 @@ namespace ezp
       } 
       m_procPoints+=numInSrc;
       if(m_procPoints == m_numPoints){
-        std::cout<<"Start Processing"<<std::endl;
+       // std::cout<<"Start Processing"<<std::endl;
         std::cout<<m_Iminx<<" "<<m_Imaxx<<"|";
         std::cout<<m_Iminy<<" "<<m_Imaxy<<"|";
         std::cout<<m_Iminz<<" "<<m_Imaxz<<std::endl;

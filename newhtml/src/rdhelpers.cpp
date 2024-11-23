@@ -54,12 +54,19 @@ void RenderString( const std::string &st,int x, int y,uint32_t *pBuff,  int32_t 
   }
 }
 
-
 struct Line{
    FPoint4 m_pt[2];
    bool m_isDone;
    bool m_isActive;
+   float m_dist;
 };
+
+static float GetDist(const FPoint4 &a, const FPoint4 &b){
+  float dx = a.x - b.x;
+  float dy = a.y - b.y;
+  float dz = a.z - b.z;
+  return sqrt( dx*dx + dy*dy + dz*dz);
+}
 
 struct RenderHelperIml: public RenderHelper{
   static const uint32_t m_ptSz = 11;
@@ -70,6 +77,7 @@ struct RenderHelperIml: public RenderHelper{
   bool m_hasPoint;
   FPoint4 m_currPoint;
   Line m_lines[m_maxLines];
+  uint32_t m_selNdx;
  
   void Init(){
     uint32_t h2 = m_ptSz/2;
@@ -81,10 +89,11 @@ struct RenderHelperIml: public RenderHelper{
         uint32_t dd = dx*dx + dy*dy;
         uint32_t ad = ix + iy*m_ptSz;
         m_ptImage[ix + iy*m_ptSz] = (dd>h2*h2)? 0x0:0xFFFF0000;
-        if(dd<4)  m_ptImage[ix + iy*m_ptSz] = 0xFFFFFFFF;
+        if(dd<4)  m_ptImage[ix + iy*m_ptSz] = 0xFFFFFFF0;
       }
     }
     m_hasPoint = false;
+    m_selNdx = -1;
   }
 
   void Reset(){
@@ -93,6 +102,7 @@ struct RenderHelperIml: public RenderHelper{
       m_lines[i].m_isActive = false;
       m_lines[i].m_isDone = false;
     }
+    m_selNdx = -1;
   }
 
   uint32_t  getClosePoint(uint32_t mx, uint32_t my,uint64_t *pt,int cW,int cH){
@@ -147,7 +157,10 @@ struct RenderHelperIml: public RenderHelper{
 
   void OnSelectPoint(){
     //std::cout<<"====SELECT===="<<std::endl;
-    if(m_hasPoint){
+    if(!m_hasPoint){
+      return;
+    }
+    if(m_selNdx==-1){
       int ndx = -1;
       for( int i = 0; i<m_maxLines; i++){
         if(m_lines[i].m_isActive==false){
@@ -159,15 +172,47 @@ struct RenderHelperIml: public RenderHelper{
         m_lines[ndx].m_pt[0] = m_currPoint;
         m_lines[ndx].m_isDone = false;
         m_lines[ndx].m_isActive = true;
+        m_selNdx = ndx;
       }
+    }else{
+      m_lines[m_selNdx].m_pt[1] = m_currPoint;
+      m_lines[m_selNdx].m_isDone = true;
+      m_lines[m_selNdx].m_isActive = true;
+      m_selNdx = -1;
+      //m_lines[m_selNdx].m_dist
     }
+  }
+  
+  bool DrawLine(uint32_t *pBuff, int cW,int cH,int px0, int py0,int px1, int py1){
+    if((px0<0) ||( px0>= cW)) return false;
+    if((px1<0) ||( px1>= cW)) return false;
+    if((py0<0) ||( py0>= cH)) return false;
+    if((py1<0) ||( py1>= cH)) return false;
+    float fx0 = (float)px0;
+    float fy0 = (float)py0;
+    float fx1 = (float)px1;
+    float fy1 = (float)py1;
+    float fdx = fx1 - fx0;
+    float fdy = fy1 - fy0;
+    float fdd = fdx*fdx + fdy*fdy;
+    if(fdd<1.0f){
+      return false;
+    }
+    for(int t = 0; t<(int)fdd;t++){
+      float prd = (float)t/fdd;
+      int sx = (int)(prd * fx0 + (1.0f - prd) * fx1);
+      int sy = (int)(prd * fy0 + (1.0f - prd) * fy1);
+      uint32_t addr = sx + cW *sy;
+      pBuff[addr] = 0xFFFFFFFF;
+    }
+    return true;
   }
 
   void DrawPoint(uint32_t *pBuff, int cW,int cH,int px, int py){
     for( int iy = 0; iy<m_ptSz; iy++){
       for( int ix = 0; ix<m_ptSz; ix++){
-        int sx = px + ix - m_ptSz;
-        int sy = py + iy - m_ptSz;
+        int sx = px + ix - m_ptSz/2;
+        int sy = py + iy - m_ptSz/2;
         if((sx>0)&&(sx<cW)&&(sy>0)&&(sy<cH)){
           uint32_t addr = sx + cW *sy;
           if(m_ptImage[ix + iy*m_ptSz] != 0){
@@ -178,14 +223,18 @@ struct RenderHelperIml: public RenderHelper{
     }
   }
 
-  void ProjectPoint(const FPoint4 &pt,int winW,int winH,int &pixX, int &pixY){
+  bool ProjectPoint(const FPoint4 &pt,int winW,int winH,int &pixX, int &pixY){
     float d,u,r;
     Camera::Get()->Project(pt.x,pt.y,pt.z,d,u,r);
-    float atanr = Renderer::Get()->GetAtanRatio();
-    float pixSize = 0.5f * (float)std::min(winW,winH);
-    float prd = atanr* pixSize;
-    pixX = (int) ((float)winW*0.5f + prd* r/d);
-    pixY = (int) ((float)winH*0.5f + prd* u/d);                             
+    if(d>0.00001f){
+      float atanr = Renderer::Get()->GetAtanRatio();
+      float pixSize = 0.5f * (float)std::min(winW,winH);
+      float prd = atanr* pixSize;
+      pixX = (int) ((float)winW*0.5f + prd* r/d);
+      pixY = (int) ((float)winH*0.5f + prd* u/d);
+      return true;  
+    }  
+    return false;                         
   }
 
   void Render(unsigned int *pBuff, int cW,int cH,int winW,int winH){
@@ -195,15 +244,37 @@ struct RenderHelperIml: public RenderHelper{
     for( int i = 0; i<m_maxLines; i++){
       if(m_lines[i].m_isActive){
         int pixX =-1, pixY = -1;
-        ProjectPoint(m_lines[i].m_pt[0],winW,winH,pixX,pixY);
-        DrawPoint(pBuff,  cW, cH, pixX, pixY);
+        if(ProjectPoint(m_lines[i].m_pt[0],winW,winH,pixX,pixY)){
+          DrawPoint(pBuff,  cW, cH, pixX, pixY);
+          if(m_lines[i].m_isDone){
+            int pixX2 =-1, pixY2 = -1;
+            if(ProjectPoint(m_lines[i].m_pt[1],winW,winH,pixX2,pixY2)){
+              bool hl = DrawLine(pBuff,cW, cH, pixX2, pixY2,pixX, pixY);
+              DrawPoint(pBuff,  cW, cH, pixX2, pixY2);
+              int xmm = (pixX + pixX2 )/2;
+              int ymm = (pixY + pixY2 )/2;
+              float fd  = GetDist(m_lines[i].m_pt[0], m_lines[i].m_pt[1]);
+              if(hl) RenderString(std::to_string(fd),xmm,ymm, pBuff,cW,cH);
+            }
+          }else{
+            if(m_hasPoint){
+              int xmm = (pixX + m_mouseX )/2;
+              int ymm = (pixY + m_mouseY )/2;
+              bool hl =  DrawLine(pBuff,cW, cH, m_mouseX, m_mouseY,pixX, pixY);
+              float fd  = GetDist(m_lines[i].m_pt[0], m_currPoint);
+              if(hl) RenderString(std::to_string(fd),xmm,ymm, pBuff,cW,cH);
+            }
+          }
+        }
       }
     }
     if(m_hasPoint){
       char stmp[1024];
       sprintf(stmp," PRESS M TO SELECT POINT ( x:%f  y:%f  z:%f ) ",m_currPoint.x,m_currPoint.y,m_currPoint.z);
       RenderString(stmp,3,2, pBuff,cW,cH);
-     }
+      RenderString("PRESS Q TO UNDO",3,20, pBuff,cW,cH);
+    }
+    //DrawLine(pBuff,cW, cH, 100, 100,200, 250);
   }
   
 };

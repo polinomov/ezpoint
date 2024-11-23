@@ -331,10 +331,16 @@ class ProscessEventsClass {
     }
 
     onMouseClick(e) {
+        //console.log("onMouseClick button= "+ e.button);
     }
 
     onDbClick(e){
-        gCamDbClickCB(e.clientX,e.clientY);
+        console.log("DBClick ruler "+ this.isRuler);
+        if(this.isRuler===1){
+            OnTest(1);
+        } else {
+            gCamDbClickCB(e.clientX,e.clientY);
+        }
     }
 
     onMouseDown(e) {
@@ -348,7 +354,7 @@ class ProscessEventsClass {
             }
         }
         if(e.button==2){//right
-            console.log("btnCode="+ e.button);
+            console.log("===btnCode="+ e.button);
             this.action = 2; //move
         }
     }

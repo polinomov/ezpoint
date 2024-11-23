@@ -272,7 +272,6 @@ extern "C" {
             ezp::Renderer::Get()->SetDebugParam(-2);
         }
         if(val==1){
-            std::cout<<"============= HA ==============="<<std::endl;
             ezp::RenderHelper::Get()->OnSelectPoint(); 
         }
         gRenderEvent = 2;
