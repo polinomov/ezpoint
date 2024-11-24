@@ -21,12 +21,17 @@ namespace ezp
 
     struct LasBuilder{
         virtual void RegisterCallbacks(
-            std::function<int (uint32_t n )> alloc,
-            std::function<FPoint4 *()> getVerts,
+            // alloc returns memory bank index
+            std::function<int (uint32_t n )> alloc,  
+            //getVerts returns start of the vert array for a memory bank index ndx               
+            std::function<const FPoint4 *(uint32_t ndx)> getVerts, 
+            // when error occurs
             std::function<void( const std::string &msg)> onErr,
+            // writes to the info
             std::function<int( const LasInfo &info)> onInfo
         ) = 0;
         virtual uint32_t SetChunkData(void *pData) = 0;
+
         virtual void Reset() = 0;
         static LasBuilder *Get();
     };

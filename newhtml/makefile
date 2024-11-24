@@ -10,8 +10,8 @@ SOURCES = src\main.cpp\
 
 EXP_FUNC = _CallCFunc,_CallCFunc2,_main,_malloc,_free,_OnDebugCheckBox,_OnTestJS,_CameraRotateJS,_CameraMoveJS,_CameraMoveDbClickJS
 EXP_FUNC := $(EXP_FUNC),_OnUIChangeJS
-EXP_FUNC := $(EXP_FUNC),_LdLasCPP
-EXP_FUNC := $(EXP_FUNC),_LoadFileDataJS
+EXP_FUNC := $(EXP_FUNC),_LdLasCppJS
+EXP_FUNC := $(EXP_FUNC),_PostProcessDataJS
 EXP_FUNC := $(EXP_FUNC),_MouseMoveJS
 EXP_FUNC := $(EXP_FUNC),_MouseClickJS
 

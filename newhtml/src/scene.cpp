@@ -10,26 +10,25 @@ namespace ezp
     {
         std::vector<Chunk*> m_allChunks;
         FBdBox m_box;
-        FPoint4 *m_allVerts;
-        uint32_t m_numAllVerts;
+        std::vector<FPoint4*> m_allVerts;
+        std::vector<uint32_t> m_numAllVerts;
         bool m_isLoading;
         float m_size;
-        FPoint4 * m_pChPos;
-        FPoint4 * m_pChAuxPos;
+      //  FPoint4 * m_pChPos;
+      //  FPoint4 * m_pChAuxPos;
 
         bool IsLoading() { return m_isLoading;}
 
         SceneImpl(){
             m_size = 1.0f;
-            m_allVerts = NULL;
-            m_numAllVerts = 0;
+           // m_allVerts = NULL;
         }
 
         uint32_t AllocVerts( uint32_t num){
-            m_allVerts = new FPoint4[num];
+            m_allVerts.push_back(new FPoint4[num]);
             std::cout<<"SCENE ############## Allocating verts "<<num<<std::endl;
-            m_numAllVerts = num;
-            return num;
+            m_numAllVerts.push_back(num);
+            return  m_allVerts.size()-1;
         }
 
         void Clear(){
@@ -37,19 +36,19 @@ namespace ezp
                 delete m_allChunks[m];
             }
             m_allChunks.clear();
-            if(m_numAllVerts>0){
-                delete[] m_allVerts;
-                m_numAllVerts = 0;
-                m_allVerts = NULL;
+            for( int m = 0; m< m_allVerts.size(); m++) {
+                delete m_allVerts[m];
             }
+            m_allVerts.clear();
+            m_numAllVerts.clear();
         }
 
-        FPoint4 *GetVerts(){
-            return m_allVerts;
+        const FPoint4 *GetVerts(uint32_t n){
+            return m_allVerts[n];
         }
 
-        uint32_t GetNumVerts(){
-            return m_numAllVerts;
+        uint32_t GetNumVerts(uint32_t n){
+            return m_numAllVerts[n];
         }
   
         void SetCamera(){
@@ -86,20 +85,14 @@ namespace ezp
         }
 
         void SetCameraOrto(){}
- 
+        
+        /*
         void SetFileImage( void *pData, std::size_t sz,int fType) 
         {
             
         }
-
-        FPoint4* GetChunkPos(){
-            return m_pChPos;
-        }
-
-        FPoint4* GetChunkAuxPos(){
-            return m_pChAuxPos;
-        }
-
+        */
+    
         const std::vector<Chunk*>&  GetChunks() {
             return m_allChunks;
         }
@@ -108,7 +101,7 @@ namespace ezp
             return m_size;
         }
 
-        FBdBox GetBdBox(){
+        FBdBox GetSceneBdBox(){
             return m_box;
         }
 
@@ -150,12 +143,12 @@ namespace ezp
            // std::cout<<"OnChunk num="<<num<<std::endl;
         }
 
-        void processVertData(){
-            FPoint4* pt = GetVerts();
-            int num = GetNumVerts();
+        void processVertData(uint32_t n){
+            const FPoint4* pt = GetVerts(n);
+            int num = GetNumVerts(n);
             m_box = getBdBox<FPoint4>(pt, 0, num-1);
            // std::cout<<"@@@@@@@@@@@@ doChunks-1 @@@@@@@ num="<<num<<std::endl;
-            doChunks<FPoint4>(pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
+            doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
             //std::cout<<"@@@@@@@@@@@@ doChunks-2 @@@@@@@"<<std::endl;
             SetCamera();
             UI::Get()->SetRenderEvent(20);
@@ -182,8 +175,8 @@ namespace ezp
             UI::Get()->PrintMessage("Sample");
             UI::Get()->SetRenderEvent(1);
             AllocVerts(totPoints);
-            FPoint4* pt = GetVerts(); 
-            FPoint4* pv = pt;
+            FPoint4* pt =(FPoint4*) GetVerts(0); 
+            FPoint4* pv = (FPoint4*)pt;
             srand(12345);
             for( int y = 0; y<sy; y++){
                 for( int x = 0; x<sx; x++){
@@ -191,7 +184,7 @@ namespace ezp
                     pt += sfPoints;  
                 }
             } 
-            processVertData(); 
+            processVertData(0); 
             Renderer::Get()->SetColorMode(UI::UICOLOR_RGB);
         }  
  

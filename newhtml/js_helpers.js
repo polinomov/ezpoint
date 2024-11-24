@@ -35,10 +35,12 @@ function OnMouseMove(e) {
     OnDraw();
 }
 
-
 function OnLoadLas(input) {
-    document.getElementById('GFG').innerHTML = 'Reading ... '
-    var file = input.files[0];
+    var fileNdx_ = 0;
+    var numFiles_ = input.files.length;
+    document.getElementById('GFG').innerHTML = 'Reading ... ' + numFiles_;
+ 
+    var file = input.files[fileNdx_];
     if (!file) {
         console.log("NO FILE");
         return;
@@ -46,10 +48,11 @@ function OnLoadLas(input) {
     var readMemBlock = null;
     var chunkSz_ = 1024*1024;
     var currSz_ = 0;
-    var ext = input.files[0].name.split('.').pop();
-    var totSz_ = input.files[0].size; 
+   // var ext = input.files[fileNdx].name.split('.').pop();
+    var totSz_ = input.files[fileNdx_].size; 
     console.log("JS-----------Reading file size here--- " + totSz_);
-    load_file_cb = Module.cwrap('LdLasCPP', 'number', ['arrayPointer', 'number', 'number'], { async: true });
+    //load_file_cb = Module.cwrap('LdLasCppJS', 'number', ['arrayPointer', 'number', 'number'], { async: true });
+    load_file_cb = Module.cwrap('LdLasCppJS', 'number', ['arrayPointer', 'number', 'number']);
     var s_action_chunk = Module._malloc(128);
     Module.HEAPU8.set(new TextEncoder().encode("datchunk"), s_action_chunk); 
  
@@ -59,6 +62,7 @@ function OnLoadLas(input) {
         var array = new Uint8Array(data);
         var res_ptr = Module._malloc(dtsize);
         Module.HEAPU8.set(array, res_ptr);  
+        console.log("call load_file_cb " + dtsize);
         chunkSz_ = load_file_cb(res_ptr, 1, dtsize); 
         Module._free(res_ptr);
         currSz_ +=  dtsize;
@@ -66,13 +70,27 @@ function OnLoadLas(input) {
     };
 
     var readerDoneLoad = function (e) {
-       // console.log("JS-readerDoneLoad " + chunkSz_);
         if(chunkSz_=== 0){
-            document.getElementById('GFG').innerHTML = "Done"
-            return;
+            console.log("JS-readerDoneLoad chunkSz_=== 0 --------> fileNdx_" + fileNdx_);
+            fileNdx_ = fileNdx_ + 1;
+            if(fileNdx_ === numFiles_){
+               console.log("JS-readerDoneLoad #### " + chunkSz_);
+               document.getElementById('GFG').innerHTML = "Done";
+               post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
+               post_proc_file_cb(0,numFiles_-1);
+               return;
+            }
+            else{
+                totSz_ = input.files[fileNdx_].size; 
+                console.log("JS-readerDoneLoad continue fsize=" +  totSz_);  
+                currSz_ = 0;
+                chunkSz_ = load_file_cb(s_action_chunk, 0, 1); 
+            }
+           // console.log("JS-readerDoneLoad ###############++++" + chunkSz_);
+           // document.getElementById('GFG').innerHTML = "Done";
         }
         var rdp = Math.floor(100* currSz_/totSz_);
-        document.getElementById('GFG').innerHTML = "Reading " +  rdp + "%";
+        document.getElementById('GFG').innerHTML = "Reading " + fileNdx_ + " " + rdp + "%";
         readMemBlock(currSz_,chunkSz_);
     }
 
@@ -85,132 +103,30 @@ function OnLoadLas(input) {
         reader.onload = readerOnLoad;
         reader.onloadend  = readerDoneLoad;
         reader.onerror = readerOnError;    
-        var blob = input.files[0].slice(_offset, length + _offset);
+        var blob = input.files[fileNdx_].slice(_offset, length + _offset);
         reader.readAsArrayBuffer(blob);
     }
     
     // Start reading
-    console.log("JS#### Start here ");
-    chunkSz_ =load_file_cb(s_action_chunk, 0, 0); 
-    console.log("JS hdrSz->"+chunkSz_);
+   // console.log("JS#### Start here ");
+    chunkSz_ = load_file_cb(s_action_chunk, 0, 0); 
+   // console.log("JS hdrSz->"+chunkSz_);
     readMemBlock(currSz_, chunkSz_);  
 } //OnLoadLas
 
-
-
-
 function OnFileSelected(input) {
-    document.getElementById('GFG').innerHTML = 'Reading ... '
+   // console.log("##################### I_AM_HERE -##################");
+    //document.getElementById('GFG').innerHTML = 'Reading ... '
+    console.log("---NUM FILES---= " + input.files.length);
     OnLoadLas(input);
-    return;
-
-    var file = input.files[0];
-    if (!file) {
-        console.log("NO FILE");
-        return;
-    }
-    var readMemBlock = null;
-    var chunkSz_ = 1024*1024;
-    var currSz_ = 0;
-    var ext = input.files[0].name.split('.').pop();
-    var totSz_ = input.files[0].size;
-    if(totSz_>=2147483648){
-        alert('File exceeds size limit');
-        return;
-    }
-    console.log("##### Reading file size ###### " + totSz_);
-    load_file_cb = Module.cwrap('LoadFileDataJS', 'number', ['arrayPointer', 'number', 'number'], { async: true });
-
-    var s_tmp = Module._malloc(128);
-    array8 = new TextEncoder().encode("hdrsize");
-    Module.HEAPU8.set(array8, s_tmp); 
-    xaxa =load_file_cb(s_tmp, 10, 0); 
-    console.log("xoxo->"+xaxa);
-
-    var s_ptr = Module._malloc(1);
-    load_file_cb(s_ptr, 0, totSz_/2);
-
-    var readerOnLoad = function (e) {      
-        var data = e.target.result;
-        var dtsize = e.target.result.byteLength;
-        //console.log("#### Reading -->>>>>>>>> " + dtsize);
-        var array = new Uint8Array(data);
-        var res_ptr = Module._malloc(dtsize);
-        Module.HEAPU8.set(array, res_ptr);  
-        load_file_cb(res_ptr, 1, dtsize); // 1 =copy 
-        Module._free(res_ptr);
-        currSz_ +=  dtsize;
-        //load_file_cb(res_ptr, 2, totSz_);
-    };
-
-    var readerDoneLoad = function (e) {
-        if(currSz_ ==  totSz_){
-            console.log("#### load done currSz_ ="+ currSz_); 
-            var v_ptr = Module._malloc(1);
-            load_file_cb(v_ptr, 2, totSz_);
-        }else{
-            var nextPos = currSz_ + chunkSz_;
-            if( nextPos <= totSz_){
-                var rdp = Math.floor(100* currSz_/totSz_);
-                document.getElementById('GFG').innerHTML = "Reading " +  rdp + "%";
-                readMemBlock(currSz_,chunkSz_);
-            }else{
-                console.log("#### load last currSz_ ="+ currSz_); 
-                readMemBlock(currSz_, totSz_ - currSz_); 
-            }
-        }
-    }
-
-    var readerOnError = function (e) {
-        console.log('Error : ' + e.type);
-    };
-
-    readMemBlock = function(_offset, length){
-        var reader = new FileReader();
-        reader.onload = readerOnLoad;
-        reader.onloadend  = readerDoneLoad;
-        reader.onerror = readerOnError;    
-        //var blob = _file.slice(_offset, length + _offset);
-        var blob = input.files[0].slice(_offset, length + _offset);
-        reader.readAsArrayBuffer(blob);
-    }
-
-    //readMemBlock(currSz_,totSz_);\
-    readMemBlock(currSz_, chunkSz_);  
+    //post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number'], { async: true });
+   // post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
+    //console.log("##################### CALL POST ###################");
+    // post_proc_file_cb(123,456);
 } //OnFileSelected
-
-
-
 
 function OnSampleLoad(){
     console.log("-OnSampleLoad-");
-    //const req = new XMLHttpRequest();
-    //req.open("GET", "https://drive.google.com/file/d/1HYSlnX1xQ79pwgYSU50yz7uguVv9iSpb/view?usp=sharing");
-    //req.open("GET", "/sample.las", true);
-    /*
-    req.responseType = "arraybuffer";
-     req.onload = (event) => {
-        const arrayBuffer = req.response; // Note: not req.responseText
-        if (arrayBuffer) {
-            const byteArray = new Uint8Array(arrayBuffer);
-                console.log(" here byteArray" + byteArray.length)
-                byteArray.forEach((element, index) => {
-             });
-        }
-    };
-    req.send();
-    */
-   /*
-    req.onload = function() {
-        var content = req.responseText;
-        console.log(" Download Size" + content.length);
-         console.log("Yes Download " + content);
-    };
-    req.onerror = function() {
-        alert("Download failure.");
-    };
-    req.send();
-    */
 }
 
 function OnFileOpen() {

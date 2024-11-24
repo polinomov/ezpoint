@@ -75,18 +75,15 @@ namespace ezp
   {
     virtual bool IsLoading() = 0;
     virtual uint32_t AllocVerts( uint32_t num) = 0;
-    virtual FPoint4 *GetVerts() = 0;
+    virtual const FPoint4 *GetVerts(uint32_t n) = 0;
     virtual void Clear() = 0;
-    virtual uint32_t GetNumVerts() = 0;
-    virtual void processVertData() = 0;
+    virtual uint32_t GetNumVerts(uint32_t n) = 0;
+    virtual void processVertData(uint32_t n) = 0;
     virtual void GenerateSample() = 0;
     virtual float GetSize() = 0;
-    virtual void SetFileImage( void *pData, std::size_t sz,int fType) = 0;
     virtual const std::vector<Chunk*>& GetChunks() = 0;
-    virtual FBdBox GetBdBox()= 0;
+    virtual FBdBox GetSceneBdBox()= 0;
     virtual void GetZMax(float &zmin, float &zmax) = 0;
-    virtual FPoint4* GetChunkPos() = 0;
-    virtual FPoint4* GetChunkAuxPos() = 0;
     virtual void SetCamera() = 0;
     virtual void SetCameraOrto() = 0;
     static Scene *Get();

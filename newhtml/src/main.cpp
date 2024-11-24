@@ -126,7 +126,7 @@ extern "C" {
        // sprintf(ts,"Done Reading sz= %d ",numFloats);
         //OutLine(ts);
         ezp::Scene *pSc = ezp::Scene::Get();
-        pSc->SetFileImage(pData, sz, type);
+       // pSc->SetFileImage(pData, sz, type);
 #if 0
         int numVerts = numFloats/4;
         float x_min = pF[0];
@@ -146,62 +146,29 @@ extern "C" {
     }
 
 extern "C" {
-    int LoadFileDataJS( void* pData, int action, int sz){
-        static uint8_t *pmem = NULL;
-        static uint32_t shift = 0; 
-        std::cout<<"==LoadFileDataJS== "<<action<<" " <<sz<<std::endl;
-
-        if( action == 10){
-            const char *pCmd= (char*)pData;
-            std::cout<<pCmd<<std::endl;
-            if ( !strncmp(pCmd,"hdrsz",5)){
-                return 555;
-            }            
-            return 123;
-        }
-  
-        if(action == 0){
-            if( sz<=0){
-                emscripten_run_script("alert('Failed to allocate negative')");
-                return -1;
-            }
-            pmem = new uint8_t[sz*2];
-            if(pmem==NULL){
-                emscripten_run_script("alert('Failed to allocate memory')");
-                return -1;
-            }
-            std::cout<<"--LoadFileDataJS MEM ALLOC-- "<<action<<" " <<sz<<std::endl;
-            return 0;
-        }
-        if( action==1){
-            if(pmem){
-                memcpy(pmem + shift,pData,sz);
-                shift += sz;
-            }
-            return 0;
-        }
-        if( action==2){
-            if(pmem){
-                FileBinDataJS(pmem, sz, 1);
-            }
-            shift = 0;
-            return 0;
+    static int xaxa = 0;
+    int PostProcessDataJS( int first, int last){
+        std::cout<<"=== PostProcessDataJS === "<<first<<" "<<last<<" "<<xaxa<<std::endl;
+        for( int n = first; n<=last; n++){
+            ezp::Scene::Get()->processVertData(n);
         }
         return 0;
     }
     
     // Call from JS
     // Process LAS data in chunks
-    int LdLasCPP(void* pData, int action, int sz){
+    int LdLasCppJS(void* pData, int action, int param){
         int ret = 0;
         static ezp::LasBuilder *pLasBuilder = NULL;
 
         auto allocVerts = [](uint32_t num){ 
-            ezp::Scene::Get()->AllocVerts(num);
-            return 0;
+            uint32_t ndx  = ezp::Scene::Get()->AllocVerts(num);
+            std::cout<<"allocVerts returns  "<<ndx<<std::endl;
+            return ndx;
         };
-        auto getVerts = [](){ 
-            return ezp::Scene::Get()->GetVerts();
+        auto getVerts = [](uint32_t ndx){ 
+            std::cout<<"getVerts for index  "<<ndx<<std::endl;
+            return ezp::Scene::Get()->GetVerts(ndx);
         };
         auto onError = [](const std::string &msg){
             std::string m = std::string("alert(") + "\"" + msg + "\"" + std::string(")");
@@ -212,7 +179,8 @@ extern "C" {
             if(info.hasRgb){
                 std::string txt = "Colorized LAS detected.\\n Press OK to keep colors";
                 std::string m = std::string("confirm(") + "\"" + txt + "\"" + std::string(")");
-                needRgb = emscripten_run_script_int(m.c_str());
+               // needRgb = emscripten_run_script_int(m.c_str());
+                needRgb = true;
                 if(needRgb){
                     ezp::Renderer::Get()->SetColorMode(ezp::UI::UICOLOR_RGB);
                 }
@@ -220,25 +188,22 @@ extern "C" {
             return needRgb;
         };
 
-
         if ( action ==0 ){// start loading
-            ezp::Scene::Get()->Clear();
+            std::cout<<"ACTION0-A"<<std::endl;
+            if(param == 0){
+                ezp::Scene::Get()->Clear();
+            }
             ezp::RenderHelper::Get()->Reset();
             pLasBuilder = ezp::LasBuilder::Get();
             pLasBuilder->Reset();
             pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
             ret = (int)pLasBuilder->SetChunkData(NULL); // returns the size of the next chunk or 0 if done.
+            std::cout<<"ACTION0-B ret= "<<ret<<std::endl;
         }
         if ( action == 1){
             ret = (int)pLasBuilder->SetChunkData(pData);
+            xaxa++;
         }  
-        if(ret==0){
-            std::cout<<"@@@@@@@@ PROCESSING @@@@@@@@@@@@@"<<std::endl;
-            ezp::Scene::Get()->processVertData();
-            std::cout<<"@@@@@@@@ PROCESSING DONE @@@@@@@@@@@@@"<<std::endl;
-            ezp::UI *pUI = ezp::UI::Get();
-            pUI->SetColorModeState(COLOR_MODEL_RGB, true);
-        }
         return ret;
     }
 }

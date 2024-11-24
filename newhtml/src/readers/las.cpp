@@ -190,6 +190,7 @@ namespace ezp
     uint32_t  m_procPoints;
     uint32_t  m_rdStep;
     uint32_t  m_numInCurrRead;
+    uint32_t  m_allocNdx;
     float intHist[sz16];
     bool m_hasClass;
     bool m_hasRgb;
@@ -199,7 +200,7 @@ namespace ezp
     int m_Iminx,m_Imaxx,m_Iminy,m_Imaxy,m_Iminz,m_Imaxz;
     uint16_t m_rMin,m_rMax,m_gMin, m_gMax,m_bMin, m_bMax;
     std::function<int (uint32_t n )> m_allocFunc;
-    std::function<FPoint4 *()> m_getVertsFunc;
+    std::function<const FPoint4 *(uint32_t)> m_getVertsFunc;
     std::function<void( const std::string &msg)> m_onErrFunc;
     std::function<int( const LasInfo &info)> m_onInfoFunc;
 
@@ -217,6 +218,7 @@ namespace ezp
       m_getVertsFunc = NULL;
       m_onErrFunc = NULL;
       m_onInfoFunc = NULL;
+      m_allocNdx = 0;
       memset(intHist,0,sz16*sizeof(float));
       m_hasClass = false;
       m_hasRgb = false;
@@ -235,7 +237,7 @@ namespace ezp
 
     void RegisterCallbacks(
       std::function<int (uint32_t n )> alloc,
-      std::function<FPoint4 *()> getVerts,
+      std::function<const FPoint4 *(uint32_t ndx)> getVerts,
       std::function<void( const std::string &msg)> onErr,
       std::function<int( const LasInfo &info)> onInfo
     ){
@@ -314,7 +316,7 @@ namespace ezp
         if(m_onErrFunc) m_onErrFunc("Can not detect LAS version");
       }
       if( m_allocFunc){
-        m_allocFunc(m_numPoints);
+        m_allocNdx = m_allocFunc(m_numPoints);
       }   
       m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId); 
       m_hasRgb =  ptHasColor((int)m_hdr.pointDataFormatId);
@@ -338,7 +340,7 @@ namespace ezp
     }
 
     int32_t SetVerts(void *pSrc, uint32_t numInSrc){            
-      FPoint4 *pDst = m_getVertsFunc();
+      FPoint4 *pDst = (FPoint4*)m_getVertsFunc(m_allocNdx);
       uint8_t *pS  = (uint8_t*)pSrc;
       for( int i = m_procPoints; i< m_procPoints + numInSrc;i++,pS+=m_hdr.poitDataRecordLength){
         PointFormat1 *pf1 = (PointFormat1*)pS;
@@ -397,7 +399,7 @@ namespace ezp
           intHist[i] *= (255.0f/intHist[sz16-1]);
         }
       } 
-      FPoint4 *pDst = m_getVertsFunc();
+      FPoint4 *pDst = (FPoint4*) m_getVertsFunc(m_allocNdx);
       // Hmap
       const uint32_t hsz = 0xFFF;
       float hHist[hsz];

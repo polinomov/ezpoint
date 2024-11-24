@@ -15,7 +15,7 @@ static void ShowBdBox(ezp::FBdBox &fb){
 }
 
 template <class T>
-static ezp::FBdBox getBdBox(T* pVerts, uint32_t first, uint32_t last){
+static ezp::FBdBox getBdBox(const T* pVerts, uint32_t first, uint32_t last){
     ezp::FBdBox fb;
     fb.xMin =  pVerts[first].x;
     fb.xMax =  pVerts[first].x;
