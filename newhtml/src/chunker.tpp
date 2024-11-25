@@ -5,6 +5,8 @@
 
 #include <iostream>
 #include <functional>
+namespace chunker
+{
 static int depth = 0;
 static bool hasError = false;
 
@@ -133,3 +135,4 @@ void doChunks(T* pV, uint32_t first, uint32_t last, uint32_t chSz, std::function
         doChunks(pV, left+1, last, chSz, onDone);
     }
 }
+} //namespace chunker

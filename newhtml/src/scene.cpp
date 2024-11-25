@@ -14,19 +14,15 @@ namespace ezp
         std::vector<uint32_t> m_numAllVerts;
         bool m_isLoading;
         float m_size;
-      //  FPoint4 * m_pChPos;
-      //  FPoint4 * m_pChAuxPos;
-
+ 
         bool IsLoading() { return m_isLoading;}
 
         SceneImpl(){
             m_size = 1.0f;
-           // m_allVerts = NULL;
         }
 
         uint32_t AllocVerts( uint32_t num){
             m_allVerts.push_back(new FPoint4[num]);
-            std::cout<<"SCENE ############## Allocating verts "<<num<<std::endl;
             m_numAllVerts.push_back(num);
             return  m_allVerts.size()-1;
         }
@@ -41,6 +37,8 @@ namespace ezp
             }
             m_allVerts.clear();
             m_numAllVerts.clear();
+            m_box.xMin = m_box.yMin = m_box.zMin = std::numeric_limits<float>::max();
+            m_box.xMax = m_box.yMax = m_box.zMax = std::numeric_limits<float>::min();
         }
 
         const FPoint4 *GetVerts(uint32_t n){
@@ -86,13 +84,6 @@ namespace ezp
 
         void SetCameraOrto(){}
         
-        /*
-        void SetFileImage( void *pData, std::size_t sz,int fType) 
-        {
-            
-        }
-        */
-    
         const std::vector<Chunk*>&  GetChunks() {
             return m_allChunks;
         }
@@ -140,16 +131,19 @@ namespace ezp
             chk->BuildBdBox();
             chk->Randomize();
             m_allChunks.push_back(chk);
-           // std::cout<<"OnChunk num="<<num<<std::endl;
         }
 
         void processVertData(uint32_t n){
             const FPoint4* pt = GetVerts(n);
             int num = GetNumVerts(n);
-            m_box = getBdBox<FPoint4>(pt, 0, num-1);
-           // std::cout<<"@@@@@@@@@@@@ doChunks-1 @@@@@@@ num="<<num<<std::endl;
-            doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
-            //std::cout<<"@@@@@@@@@@@@ doChunks-2 @@@@@@@"<<std::endl;
+            FBdBox bd = chunker::getBdBox<FPoint4>(pt, 0, num-1);
+            m_box.xMin  = std::min(m_box.xMin,bd.xMin);
+            m_box.yMin  = std::min(m_box.yMin,bd.yMin);
+            m_box.zMin  = std::min(m_box.zMin,bd.zMin);
+            m_box.xMax  = std::max(m_box.xMax,bd.xMax);
+            m_box.yMax  = std::max(m_box.yMax,bd.yMax);
+            m_box.zMax  = std::max(m_box.zMax,bd.zMax);
+            chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
             SetCamera();
             UI::Get()->SetRenderEvent(20);
         }
