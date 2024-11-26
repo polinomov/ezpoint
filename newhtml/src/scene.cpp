@@ -12,6 +12,7 @@ namespace ezp
         FBdBox m_box;
         std::vector<FPoint4*> m_allVerts;
         std::vector<uint32_t> m_numAllVerts;
+        uint32_t m_totVerts;
         bool m_isLoading;
         float m_size;
  
@@ -19,12 +20,22 @@ namespace ezp
 
         SceneImpl(){
             m_size = 1.0f;
+            m_totVerts = 0;
         }
 
         uint32_t AllocVerts( uint32_t num){
             m_allVerts.push_back(new FPoint4[num]);
             m_numAllVerts.push_back(num);
+            m_totVerts+=num;
             return  m_allVerts.size()-1;
+        }
+
+        uint32_t GetTotVerts(){
+            return m_totVerts;
+        }
+
+        uint32_t GetNumMemBanks(){
+            return m_allVerts.size();
         }
 
         void Clear(){
@@ -39,6 +50,7 @@ namespace ezp
             m_numAllVerts.clear();
             m_box.xMin = m_box.yMin = m_box.zMin = std::numeric_limits<float>::max();
             m_box.xMax = m_box.yMax = m_box.zMax = std::numeric_limits<float>::min();
+            m_totVerts = 0;
         }
 
         const FPoint4 *GetVerts(uint32_t n){

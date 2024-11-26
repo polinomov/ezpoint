@@ -205,6 +205,7 @@ namespace ezp
     std::function<int( const LasInfo &info)> m_onInfoFunc;
 
     LasBuilderImpl(){
+      m_R16 = m_G16 = m_B16 = NULL;
       Reset();
     }
 
@@ -232,6 +233,9 @@ namespace ezp
       m_Imaxz  = std::numeric_limits<int>::min();
       m_rMin = m_gMin= m_bMin = 0xFFFF;
       m_rMax = m_gMax= m_bMax = 0;
+      if(m_R16) delete [] m_R16;
+      if(m_G16) delete [] m_G16;
+      if(m_B16) delete [] m_B16;
       m_R16 = m_G16 = m_B16 = NULL;
     }
 
@@ -248,13 +252,15 @@ namespace ezp
     }
 
     uint32_t SetChunkData(void *pData){
-      //std::cout<<"@@@@ SetChunkData state="<<m_state<<std::endl;
       if(m_state == RD_NONE){
         m_state = RD_HEARED;
         return sizeof(LasHeader);
       }
       if(m_state == RD_HEARED){
-        SetHeader(pData);
+        bool isGood = SetHeader(pData);
+        if(!isGood){
+           return -1;
+        }
         if(m_hdr.pointOfst > sizeof(LasHeader)){
           m_state = RD_SKIP;
           return m_hdr.pointOfst - sizeof(LasHeader);
@@ -288,13 +294,13 @@ namespace ezp
       }
     }
     
-    uint32_t SetHeader( void *pHdr ){
+    bool SetHeader( void *pHdr ){
       memcpy(&m_hdr,pHdr, sizeof(LasHeader));
       char magic[5] = {0,0,0,0,0};
       memcpy(magic,m_hdr.magic,4);
       if(strcmp(magic,"LASF")){
         if(m_onErrFunc) m_onErrFunc("Can not detect LASF");
-        return  0;
+        return  true;
       }           
       int vMajor = (int)m_hdr.verMajor;
       int vMinor = (int)m_hdr.verMinor;
@@ -316,27 +322,26 @@ namespace ezp
         if(m_onErrFunc) m_onErrFunc("Can not detect LAS version");
       }
       if( m_allocFunc){
-        m_allocNdx = m_allocFunc(m_numPoints);
+       // m_allocNdx = m_allocFunc(m_numPoints);
       }   
       m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId); 
       m_hasRgb =  ptHasColor((int)m_hdr.pointDataFormatId);
-      std::cout<<"=== LAS === verttype "<< (int)m_hdr.pointDataFormatId<<std::endl;
-      std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
+      //std::cout<<"=== LAS === verttype "<< (int)m_hdr.pointDataFormatId<<std::endl;
+      //std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
       LasInfo inf;  
       inf.numPoints = m_numPoints;
       inf.hasRgb = m_hasRgb;
       inf.hasClass  = m_hasClass;
-      if(m_onInfoFunc){
-         int useRgb = m_onInfoFunc(inf); 
-         m_hasRgb = (useRgb==1) ? true:false;
-         std::cout<<"useRgb="<<m_hasRgb<<std::endl;
-      }
+      if(m_onInfoFunc(inf) != 0){
+        return false;
+      }      
+      m_allocNdx = m_allocFunc(m_numPoints);
       if(m_hasRgb){
         m_R16 = new uint16_t[m_numPoints];
         m_G16 = new uint16_t[m_numPoints];
         m_B16 = new uint16_t[m_numPoints];
       }
-      return 0;
+      return true;
     }
 
     int32_t SetVerts(void *pSrc, uint32_t numInSrc){            

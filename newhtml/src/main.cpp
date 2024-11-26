@@ -146,11 +146,11 @@ extern "C" {
     }
 
 extern "C" {
-    static int xaxa = 0;
     int PostProcessDataJS( int first, int last){
-        std::cout<<"=== PostProcessDataJS === "<<first<<" "<<last<<" "<<xaxa<<std::endl;
-        for( int n = first; n<=last; n++){
+        for( int n = 0; n < ezp::Scene::Get()->GetNumMemBanks(); n++){
+            std::cout<<"processVertData"<<" "<<n<<std::endl;
             ezp::Scene::Get()->processVertData(n);
+            std::cout<<"-----------------"<<std::endl;
         }
         return 0;
     }
@@ -163,11 +163,9 @@ extern "C" {
 
         auto allocVerts = [](uint32_t num){ 
             uint32_t ndx  = ezp::Scene::Get()->AllocVerts(num);
-            std::cout<<"allocVerts returns  "<<ndx<<std::endl;
             return ndx;
         };
         auto getVerts = [](uint32_t ndx){ 
-            std::cout<<"getVerts for index  "<<ndx<<std::endl;
             return ezp::Scene::Get()->GetVerts(ndx);
         };
         auto onError = [](const std::string &msg){
@@ -175,21 +173,17 @@ extern "C" {
             emscripten_run_script(m.c_str());
         };
         auto onInfo = [](const ezp::LasInfo &info){
-            int needRgb = 0;
             if(info.hasRgb){
-                std::string txt = "Colorized LAS detected.\\n Press OK to keep colors";
-                std::string m = std::string("confirm(") + "\"" + txt + "\"" + std::string(")");
-               // needRgb = emscripten_run_script_int(m.c_str());
-                needRgb = true;
-                if(needRgb){
-                    ezp::Renderer::Get()->SetColorMode(ezp::UI::UICOLOR_RGB);
-                }
+                ezp::Renderer::Get()->SetColorMode(ezp::UI::UICOLOR_RGB);
             }
-            return needRgb;
+            uint32_t nextPointsNum = ezp::Scene::Get()->GetTotVerts() + info.numPoints;
+            if(nextPointsNum > 120*1000*1000){
+                return 1;
+            }
+            return 0;
         };
 
         if ( action ==0 ){// start loading
-            std::cout<<"ACTION0-A"<<std::endl;
             if(param == 0){
                 ezp::Scene::Get()->Clear();
             }
@@ -198,11 +192,9 @@ extern "C" {
             pLasBuilder->Reset();
             pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
             ret = (int)pLasBuilder->SetChunkData(NULL); // returns the size of the next chunk or 0 if done.
-            std::cout<<"ACTION0-B ret= "<<ret<<std::endl;
         }
         if ( action == 1){
             ret = (int)pLasBuilder->SetChunkData(pData);
-            xaxa++;
         }  
         return ret;
     }

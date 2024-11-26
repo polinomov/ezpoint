@@ -69,19 +69,24 @@ function OnLoadLas(input) {
         if(chunkSz_=== 0){
             fileNdx_ = fileNdx_ + 1;
             if(fileNdx_ === numFiles_){
-               document.getElementById('GFG').innerHTML = "Processing ...";
                post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
                post_proc_file_cb(0,numFiles_-1);
-               return;
+               return;//done
             }
             else{
+                // Start reading new file
                 totSz_ = input.files[fileNdx_].size; 
                 currSz_ = 0;
                 chunkSz_ = load_file_cb(s_action_chunk, 0, 1); 
             }
         }
+        if(chunkSz_=== -1){
+            post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
+            post_proc_file_cb(0,numFiles_-1);
+            return;//done        
+        }
         var rdp = Math.floor(100* currSz_/totSz_);
-        document.getElementById('GFG').innerHTML = "Reading " + fileNdx_ + " " + rdp + "%";
+        document.getElementById('GFG').innerHTML = "Reading " + fileNdx_ + " from " + numFiles_+ " " + rdp + "%";
         readMemBlock(currSz_,chunkSz_);
     }
 

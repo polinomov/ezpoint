@@ -75,6 +75,8 @@ namespace ezp
   {
     virtual bool IsLoading() = 0;
     virtual uint32_t AllocVerts( uint32_t num) = 0;
+    virtual uint32_t GetTotVerts() = 0;
+    virtual uint32_t GetNumMemBanks() = 0;
     virtual const FPoint4 *GetVerts(uint32_t n) = 0;
     virtual void Clear() = 0;
     virtual uint32_t GetNumVerts(uint32_t n) = 0;
