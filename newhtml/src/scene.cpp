@@ -13,14 +13,13 @@ namespace ezp
         std::vector<FPoint4*> m_allVerts;
         std::vector<uint32_t> m_numAllVerts;
         uint32_t m_totVerts;
-        bool m_isLoading;
+        bool m_needProcess;
         float m_size;
  
-        bool IsLoading() { return m_isLoading;}
-
         SceneImpl(){
             m_size = 1.0f;
             m_totVerts = 0;
+            m_needProcess = false;
         }
 
         uint32_t AllocVerts( uint32_t num){
@@ -51,6 +50,7 @@ namespace ezp
             m_box.xMin = m_box.yMin = m_box.zMin = std::numeric_limits<float>::max();
             m_box.xMax = m_box.yMax = m_box.zMax = std::numeric_limits<float>::min();
             m_totVerts = 0;
+            m_needProcess = false;
         }
 
         const FPoint4 *GetVerts(uint32_t n){
@@ -135,8 +135,8 @@ namespace ezp
                 std::cout<<"OnChunk @@@@@@@@@@@@@@@@@@@@@ num="<<num<<std::endl;
                 return;
             }
-            static uint32_t stot = 0;
-            stot+=num;
+           // static uint32_t stot = 0;
+           // stot+=num;
             Chunk* chk = new Chunk();
             chk->pVert = (float*)pt;
             chk->numVerts = num;
@@ -145,7 +145,7 @@ namespace ezp
             m_allChunks.push_back(chk);
         }
 
-        void processVertData(uint32_t n){
+        void processVertDataInt(uint32_t n){
             const FPoint4* pt = GetVerts(n);
             int num = GetNumVerts(n);
             FBdBox bd = chunker::getBdBox<FPoint4>(pt, 0, num-1);
@@ -155,9 +155,39 @@ namespace ezp
             m_box.xMax  = std::max(m_box.xMax,bd.xMax);
             m_box.yMax  = std::max(m_box.yMax,bd.yMax);
             m_box.zMax  = std::max(m_box.zMax,bd.zMax);
-            chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );
-            SetCamera();
-            UI::Get()->SetRenderEvent(20);
+            chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );           
+        }
+
+        void processVertData(){
+            m_needProcess = true;
+        }
+
+        void onTick(){
+            static int cnt = 0;
+            static bool isDone = false;
+            if( m_needProcess){
+                cnt = GetNumMemBanks();
+                UI::Get()->PrintMessage("Processing... "); 
+                m_needProcess = false;
+                return;               
+            }
+            if(cnt>0){
+                uint32_t ndx = GetNumMemBanks()- cnt;
+                processVertDataInt(ndx);
+                UI::Get()->PrintMessage("Processing... " + std::to_string(ndx)); 
+                cnt--;
+                if(cnt==0){
+                  isDone = true;  
+                }
+                return;
+            }
+            if(isDone){
+                UI::Get()->PrintMessage("Done"); 
+                isDone = false;
+                SetCamera();
+                UI::Get()->SetRenderEvent(20);
+                return;
+            }          
         }
 
         void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z,uint16_t col )
@@ -190,7 +220,7 @@ namespace ezp
                     pt += sfPoints;  
                 }
             } 
-            processVertData(0); 
+            processVertData(); 
             Renderer::Get()->SetColorMode(UI::UICOLOR_RGB);
         }  
  

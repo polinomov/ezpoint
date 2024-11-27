@@ -35,11 +35,18 @@ function OnMouseMove(e) {
     OnDraw();
 }
 
-function OnLoadLas(input) {
+
+async function PostProcess() {
+    return new Promise(() => {
+        console.log("ISIDE PROMISE");
+    });
+}
+
+async function OnLoadLas(input) {
     var fileNdx_ = 0;
     var numFiles_ = input.files.length;
     document.getElementById('GFG').innerHTML = 'Reading ... ' + numFiles_;
- 
+    console.log("OnLoadLas");
     var file = input.files[fileNdx_];
     if (!file) {
         console.log("NO FILE");
@@ -54,7 +61,7 @@ function OnLoadLas(input) {
     var s_action_chunk = Module._malloc(128);
     Module.HEAPU8.set(new TextEncoder().encode("datchunk"), s_action_chunk); 
  
-    var readerOnLoad = function (e) {    
+    var readerOnLoad = async function (e) {    
         var data = e.target.result;
         var dtsize = e.target.result.byteLength;
         var array = new Uint8Array(data);
@@ -65,14 +72,14 @@ function OnLoadLas(input) {
         currSz_ +=  dtsize;
     };
 
-    var readerDoneLoad = function (e) {
+    var readerDoneLoad = async function (e) {
         if(chunkSz_=== 0){
             fileNdx_ = fileNdx_ + 1;
             if(fileNdx_ === numFiles_){
                post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
-               post_proc_file_cb(0,numFiles_-1);
-               return;//done
-            }
+               post_proc_file_cb(0,0);
+               return ;
+             }
             else{
                 // Start reading new file
                 totSz_ = input.files[fileNdx_].size; 
@@ -82,8 +89,8 @@ function OnLoadLas(input) {
         }
         if(chunkSz_=== -1){
             post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
-            post_proc_file_cb(0,numFiles_-1);
-            return;//done        
+            post_proc_file_cb(0,0);
+            return ;
         }
         var rdp = Math.floor(100* currSz_/totSz_);
         document.getElementById('GFG').innerHTML = "Reading " + fileNdx_ + " from " + numFiles_+ " " + rdp + "%";
@@ -94,7 +101,7 @@ function OnLoadLas(input) {
         console.log('Error : ' + e.type);
     };
 
-    readMemBlock = function(_offset, length){
+     readMemBlock = async function(_offset, length){
         var reader = new FileReader();
         reader.onload = readerOnLoad;
         reader.onloadend  = readerDoneLoad;
@@ -108,8 +115,32 @@ function OnLoadLas(input) {
     readMemBlock(currSz_, chunkSz_);  
 } //OnLoadLas
 
-function OnFileSelected(input) {
-    OnLoadLas(input);
+
+
+async function LoadLasAsync(input){
+    const ppp = new Promise((aaa, rej) => {
+        console.log(" INSIDE PROMISE");
+        OnLoadLas(input);
+    });
+    return ppp;
+}
+
+function  doSomeLogging(){
+    console.log("---Do logging----");
+}
+
+async function OnFileSelected(input) {
+    console.log("HERE_I_AM-1");
+    try{
+        await  LoadLasAsync(input);
+    }
+    catch(error){
+        console.log("error " + error);
+    }
+    //OnLoadLas(input);
+    console.log("HERE_I_AM-2");
+    //await PostProcess();
+
 } //OnFileSelected
 
 function OnSampleLoad(){

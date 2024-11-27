@@ -51,7 +51,6 @@ extern "C" {
         sprintf(strw, "%s'%s'", "document.getElementById('GFG').innerHTML=", txt);
         emscripten_run_script(strw);
     }
- 
     void MainLoop() {
         static int cnt = 0;
         cnt++;
@@ -77,6 +76,7 @@ extern "C" {
             SDL_RenderPresent(m_renderer);
             gRenderEvent--;
         }
+        ezp::Scene::Get()->onTick();
     }
 
     void InitSDL() {
@@ -147,11 +147,7 @@ extern "C" {
 
 extern "C" {
     int PostProcessDataJS( int first, int last){
-        for( int n = 0; n < ezp::Scene::Get()->GetNumMemBanks(); n++){
-            std::cout<<"processVertData"<<" "<<n<<std::endl;
-            ezp::Scene::Get()->processVertData(n);
-            std::cout<<"-----------------"<<std::endl;
-        }
+        ezp::Scene::Get()->processVertData();
         return 0;
     }
     
@@ -159,7 +155,7 @@ extern "C" {
     // Process LAS data in chunks
     int LdLasCppJS(void* pData, int action, int param){
         int ret = 0;
-        static ezp::LasBuilder *pLasBuilder = NULL;
+        static ezp::LasBuilder *pLasBuilder = ezp::LasBuilder::Get();
 
         auto allocVerts = [](uint32_t num){ 
             uint32_t ndx  = ezp::Scene::Get()->AllocVerts(num);
@@ -177,8 +173,8 @@ extern "C" {
                 ezp::Renderer::Get()->SetColorMode(ezp::UI::UICOLOR_RGB);
             }
             uint32_t nextPointsNum = ezp::Scene::Get()->GetTotVerts() + info.numPoints;
-            if(nextPointsNum > 120*1000*1000){
-                return 1;
+            if(nextPointsNum > 250 *1000*1000){
+                return 1; 
             }
             return 0;
         };
@@ -188,14 +184,10 @@ extern "C" {
                 ezp::Scene::Get()->Clear();
             }
             ezp::RenderHelper::Get()->Reset();
-            pLasBuilder = ezp::LasBuilder::Get();
             pLasBuilder->Reset();
             pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
-            ret = (int)pLasBuilder->SetChunkData(NULL); // returns the size of the next chunk or 0 if done.
         }
-        if ( action == 1){
-            ret = (int)pLasBuilder->SetChunkData(pData);
-        }  
+        ret = (int)pLasBuilder->SetChunkData((action == 0) ? NULL: pData);
         return ret;
     }
 }
@@ -328,6 +320,10 @@ namespace ezp
             m_strToId["camOrto"] = UICAM_ORTO;
             m_strToId["SampleId"] = UIDATA_SAMPLE;
             m_strToId["ruler"] = UIRULER;
+        }
+
+        void PrintMessage(const std::string &msg){
+           OutLine(msg.c_str());
         }
         void PrintMessage( const char *pMsg){
             //printf("MESSAGE\n");

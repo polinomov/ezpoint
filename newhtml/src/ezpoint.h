@@ -34,6 +34,7 @@ namespace ezp
 
     virtual void PrintMessage( const char *pMsg) = 0;
     virtual void PrintMessage( const char *pMsg,int val) = 0;
+    virtual void PrintMessage(const std::string &msg) =0;
     virtual void SetRenderEvent(int num)  = 0;
     virtual void GetValue( const char *pUiId) = 0;
     virtual int GetFov() = 0;
@@ -73,21 +74,21 @@ namespace ezp
 
   struct Scene
   {
-    virtual bool IsLoading() = 0;
     virtual uint32_t AllocVerts( uint32_t num) = 0;
     virtual uint32_t GetTotVerts() = 0;
     virtual uint32_t GetNumMemBanks() = 0;
     virtual const FPoint4 *GetVerts(uint32_t n) = 0;
     virtual void Clear() = 0;
     virtual uint32_t GetNumVerts(uint32_t n) = 0;
-    virtual void processVertData(uint32_t n) = 0;
+    virtual void processVertData() = 0;
     virtual void GenerateSample() = 0;
     virtual float GetSize() = 0;
     virtual const std::vector<Chunk*>& GetChunks() = 0;
-    virtual FBdBox GetSceneBdBox()= 0;
+   // virtual FBdBox GetSceneBdBox()= 0;
     virtual void GetZMax(float &zmin, float &zmax) = 0;
     virtual void SetCamera() = 0;
     virtual void SetCameraOrto() = 0;
+    virtual void onTick() = 0;
     static Scene *Get();
   };
 

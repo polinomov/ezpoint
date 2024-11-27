@@ -22,6 +22,7 @@ EMFLAGS = -O3 \
 -s SDL2_IMAGE_FORMATS=["png"] \
 -s USE_SDL_TTF=2 \
 -s ALLOW_MEMORY_GROWTH=1 \
+-s MAXIMUM_MEMORY=4GB \
 -s ASSERTIONS \
 -s EXPORTED_FUNCTIONS=$(EXP_FUNC) \
 -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -std=c++17 -msimd128 -msse -msse2 -msse3 --bind -s FETCH=1 
