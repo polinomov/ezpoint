@@ -454,7 +454,7 @@ namespace ezp
     std::function<const FPoint4 *(uint32_t ndx)> getVerts,
     std::function<uint32_t (uint32_t ndx)> getNum)
   {
-    std::cout<<"LAS PostProcessColors mems " << numMemBanks<<std::endl;
+    //std::cout<<"LAS PostProcessColors mems " << numMemBanks<<std::endl;
     const uint32_t hsz = 0xFFF;
     float hHist[hsz];
     memset(hHist, 0, hsz*sizeof(float));
@@ -497,7 +497,7 @@ namespace ezp
         pt[v].col |= (hcol<<16);
       }
     }
-    std::cout<<"LAS PostProcessColors mems Done " << numMemBanks<<std::endl;
+  //  std::cout<<"LAS PostProcessColors mems Done " << numMemBanks<<std::endl;
   }//LasBuilder::PostProcessAllColors
  
   

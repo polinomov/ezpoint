@@ -148,7 +148,6 @@ extern "C" {
 extern "C" {
     int PostProcessDataJS( int first, int last){
         auto postProcColors = [](void){ 
-            std::cout<<"POST_PROC"<<std::endl;
             auto getVerts = [](uint32_t ndx){ 
                 return ezp::Scene::Get()->GetVerts(ndx);
             };

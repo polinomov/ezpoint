@@ -137,8 +137,6 @@ namespace ezp
                 std::cout<<"OnChunk @@@@@@@@@@@@@@@@@@@@@ num="<<num<<std::endl;
                 return;
             }
-           // static uint32_t stot = 0;
-           // stot+=num;
             Chunk* chk = new Chunk();
             chk->pVert = (float*)pt;
             chk->numVerts = num;
@@ -186,7 +184,7 @@ namespace ezp
                 return;
             }
             if(isDone){
-                UI::Get()->PrintMessage("Done"); 
+                UI::Get()->PrintMessage("Processing colors..."); 
                 isDone = false;
                 doPostProc = true;
                 return;
@@ -196,8 +194,9 @@ namespace ezp
                     m_procIsReadyFunc();
                 }
                 SetCamera();
-                UI::Get()->SetRenderEvent(20);
+                UI::Get()->SetRenderEvent(2);
                 doPostProc = false;
+                UI::Get()->PrintMessage(" "); 
                 return;
             }          
         }
@@ -221,7 +220,6 @@ namespace ezp
             uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
             uint32_t totPoints = sx*sy*sfPoints;
             UI::Get()->PrintMessage("Sample");
-            UI::Get()->SetRenderEvent(1);
             AllocVerts(totPoints);
             FPoint4* pt =(FPoint4*) GetVerts(0); 
             FPoint4* pv = (FPoint4*)pt;
@@ -232,8 +230,10 @@ namespace ezp
                     pt += sfPoints;  
                 }
             } 
-            processVertData(NULL); 
+            processVertDataInt(0);
+            SetCamera();
             Renderer::Get()->SetColorMode(UI::UICOLOR_RGB);
+            UI::Get()->SetRenderEvent(2);
         }  
  
     }; //SceneImpl
