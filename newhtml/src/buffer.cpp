@@ -412,12 +412,6 @@ namespace ezp
       }
     }
 
-    /*
-    void HintString(const std::string &hint,unsigned int *pBuff,int winW, int winH){
-      RenderString(hint,5,5,pBuff,m_canvasW, m_canvasH);
-    }
-    */
-
     void Render(unsigned int *pBuff, int winW, int winH,int evnum){
       static int val = 0;
       static FPoint4 pt4;
@@ -471,17 +465,6 @@ namespace ezp
         //RenderPoint(pBuff,  m_canvasW, m_canvasH, m_mouseX, m_mouseY);
         RenderHelper::Get()->Render(pBuff,  m_canvasW, m_canvasH,winW,winH);
       }
-      #if 0
-      {
-        float pvx,pvy,pvz;
-        Camera *pCam = Camera::Get();
-        pCam->GetPivot(pvx,pvy,pvz);
-        RenderString( std::to_string(pvx),3,2,pBuff,m_canvasW, m_canvasH);
-        RenderString( std::to_string(pvy),3,17,pBuff,m_canvasW, m_canvasH);
-        RenderString( std::to_string(pvz),3,32,pBuff,m_canvasW, m_canvasH);
-      }
-      #endif
-
       if(m_showfr){
         DbgShowFrameRate(m_visPoints,rndMs);  
       }         

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include <memory>
+#include <functional>
 #include "chunk.h"
 
 #define COLOR_MODEL_RGB (1<<1)
@@ -80,11 +81,10 @@ namespace ezp
     virtual const FPoint4 *GetVerts(uint32_t n) = 0;
     virtual void Clear() = 0;
     virtual uint32_t GetNumVerts(uint32_t n) = 0;
-    virtual void processVertData() = 0;
+    virtual void processVertData(std::function<void( )> isReady) = 0;
     virtual void GenerateSample() = 0;
     virtual float GetSize() = 0;
     virtual const std::vector<Chunk*>& GetChunks() = 0;
-   // virtual FBdBox GetSceneBdBox()= 0;
     virtual void GetZMax(float &zmin, float &zmax) = 0;
     virtual void SetCamera() = 0;
     virtual void SetCameraOrto() = 0;

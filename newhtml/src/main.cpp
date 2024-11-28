@@ -147,7 +147,19 @@ extern "C" {
 
 extern "C" {
     int PostProcessDataJS( int first, int last){
-        ezp::Scene::Get()->processVertData();
+        auto postProcColors = [](void){ 
+            std::cout<<"POST_PROC"<<std::endl;
+            auto getVerts = [](uint32_t ndx){ 
+                return ezp::Scene::Get()->GetVerts(ndx);
+            };
+            auto getNumInBank = [](uint32_t ndx){ 
+                return ezp::Scene::Get()->Get()->GetNumVerts(ndx);
+            };
+            uint32_t mb =  ezp::Scene::Get()->GetNumMemBanks();
+            ezp::LasBuilder::PostProcessAllColors(mb,true, getVerts, getNumInBank);
+        };
+
+        ezp::Scene::Get()->processVertData(postProcColors);
         return 0;
     }
     

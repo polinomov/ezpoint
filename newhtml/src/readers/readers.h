@@ -33,6 +33,12 @@ namespace ezp
         virtual uint32_t SetChunkData(void *pData) = 0;
 
         virtual void Reset() = 0;
+        
+        static void PostProcessAllColors(
+            uint32_t numMemBanks,
+            bool hasRgb,
+            std::function<const FPoint4 *(uint32_t ndx)> getVerts,
+            std::function<uint32_t (uint32_t ndx)> getNum);
         static LasBuilder *Get();
     };
 }

@@ -15,6 +15,7 @@ namespace ezp
         uint32_t m_totVerts;
         bool m_needProcess;
         float m_size;
+        std::function<void( )> m_procIsReadyFunc;
  
         SceneImpl(){
             m_size = 1.0f;
@@ -51,6 +52,7 @@ namespace ezp
             m_box.xMax = m_box.yMax = m_box.zMax = std::numeric_limits<float>::min();
             m_totVerts = 0;
             m_needProcess = false;
+            m_procIsReadyFunc = NULL;
         }
 
         const FPoint4 *GetVerts(uint32_t n){
@@ -158,13 +160,15 @@ namespace ezp
             chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );           
         }
 
-        void processVertData(){
+        void processVertData(std::function<void( )> isReady){
             m_needProcess = true;
+            m_procIsReadyFunc = isReady;
         }
 
-        void onTick(){
+        void onTick() {
             static int cnt = 0;
             static bool isDone = false;
+            static bool doPostProc = false;
             if( m_needProcess){
                 cnt = GetNumMemBanks();
                 UI::Get()->PrintMessage("Processing... "); 
@@ -184,8 +188,16 @@ namespace ezp
             if(isDone){
                 UI::Get()->PrintMessage("Done"); 
                 isDone = false;
+                doPostProc = true;
+                return;
+            }
+            if(doPostProc){
+                if(m_procIsReadyFunc){
+                    m_procIsReadyFunc();
+                }
                 SetCamera();
                 UI::Get()->SetRenderEvent(20);
+                doPostProc = false;
                 return;
             }          
         }
@@ -220,7 +232,7 @@ namespace ezp
                     pt += sfPoints;  
                 }
             } 
-            processVertData(); 
+            processVertData(NULL); 
             Renderer::Get()->SetColorMode(UI::UICOLOR_RGB);
         }  
  
