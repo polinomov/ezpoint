@@ -42,7 +42,6 @@ namespace ezp
     virtual int GetBkColor() = 0;
     virtual int GetPtSize() = 0;
     virtual int GetBudget() = 0;
-    virtual void SetColorModeState(uint32_t flg, bool state) = 0;
     virtual void OnUIEvent(const char *pEvent, int val)  = 0;
     static UI *Get();
   };

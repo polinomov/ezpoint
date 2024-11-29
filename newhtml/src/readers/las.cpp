@@ -358,8 +358,7 @@ namespace ezp
         m_Imaxx  = std::max(m_Imaxx,pf1->x);
         m_Imaxy  = std::max(m_Imaxy,pf1->y);
         m_Imaxz  = std::max(m_Imaxz,pf1->z);
-        m_hMin = std::min(m_hMin,pDst[i].z);
-        m_hMax = std::max(m_hMax,pDst[i].z);
+        pDst[i].col = 0;
         pDst[i].col = pf1->intensity;
         if(m_hasClass){
           uint8_t cls = (uint8_t)ptGetClass((int)m_hdr.pointDataFormatId,pS); 
@@ -382,11 +381,9 @@ namespace ezp
       } 
       m_procPoints+=numInSrc;
       if(m_procPoints == m_numPoints){
-       // std::cout<<"Start Processing"<<std::endl;
-        std::cout<<m_Iminx<<" "<<m_Imaxx<<"|";
-        std::cout<<m_Iminy<<" "<<m_Imaxy<<"|";
-        std::cout<<m_Iminz<<" "<<m_Imaxz<<std::endl;
-        PostProcessColors();
+        if(m_hasRgb){
+          PostProcessColors(); 
+        }
       }
       return 0;
     }
@@ -396,57 +393,20 @@ namespace ezp
       if( ((m_rMax - m_rMin)>256) || ((m_gMax - m_gMin))>256  || ((m_bMax - m_bMin))>256 ){
         shift_rgb  = 11;
       }
-      for( int i =1; i<sz16; i++){
-        intHist[i] +=  intHist[i-1];
-      }
-      for( int i =0; i<sz16; i++){
-        if( intHist[sz16-1]>0.f){
-          intHist[i] *= (255.0f/intHist[sz16-1]);
-        }
-      } 
       FPoint4 *pDst = (FPoint4*) m_getVertsFunc(m_allocNdx);
-      // Hmap
-      const uint32_t hsz = 0xFFF;
-      float hHist[hsz];
-      memset(hHist, 0, hsz*sizeof(float));
-      float prd = (float)hsz-1.0f;
-      float hDiff  = prd/(m_hMax - m_hMin);
       for(int i=0; i<m_numPoints; i++){
-        uint32_t h8 = (uint32_t)((pDst[i].z - m_hMin) *  hDiff);
-        h8 &= 0xFFF;
-        hHist[h8] += 1.0f;
-      }
-      for( int i =1; i<hsz; i++){
-        hHist[i] +=hHist[i-1];
-      }
-      for( int i = 0; i<hsz; i++){
-        if(hHist[hsz-1]>0.0f){
-          hHist[i] *= (prd/hHist[hsz-1]);
-        }
-      }
-      // Colors
-      for(int i=0; i<m_numPoints; i++){
-        uint16_t intensity  = pDst[i].col & 0xFFFF;
-        uint8_t cls = 0;
-        uint32_t hcol = 0;
-        if(m_hasClass){
-          cls = (pDst[i].col >>16) & 0xFF;
-        }
-        uint32_t h8 = (uint32_t)((pDst[i].z -  m_hMin) *  hDiff);
-        hcol = (uint32_t)hHist[h8 & hsz];
-        if(m_hasRgb){
-          uint32_t rr = ((m_R16[i]>>shift_rgb) & 0x1f)<<10;
-          uint32_t gg = ((m_G16[i]>>shift_rgb) & 0x1f)<<5;
-          uint32_t bb = ((m_B16[i]>>shift_rgb) & 0x1f);
-          pDst[i].col = rr | gg | bb;
-        }else{
-          pDst[i].col  = (uint8_t)intHist[intensity];
-          pDst[i].col |= (cls<<8);
-        }
-        pDst[i].col |= (hcol<<16);
+        uint32_t rr = ((m_R16[i]>>shift_rgb) & 0x1f)<<10;
+        uint32_t gg = ((m_G16[i]>>shift_rgb) & 0x1f)<<5;
+        uint32_t bb = ((m_B16[i]>>shift_rgb) & 0x1f);
+        pDst[i].col = rr | gg | bb;
       }
     }
   };//struct LasBuilderImpl
+
+  static const  uint32_t hsz = 0xFFF;
+  static const  uint32_t s16 = 256*256;
+  static float hHist[hsz];
+  static float gHist[s16];
 
   void LasBuilder::PostProcessAllColors(
     uint32_t numMemBanks,
@@ -454,10 +414,8 @@ namespace ezp
     std::function<const FPoint4 *(uint32_t ndx)> getVerts,
     std::function<uint32_t (uint32_t ndx)> getNum)
   {
-    //std::cout<<"LAS PostProcessColors mems " << numMemBanks<<std::endl;
-    const uint32_t hsz = 0xFFF;
-    float hHist[hsz];
     memset(hHist, 0, hsz*sizeof(float));
+    memset(gHist, 0, s16*sizeof(float));
  
     float hMin = std::numeric_limits<float>::max();
     float hMax = std::numeric_limits<float>::min();
@@ -466,6 +424,8 @@ namespace ezp
       for( uint32_t v = 0; v < getNum(m); v++){
         hMin = std::min(hMin,pt[v].z);
         hMax = std::max(hMax,pt[v].z);
+        uint16_t val = pt[v].col & 0xFFFF;
+        gHist[val] += 1.0f;
       }
     }
     float prd = (float)hsz-1.0f;
@@ -486,22 +446,33 @@ namespace ezp
         hHist[i] *= (prd/hHist[hsz-1]);
       }
     }
-
+    
+    for( int i =1; i<s16; i++){
+      gHist[i] +=  gHist[i-1];
+    }
+    for( int i =0; i<s16; i++){
+      if(gHist[s16-1]>0.f){
+        gHist[i] *= (255.0f/gHist[s16-1]);
+      }
+    } 
     const uint32_t hColMsk = 0xF000FFFF;
     for(uint32_t m = 0; m<numMemBanks; m++){
       FPoint4 *pt = (FPoint4*)getVerts(m);
       for( uint32_t v = 0; v < getNum(m); v++){
         uint32_t h8 = (uint32_t)((pt[v].z -  hMin) *  hDiff);
         uint32_t hcol = (uint32_t)hHist[h8 & hsz];
+        uint16_t intensity  = pt[v].col & 0xFFFF;
+        uint8_t cls = (pt[v].col >>16) & 0xFF;;
+        if(!hasRgb){
+          pt[v].col  = (uint8_t)gHist[intensity];
+          pt[v].col |= (cls<<8);
+        }
         pt[v].col &= hColMsk;
         pt[v].col |= (hcol<<16);
       }
     }
-  //  std::cout<<"LAS PostProcessColors mems Done " << numMemBanks<<std::endl;
   }//LasBuilder::PostProcessAllColors
  
-  
-
   LasBuilder * LasBuilder::Get(){
     static LasBuilder *pRet  = new LasBuilderImpl();
     return pRet;

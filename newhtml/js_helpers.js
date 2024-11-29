@@ -197,17 +197,10 @@ function SetColorMode(){
 }
 
 function UpdateColorModeUI(){
-    var el = document.getElementById("colrgbId");
-    if(gDisableRdb === 1){
-        console.log("-----here1===========*");
-        //el.disabled = true;
-        el.setAttribute("disabled", true);
-    }else{
-        console.log("-----here2===========*");
-        el.removeAttribute('disabled');
-        //el.disabled = false;
-        //el.setAttribute("disabled", false);      
-    }
+    console.log("-----UpdateColorModeUI ===========*");
+   // document.getElementById("colrgbId").checked = true;
+   // var el = document.getElementById("colrgbId");
+   // el.setAttribute("disabled", true);
 }
 
 function OnUIEvent1(input){

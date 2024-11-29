@@ -45,12 +45,13 @@ extern "C" {
             emscripten_run_script("forceResize()");
         }
     }
-
+    /*
     static void OutLine(const char *txt){
         static char strw[1024];
         sprintf(strw, "%s'%s'", "document.getElementById('GFG').innerHTML=", txt);
         emscripten_run_script(strw);
     }
+    */
     void MainLoop() {
         static int cnt = 0;
         cnt++;
@@ -96,7 +97,7 @@ extern "C" {
         m_screenTexture = SDL_CreateTexture(m_renderer,
                                             SDL_PIXELFORMAT_BGRA32, SDL_TEXTUREACCESS_STREAMING,
                                             gCanvasW, gCanvasH);
-        gWriteLine =  OutLine;
+        //gWriteLine =  OutLine;
         ezp::Renderer::Get()->Init(gCanvasW, gCanvasH);
         emscripten_run_script("OnStart()");
         emscripten_set_main_loop(MainLoop, 0, true);
@@ -302,7 +303,7 @@ extern "C" {
     }
 
     int  main() {
-        OutLine("MAIN");
+       // OutLine("MAIN");
         InitSDL();
         SDL_DestroyRenderer(m_renderer);
         SDL_DestroyWindow(window);
@@ -310,152 +311,3 @@ extern "C" {
         return 0;
     }
 }
-
-namespace ezp 
-{
-    struct UIImpl : public UI{
-     std::unordered_map<std::string, uint32_t> m_strToId;
-
-        UIImpl(){
-            m_strToId["fovVal"] = UIFOV;
-            m_strToId["ptSize"] = UIPTSIZE;
-            m_strToId["budVal"] = UIBUDGET;
-            m_strToId["bkgcol"] = UIBKGCOLOR;
-            m_strToId["colrgbId"] = UICOLOR_RGB;
-            m_strToId["colintId"] = UICOLOR_INTENS;
-            m_strToId["colhtmId"] = UICOLOR_HMAP;
-            m_strToId["colclassId"] = UICOLOR_CLASS;
-            m_strToId["colmix"] = UICOLOR_MIX;
-            m_strToId["rdAll"] = UIRENDER_ALL;
-            m_strToId["camReset"] = UICAM_RESET;
-            m_strToId["camOrto"] = UICAM_ORTO;
-            m_strToId["SampleId"] = UIDATA_SAMPLE;
-            m_strToId["ruler"] = UIRULER;
-        }
-
-        void PrintMessage(const std::string &msg){
-           OutLine(msg.c_str());
-        }
-        void PrintMessage( const char *pMsg){
-            //printf("MESSAGE\n");
-            OutLine(pMsg);
-        }
-        void PrintMessage( const char *pMsg,int val){
-            static char strw[1024];
-            sprintf(strw, "%s'%s %d'", "document.getElementById('GFG').innerHTML=", pMsg,val);
-            emscripten_run_script(strw);
-        }
-
-        void SetRenderEvent(int num){
-            gRenderEvent = num;
-        }
-
-        void GetValue( const char *pUiId){
-           char *pRet =  emscripten_run_script_string("GetUIValue('xaxa')");
-           std::cout<<"pRet="<<pRet<<std::endl;
-        }
-
-        int GetFov(){
-            return emscripten_run_script_int("GetFovValue()");
-        }
-
-        int GetBkColor(){
-           return emscripten_run_script_int("GetBkColorValue()");
-        }
-
-        int GetPtSize(){
-            return emscripten_run_script_int("GetPtSizeValue()");
-        }
-        int GetBudget(){
-            return 100000*emscripten_run_script_int("GetBudgetValue()");
-        }
-
-        void OnUIEvent(const char *pEvent, int val){
-
-            if(pEvent==NULL) return;
-            std::cout<<"OnUIEvent:"<<pEvent<<" val="<<val<<std::endl;
-            auto u_iter = m_strToId.find(pEvent);
-            if( u_iter == m_strToId.end()){
-                return;
-            }
-            switch(u_iter->second){
-                case UIFOV:
-                    ezp::Renderer::Get()->SetFov(val);
-                break;
-                case UIPTSIZE:
-                    ezp::Renderer::Get()->SetPointSize(val);
-                break;
-                case UIBUDGET:
-                    ezp::Renderer::Get()->SetBudget(val*100000);
-                break;
-                case UIBKGCOLOR:
-                    ezp::Renderer::Get()->SetBkColor(val);
-                break;
-                case UICOLOR_INTENS:
-                    ezp::Renderer::Get()->SetColorMode(UICOLOR_INTENS);
-                 break;
-                case UICOLOR_CLASS:
-                    ezp::Renderer::Get()->SetColorMode(UICOLOR_CLASS);
-                break;
-                case UICOLOR_RGB:
-                    ezp::Renderer::Get()->SetColorMode(UICOLOR_RGB);
-                break;
-                case UICOLOR_HMAP:
-                    ezp::Renderer::Get()->SetColorMode(UICOLOR_HMAP);
-                break;
-                case UICOLOR_MIX:
-                    ezp::Renderer::Get()->SetColorMode(UICOLOR_MIX);
-                break;
-                case UIRENDER_ALL:
-                    ezp::Renderer::Get()->SetRenderAll((uint32_t)val);
-                break;
-                case UICAM_RESET:
-                   ezp::Scene::Get()->SetCamera();
-                break;
-                case UICAM_ORTO:
-                   ezp::Scene::Get()->SetCameraOrto();
-                break;
-                case UIDATA_SAMPLE:
-                   ezp::Scene::Get()->GenerateSample();
-                break;
-                case UIRULER:
-                   ezp::Renderer::Get()->SetRuler(val);
-                break;
-                default:
-                    std::cout<<"UNKNOWN"<<std::endl;
-                break;
-            }
-            gRenderEvent = 2;	
-        }
-
-        void SetElementState( const std::string &id,bool state){
-            const std::string qt = "\"";  
-            std::string cmd = "document.getElementById("+qt+id+qt+").disabled=";
-            cmd += (state) ? "false":"true";
-            emscripten_run_script(cmd.c_str());
-        }
-
-        void SetColorModeState(uint32_t flg, bool state){
-            emscripten_run_script("SetColorMode()");
-            std::cout<<"SetColorModeState "<<flg<<std::endl;
-            if(flg & COLOR_MODEL_RGB){
-                SetElementState("colrgbId", state);
-            }
-            if(flg & COLOR_INTENS){
-                SetElementState("colintId", state);
-            }
-            if(flg & COLOR_HMAP){
-                SetElementState("colhtmId", state);
-            }
-            if(flg & COLOR_CLASS){
-                SetElementState("colclassId", state);
-            }
-        }
-    };
-    
-    UI* UI::Get(){
-        static UIImpl theUIImpl;
-        return &theUIImpl;
-    }
-
-}// namespace ezp

@@ -7,6 +7,7 @@ SOURCES = src\main.cpp\
 		src\readers\test.cpp \
 		src\readers\las.cpp \
 		src\chunk.cpp \
+		src\ui.cpp \
 
 EXP_FUNC = _CallCFunc,_CallCFunc2,_main,_malloc,_free,_OnDebugCheckBox,_OnTestJS,_CameraRotateJS,_CameraMoveJS,_CameraMoveDbClickJS
 EXP_FUNC := $(EXP_FUNC),_OnUIChangeJS
