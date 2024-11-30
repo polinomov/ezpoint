@@ -7,41 +7,28 @@
 #include <functional>
 #include "chunk.h"
 
-#define COLOR_MODEL_RGB (1<<1)
-#define COLOR_INTENS    (1<<2)
-#define COLOR_HMAP      (1<<3)
-#define COLOR_CLASS     (1<<4)
-
 namespace ezp 
 {
   struct UI
   {
-    enum{
-      UIFOV = 0,
-      UIBUDGET,
-      UIBKGCOLOR,
-      UIPTSIZE,
-      UICOLOR_INTENS,
+    enum ColorMode{
+      UICOLOR_INTENS =0,
       UICOLOR_CLASS,
       UICOLOR_RGB,
       UICOLOR_HMAP,
-      UICOLOR_MIX,
-      UIRENDER_ALL,
-      UICAM_RESET,
-      UICAM_ORTO,
-      UIDATA_SAMPLE,
-      UIRULER
+      UICOLOR_MIX
     };
 
     virtual void PrintMessage( const char *pMsg) = 0;
     virtual void PrintMessage( const char *pMsg,int val) = 0;
     virtual void PrintMessage(const std::string &msg) =0;
     virtual void SetRenderEvent(int num)  = 0;
-    virtual void GetValue( const char *pUiId) = 0;
     virtual int GetFov() = 0;
     virtual int GetBkColor() = 0;
     virtual int GetPtSize() = 0;
     virtual int GetBudget() = 0;
+    virtual void SetColorMode(ColorMode md) = 0;
+    virtual ColorMode GetColorMode() = 0;
     virtual void OnUIEvent(const char *pEvent, int val)  = 0;
     static UI *Get();
   };

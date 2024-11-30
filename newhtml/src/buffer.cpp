@@ -474,7 +474,7 @@ namespace ezp
     template <unsigned int M>
     void XERR1(unsigned int *pBuff, int winW, int winH){
       uint32_t *pUPal,msk,shift;
-      switch(m_colorMode){
+      switch(UI::Get()->GetColorMode()){
         case UI::UICOLOR_HMAP :
           pUPal = (uint32_t*)m_palHMap;
           msk = 0xFFF;
