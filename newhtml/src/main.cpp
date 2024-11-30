@@ -53,9 +53,6 @@ extern "C" {
   }
   */
   void MainLoop() {
-    static int cnt = 0;
-    cnt++;
-     // if(cnt &1) return;
     if((gRenderEvent>0) || ( gAlwaysRender==1)){
       SDL_Rect srcRect, dstRect;
       unsigned char* pixels;
@@ -77,7 +74,7 @@ extern "C" {
       SDL_RenderPresent(m_renderer);
       gRenderEvent--;
     }
-    ezp::Scene::Get()->onTick();
+    ezp::Scene::Get()->OnTick();
   }
 
   void InitSDL() {
@@ -147,6 +144,8 @@ extern "C" {
   }
 
 extern "C" {
+  // Call from JS
+  //Gets called when all files are loaded. Schedules postprocessing calls.
   int PostProcessDataJS( int first, int last){
     auto postProcColors = [](void){ 
       auto getVerts = [](uint32_t ndx){ 
@@ -158,14 +157,32 @@ extern "C" {
       uint32_t mb =  ezp::Scene::Get()->GetNumMemBanks();
       bool isRgb = (ezp::UI::Get()->GetColorMode() ==  ezp::UI::ColorMode::UICOLOR_RGB);
       ezp::LasBuilder::PostProcessAllColors(mb,isRgb, getVerts, getNumInBank);
+      ezp::Scene::Get()->SetCamera();
+			ezp::UI::Get()->SetRenderEvent(2);
     };
 
-    ezp::Scene::Get()->processVertData(postProcColors);
+    for( int nn = 0; nn<ezp::Scene::Get()->GetNumMemBanks(); nn++){
+      auto call = [nn](void){
+        ezp::UI::Get()->PrintMessage("Processing ..." + std::to_string(nn));
+        ezp::Scene::Get()->processVertDataInt(nn);
+      };
+      ezp::Scene::Get()->AddToQueue(call);
+    }
+    auto postMessage = [](void){
+      ezp::UI::Get()->PrintMessage("Processing colors...");
+    };
+    ezp::Scene::Get()->AddToQueue(postMessage);
+    ezp::Scene::Get()->AddToQueue(postProcColors);   
+    auto finMessage = [](void){
+      ezp::UI::Get()->PrintMessage("Done");
+    };
+    ezp::Scene::Get()->AddToQueue(finMessage);
     return 0;
   }
   
   // Call from JS
-  // Process LAS data in chunks
+  // Consumes LAS data in chunks
+  // Returns the size of the next chunk , 0 if done.
   int LdLasCppJS(void* pData, int action, int param){
     int ret = 0;
     static ezp::LasBuilder *pLasBuilder = ezp::LasBuilder::Get();
@@ -306,7 +323,6 @@ extern "C" {
   }
 
   int  main() {
-     // OutLine("MAIN");
     InitSDL();
     SDL_DestroyRenderer(m_renderer);
     SDL_DestroyWindow(window);

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <iostream>
+#include <queue>
 #include "ezpoint.h"
 #include "readers\readers.h"
 #include <string>
@@ -13,14 +14,12 @@ namespace ezp
 		std::vector<FPoint4*> m_allVerts;
 		std::vector<uint32_t> m_numAllVerts;
 		uint32_t m_totVerts;
-		bool m_needProcess;
 		float m_size;
-		std::function<void( )> m_procIsReadyFunc;
+		std::queue<std::function<void( )>> m_calls;
  
 		SceneImpl(){
 			m_size = 1.0f;
 			m_totVerts = 0;
-			m_needProcess = false;
 		}
 
 		uint32_t AllocVerts( uint32_t num){
@@ -50,9 +49,9 @@ namespace ezp
 			m_numAllVerts.clear();
 			m_box.xMin = m_box.yMin = m_box.zMin = std::numeric_limits<float>::max();
 			m_box.xMax = m_box.yMax = m_box.zMax = std::numeric_limits<float>::min();
-			m_totVerts = 0;
-			m_needProcess = false;
-			m_procIsReadyFunc = NULL;
+			m_totVerts = 0;	
+			std::queue<std::function<void( )>> empty;
+			std::swap( m_calls, empty );	
 		}
 
 		const FPoint4 *GetVerts(uint32_t n){
@@ -67,7 +66,6 @@ namespace ezp
 			if(m_allChunks.size() == 0){
 				return;
 			}
-			std::cout<<"== SetCamera === "<<std::endl;
 			float pos[3],dim[3];
 			dim[0] = m_box.xMax - m_box.xMin;
 			dim[1] = m_box.yMax - m_box.yMin;
@@ -85,7 +83,6 @@ namespace ezp
 			pos[2]= (m_box.zMax + m_box.zMin) *0.5f;
 			pCam->SetPivot(pos[0],pos[1],pos[2]);
 			float atanr = Renderer::Get()->GetAtanRatio();
-			//pos[2] += 0.5f*atanr*std::max(dim[0],dim[1]);
 			pos[2] += 0.5f*atanr*std::max(dim[0],dim[1]);
 			pCam->ReSet();
 			pCam->SetPos(pos);
@@ -158,49 +155,18 @@ namespace ezp
 			chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} );           
 		}
 
-		void processVertData(std::function<void( )> isReady){
-			m_needProcess = true;
-			m_procIsReadyFunc = isReady;
+		 void AddToQueue(std::function<void( )> func){
+			m_calls.push(func);
 		}
 
-		void onTick() {
-			static int cnt = 0;
-			static bool isDone = false;
-			static bool doPostProc = false;
-			if( m_needProcess){
-				cnt = GetNumMemBanks();
-				UI::Get()->PrintMessage("Processing... "); 
-				m_needProcess = false;
-				return;               
+		void OnTick(){
+			if(!m_calls.empty()){
+				auto func = m_calls.front();
+				func();
+				m_calls.pop();
 			}
-			if(cnt>0){
-				uint32_t ndx = GetNumMemBanks()- cnt;
-				processVertDataInt(ndx);
-				UI::Get()->PrintMessage("Processing... " + std::to_string(ndx)); 
-				cnt--;
-				if(cnt==0){
-				  isDone = true;  
-				}
-				return;
-			}
-			if(isDone){
-				UI::Get()->PrintMessage("Processing colors..."); 
-				isDone = false;
-				doPostProc = true;
-				return;
-			}
-			if(doPostProc){
-				if(m_procIsReadyFunc){
-					m_procIsReadyFunc();
-				}
-				SetCamera();
-				UI::Get()->SetRenderEvent(2);
-				doPostProc = false;
-				UI::Get()->PrintMessage(" "); 
-				return;
-			}          
 		}
-
+		
 		void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z,uint16_t col )
 		{
 			for( int i = 0; i<num ; i++){
@@ -230,9 +196,9 @@ namespace ezp
 					pt += sfPoints;  
 				}
 			} 
+			UI::Get()->SetColorMode(UI::UICOLOR_RGB);
 			processVertDataInt(0);
 			SetCamera();
-			Renderer::Get()->SetColorMode(UI::UICOLOR_RGB);
 			UI::Get()->SetRenderEvent(2);
 		}  
  

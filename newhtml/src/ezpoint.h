@@ -67,14 +67,15 @@ namespace ezp
     virtual const FPoint4 *GetVerts(uint32_t n) = 0;
     virtual void Clear() = 0;
     virtual uint32_t GetNumVerts(uint32_t n) = 0;
-    virtual void processVertData(std::function<void( )> isReady) = 0;
+    virtual void processVertDataInt(uint32_t n) = 0;
     virtual void GenerateSample() = 0;
     virtual float GetSize() = 0;
     virtual const std::vector<Chunk*>& GetChunks() = 0;
     virtual void GetZMax(float &zmin, float &zmax) = 0;
     virtual void SetCamera() = 0;
     virtual void SetCameraOrto() = 0;
-    virtual void onTick() = 0;
+    virtual void AddToQueue(std::function<void( )> func) = 0;
+    virtual void OnTick() = 0;
     static Scene *Get();
   };
 
@@ -89,7 +90,7 @@ namespace ezp
     virtual void SetBkColor( uint32_t val)= 0;
     virtual void ShowFrameRate(bool val) = 0;
     virtual void SetDebugParam(int val) = 0;
-    virtual void SetColorMode( uint32_t val) = 0;
+    //virtual void SetColorMode( uint32_t val) = 0;
     virtual void SetRenderAll( uint32_t val) = 0;
     virtual void SetDbClickEvent( uint32_t x, uint32_t y) = 0;
     virtual void SetRuler(int val) =0;

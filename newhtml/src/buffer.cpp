@@ -186,7 +186,7 @@ namespace ezp
     }
 
     void SetDbClickEvent( uint32_t x, uint32_t y){
-      std::cout<<"SetDbClickEvent"<<std::endl;
+      //std::cout<<"SetDbClickEvent"<<std::endl;
       m_bdClickX = x;
       m_bdClickY = y;
       m_hasDbClick = true;
@@ -289,7 +289,7 @@ namespace ezp
       float distMax = std::numeric_limits<float>::min();
       float distMin = std::numeric_limits<float>::max();
       float zTr = rp->m_sceneSize/sqrt((float)chunks.size());
-      for( int m = 0; m<chunks.size()-1; m++) {
+      for( int m = 0; m<chunks.size(); m++) {
         Chunk* pCh= chunks[m];
         chunks[m]->numToRender = chunks[m]->numVerts-1;
         FPoint4 bdd[8];
@@ -364,6 +364,7 @@ namespace ezp
       float shf = (float)sh *0.5f;
       rp->m_visPoints= 0;
       for( int m = 0; m<chunks.size(); m++) {
+        //std::cout<<"ch "<<m<<" numv="<<chunks[m]->numToRender<<std::endl;
         if(chunks[m]->numToRender<=1) continue;
         FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
         __m128 xss = _mm_set1_ps(pV4->x);
