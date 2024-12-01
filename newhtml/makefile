@@ -9,7 +9,7 @@ SOURCES = src\main.cpp\
 		src\chunk.cpp \
 		src\ui.cpp \
 
-EXP_FUNC = _CallCFunc,_CallCFunc2,_main,_malloc,_free,_OnDebugCheckBox,_OnTestJS,_CameraRotateJS,_CameraMoveJS,_CameraMoveDbClickJS
+EXP_FUNC = _CallCFunc,_main,_malloc,_free,_OnDebugCheckBox,_OnTestJS,_CameraRotateJS,_CameraMoveJS,_CameraMoveDbClickJS
 EXP_FUNC := $(EXP_FUNC),_OnUIChangeJS
 EXP_FUNC := $(EXP_FUNC),_LdLasCppJS
 EXP_FUNC := $(EXP_FUNC),_PostProcessDataJS

@@ -176,7 +176,7 @@ namespace ezp
 		}
 	}
 
-	struct LasBuilderImpl: public LasBuilder{
+	struct LasBuilderImpl: public PointBuilder{
 		enum{
 			RD_NONE = 0,
 			RD_SKIP,
@@ -408,7 +408,7 @@ namespace ezp
 	static float hHist[hsz];
 	static float gHist[s16];
 
-	void LasBuilder::PostProcessAllColors(
+	void PointBuilder::PostProcessAllColors(
 		uint32_t numMemBanks,
 		bool hasRgb,
 		std::function<const FPoint4 *(uint32_t ndx)> getVerts,
@@ -473,8 +473,8 @@ namespace ezp
 		}
 	}//LasBuilder::PostProcessAllColors
  
-	LasBuilder * LasBuilder::Get(){
-		static LasBuilder *pRet  = new LasBuilderImpl();
+	PointBuilder * PointBuilder::Get(){
+		static PointBuilder *pRet  = new LasBuilderImpl();
 		return pRet;
 	}
 

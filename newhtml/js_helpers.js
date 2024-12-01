@@ -42,7 +42,7 @@ async function PostProcess() {
     });
 }
 
-async function OnLoadLas(input) {
+function OnLoadLas(input) {
     var fileNdx_ = 0;
     var numFiles_ = input.files.length;
     document.getElementById('GFG').innerHTML = 'Reading ... ' + numFiles_;
@@ -61,7 +61,7 @@ async function OnLoadLas(input) {
     var s_action_chunk = Module._malloc(128);
     Module.HEAPU8.set(new TextEncoder().encode("datchunk"), s_action_chunk); 
  
-    var readerOnLoad = async function (e) {    
+    var readerOnLoad =  function (e) {    
         var data = e.target.result;
         var dtsize = e.target.result.byteLength;
         var array = new Uint8Array(data);
@@ -72,7 +72,7 @@ async function OnLoadLas(input) {
         currSz_ +=  dtsize;
     };
 
-    var readerDoneLoad = async function (e) {
+    var readerDoneLoad = function (e) {
         if(chunkSz_=== 0){
             fileNdx_ = fileNdx_ + 1;
             if(fileNdx_ === numFiles_){
@@ -101,7 +101,7 @@ async function OnLoadLas(input) {
         console.log('Error : ' + e.type);
     };
 
-     readMemBlock = async function(_offset, length){
+     readMemBlock = function(_offset, length){
         var reader = new FileReader();
         reader.onload = readerOnLoad;
         reader.onloadend  = readerDoneLoad;
@@ -129,15 +129,17 @@ function  doSomeLogging(){
     console.log("---Do logging----");
 }
 
-async function OnFileSelected(input) {
-    console.log("HERE_I_AM-1");
+async function OnFileSelected(input,ftype) {
+    console.log("HERE_I_AM-1 " + ftype);
+    /*
     try{
         await  LoadLasAsync(input);
     }
     catch(error){
         console.log("error " + error);
     }
-    //OnLoadLas(input);
+    */
+    OnLoadLas(input);
     console.log("HERE_I_AM-2");
     //await PostProcess();
 
@@ -147,7 +149,7 @@ function OnSampleLoad(){
     console.log("-OnSampleLoad-");
 }
 
-function OnFileOpen() {
+function OnFileOpen(ftype) {
     document.getElementById('attachment').click();
 }
 
@@ -204,7 +206,6 @@ function UpdateColorModeUI(){
 }
 
 function OnUIEvent1(input){
-    //SetColorMode();
     gIdChanged = input.id;
     var elType = document.getElementById(input.id).type;
     if(elType == "checkbox"){

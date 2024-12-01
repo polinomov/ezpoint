@@ -99,13 +99,36 @@
 <body>
    <div class="navbar" >
         <div class="dropdown">
-            <!-- file -->
-            <input type="file" multiple class="file" id="attachment" style="display: none;" accept=".xyz,.las,.ply" onchange="OnFileSelected(this)" />
+            <!--
+             file  menu
+            -->
+            <input type="file" multiple class="file" id="attach_las"    style="display: none;" accept=".las" onchange="OnFileSelected(this,'las')" />
+            <input type="file" multiple class="file" id="attach_xyzbin" style="display: none;" accept=".xyz" onchange="OnFileSelected(this,'xyz_bin')" />
+            <input type="file" multiple class="file" id="attach_xyztxt" style="display: none;" accept=".xyz" onchange="OnFileSelected(this,'xyz_txt')" />
             <button class="dropbtn" id="fbtn" onclick="myFunction('fbtn','fileDropdown')">File</button>
             <div class="dropdown-content" id="fileDropdown">
-                <button type="button"  onclick="OnFileOpen()"class="thebutton">Load Las</button>
-                <button type="button" id="SampleId"  onclick="OnUIEvent1(this)" class="thebutton">Test</button>
-                <button type="button" id="HelpId"    onclick="OnUIEvent1(this)" class="thebutton">Help</button>
+                <button type="button"  
+                        onclick="document.getElementById('attach_las').click()"
+                        class="thebutton">Load Las
+                </button>
+                <button type="button"  
+                        onclick="document.getElementById('attach_xyzbin').click()"
+                        class="thebutton">Load XYZ (bin)
+                </button>
+                <button type="button"  
+                        onclick="document.getElementById('attach_xyztxt').click()"
+                        class="thebutton">Load XYZ (text)
+                </button>
+                <button type="button" 
+                        id="SampleId"  
+                        onclick="OnUIEvent1(this)"
+                        class="thebutton">Test
+                </button>
+                <button type="button" 
+                        id="HelpId"    
+                        onclick="OnUIEvent1(this)" 
+                        class="thebutton">Help
+                </button>
             </div>
             <!-- camera -->
             <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
@@ -157,10 +180,7 @@
     <div>
         <canvas id="canvas" oncontextmenu="event.preventDefault()" ></canvas>
     </div>
-
    
-
-    
     <script type='text/javascript'>
         var Module = {
             canvas: (function () { return document.getElementById('canvas'); })()

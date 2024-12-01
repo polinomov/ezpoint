@@ -156,7 +156,7 @@ extern "C" {
       };
       uint32_t mb =  ezp::Scene::Get()->GetNumMemBanks();
       bool isRgb = (ezp::UI::Get()->GetColorMode() ==  ezp::UI::ColorMode::UICOLOR_RGB);
-      ezp::LasBuilder::PostProcessAllColors(mb,isRgb, getVerts, getNumInBank);
+      ezp::PointBuilder::PostProcessAllColors(mb,isRgb, getVerts, getNumInBank);
       ezp::Scene::Get()->SetCamera();
 			ezp::UI::Get()->SetRenderEvent(2);
     };
@@ -181,11 +181,11 @@ extern "C" {
   }
   
   // Call from JS
-  // Consumes LAS data in chunks
+  // Consumes file data in chunks
   // Returns the size of the next chunk , 0 if done.
   int LdLasCppJS(void* pData, int action, int param){
     int ret = 0;
-    static ezp::LasBuilder *pLasBuilder = ezp::LasBuilder::Get();
+    static ezp::PointBuilder *pLasBuilder = ezp::PointBuilder::Get();
 
     auto allocVerts = [](uint32_t num){ 
       uint32_t ndx  = ezp::Scene::Get()->AllocVerts(num);
@@ -223,15 +223,6 @@ extern "C" {
     return ret;
   }
 }
-
-
-  int CallCFunc2(int w, int h) 
-  {
-    std::thread::id this_id = std::this_thread::get_id();
-    std::cout << "thread " << this_id << " sleeping...\n";
-    std::cout <<"here..."<<std::endl;
-    return 0;
-  }
 
   int OnDebugCheckBox( int val){ //JS call
     gAlwaysRender = val;
