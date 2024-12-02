@@ -16,6 +16,7 @@ namespace ezp
 		uint32_t m_totVerts;
 		float m_size;
 		std::queue<std::function<void( )>> m_calls;
+		std::string m_desc;
  
 		SceneImpl(){
 			m_size = 1.0f;
@@ -51,7 +52,8 @@ namespace ezp
 			m_box.xMax = m_box.yMax = m_box.zMax = std::numeric_limits<float>::min();
 			m_totVerts = 0;	
 			std::queue<std::function<void( )>> empty;
-			std::swap( m_calls, empty );	
+			std::swap( m_calls, empty );
+			m_desc = "";
 		}
 
 		const FPoint4 *GetVerts(uint32_t n){
@@ -166,6 +168,13 @@ namespace ezp
 				m_calls.pop();
 			}
 		}
+
+		void SetDesctiption( const std::string &decs){
+			m_desc = decs;
+		}
+    std::string GetDesctiption( ){
+			return m_desc;
+	  }
 		
 		void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z,uint16_t col )
 		{

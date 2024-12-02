@@ -13,6 +13,7 @@ namespace ezp
         uint32_t hasClass;
         uint32_t hasRgb;
         uint32_t err;
+        std::string description;
     };
 
     struct PointBuilder{

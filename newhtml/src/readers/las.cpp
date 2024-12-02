@@ -332,6 +332,8 @@ namespace ezp
 			inf.numPoints = m_numPoints;
 			inf.hasRgb = m_hasRgb;
 			inf.hasClass  = m_hasClass;
+			inf.description = "Las" + std::to_string(vMajor) + "." + std::to_string(vMinor) + " ";
+			inf.description += std::to_string(m_hdr.pointDataFormatId);
 			if(m_onInfoFunc(inf) != 0){
 				return false;
 			}      

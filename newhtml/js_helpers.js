@@ -129,20 +129,12 @@ function  doSomeLogging(){
     console.log("---Do logging----");
 }
 
-async function OnFileSelected(input,ftype) {
+function OnFileSelected(input,ftype) {
     console.log("HERE_I_AM-1 " + ftype);
-    /*
-    try{
-        await  LoadLasAsync(input);
-    }
-    catch(error){
-        console.log("error " + error);
-    }
-    */
+    clear_scene_cb = Module.cwrap('ClearSceneJS', 'number', ['number']);
+    clear_scene_cb(0);
     OnLoadLas(input);
     console.log("HERE_I_AM-2");
-    //await PostProcess();
-
 } //OnFileSelected
 
 function OnSampleLoad(){

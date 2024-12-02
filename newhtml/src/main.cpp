@@ -174,7 +174,7 @@ extern "C" {
     ezp::Scene::Get()->AddToQueue(postMessage);
     ezp::Scene::Get()->AddToQueue(postProcColors);   
     auto finMessage = [](void){
-      ezp::UI::Get()->PrintMessage("Done");
+      ezp::UI::Get()->PrintMessage(ezp::Scene::Get()->GetDesctiption());
     };
     ezp::Scene::Get()->AddToQueue(finMessage);
     return 0;
@@ -183,9 +183,9 @@ extern "C" {
   // Call from JS
   // Consumes file data in chunks
   // Returns the size of the next chunk , 0 if done.
-  int LdLasCppJS(void* pData, int action, int param){
+  int LdLasCppJS(void* pData, int action, int ftype){
     int ret = 0;
-    static ezp::PointBuilder *pLasBuilder = ezp::PointBuilder::Get();
+    ezp::PointBuilder *pLasBuilder = ezp::PointBuilder::Get();
 
     auto allocVerts = [](uint32_t num){ 
       uint32_t ndx  = ezp::Scene::Get()->AllocVerts(num);
@@ -202,8 +202,9 @@ extern "C" {
       if(info.hasRgb){
         ezp::UI::Get()->SetColorMode(ezp::UI::UICOLOR_RGB);
       }else{
-        ezp::UI::Get()->SetColorMode(ezp::UI::UICOLOR_MIX);
+        ezp::UI::Get()->SetColorMode(ezp::UI::UICOLOR_INTENS);
       }
+      ezp::Scene::Get()->SetDesctiption(info.description);
       uint32_t nextPointsNum = ezp::Scene::Get()->GetTotVerts() + info.numPoints;
       if(nextPointsNum > 250 *1000*1000){
         return 1; 
@@ -211,16 +212,18 @@ extern "C" {
       return 0;
     };
 
-    if ( action ==0 ){// start loading
-      if(param == 0){
-        ezp::Scene::Get()->Clear();
-      }
-      ezp::RenderHelper::Get()->Reset();
+    if ( action == 0 ){// start loading new file
       pLasBuilder->Reset();
       pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
     }
     ret = (int)pLasBuilder->SetChunkData((action == 0) ? NULL: pData);
     return ret;
+  }
+
+  int ClearSceneJS(int param){
+    ezp::RenderHelper::Get()->Reset();
+    ezp::Scene::Get()->Clear();
+    return 0;
   }
 }
 

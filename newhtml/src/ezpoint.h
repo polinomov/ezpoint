@@ -76,6 +76,8 @@ namespace ezp
     virtual void SetCameraOrto() = 0;
     virtual void AddToQueue(std::function<void( )> func) = 0;
     virtual void OnTick() = 0;
+    virtual void SetDesctiption( const std::string &decs) = 0;
+    virtual std::string GetDesctiption( ) = 0;
     static Scene *Get();
   };
 
@@ -90,7 +92,6 @@ namespace ezp
     virtual void SetBkColor( uint32_t val)= 0;
     virtual void ShowFrameRate(bool val) = 0;
     virtual void SetDebugParam(int val) = 0;
-    //virtual void SetColorMode( uint32_t val) = 0;
     virtual void SetRenderAll( uint32_t val) = 0;
     virtual void SetDbClickEvent( uint32_t x, uint32_t y) = 0;
     virtual void SetRuler(int val) =0;
