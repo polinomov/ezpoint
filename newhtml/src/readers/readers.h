@@ -28,13 +28,15 @@ namespace ezp
             std::function<int( const LasInfo &info)> onInfo
         ) = 0;
         virtual uint32_t SetChunkData(void *pData) = 0;
-        virtual void Reset() = 0;
-        static void PostProcessAllColors(
+        virtual void Reset(uint32_t fSize) = 0;
+        virtual void PostProcessAllColors(
             uint32_t numMemBanks,
             bool hasRgb,
             std::function<const FPoint4 *(uint32_t ndx)> getVerts,
-            std::function<uint32_t (uint32_t ndx)> getNum);
-        static PointBuilder *Get();
+            std::function<uint32_t (uint32_t ndx)> getNum
+        ) = 0;
+        static PointBuilder *GetLasBuilder();
+        static PointBuilder *GetXyzTxtBuilder();
     };
 }
 

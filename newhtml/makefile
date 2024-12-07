@@ -6,6 +6,8 @@ SOURCES = src\main.cpp\
 		src\rdhelpers.cpp \
 		src\readers\test.cpp \
 		src\readers\las.cpp \
+		src\readers\xyztxt.cpp \
+		src\readers\xyzbin.cpp \
 		src\chunk.cpp \
 		src\ui.cpp \
 

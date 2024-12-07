@@ -74,6 +74,11 @@ namespace ezp
 			return m_colorMode;
 		}
 
+		void ShowErrorMessage(const std::string &msg){
+      std::string m = std::string("alert(") + "\"" + msg + "\"" + std::string(")");
+      emscripten_run_script(m.c_str());
+		}
+
 		void OnUIEvent(const char *pEvent, int val){
 			if(pEvent==NULL) return;
 			auto f_iter = m_strToCall.find(pEvent);

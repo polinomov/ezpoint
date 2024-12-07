@@ -150,7 +150,7 @@ namespace ezp
 			PointFormat6 *pt6 = (PointFormat6*)pt;
 			Point6Flags flg = pt6->flg;
 			uint8_t c2 = pt6->classification;
-			return c2;
+			return  c2;
 		}
 		return 0;
 	}
@@ -206,10 +206,10 @@ namespace ezp
 
 		LasBuilderImpl(){
 			m_R16 = m_G16 = m_B16 = NULL;
-			Reset();
+			Reset(0);
 		}
 
-		void Reset(){
+		void Reset(uint32_t fSize){
 			m_state= RD_NONE; 
 			m_numPoints = 0;
 			m_procPoints = 0;
@@ -327,7 +327,7 @@ namespace ezp
 			m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId); 
 			m_hasRgb =  ptHasColor((int)m_hdr.pointDataFormatId);
 			//std::cout<<"=== LAS === verttype "<< (int)m_hdr.pointDataFormatId<<std::endl;
-			//std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
+			std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
 			LasInfo inf;  
 			inf.numPoints = m_numPoints;
 			inf.hasRgb = m_hasRgb;
@@ -403,6 +403,13 @@ namespace ezp
 				pDst[i].col = rr | gg | bb;
 			}
 		}
+
+		void PostProcessAllColors(
+		uint32_t numMemBanks,
+		bool hasRgb,
+		std::function<const FPoint4 *(uint32_t ndx)> getVerts,
+		std::function<uint32_t (uint32_t ndx)> getNum);
+	
 	};//struct LasBuilderImpl
 
 	static const  uint32_t hsz = 0xFFF;
@@ -410,7 +417,7 @@ namespace ezp
 	static float hHist[hsz];
 	static float gHist[s16];
 
-	void PointBuilder::PostProcessAllColors(
+	void LasBuilderImpl::PostProcessAllColors(
 		uint32_t numMemBanks,
 		bool hasRgb,
 		std::function<const FPoint4 *(uint32_t ndx)> getVerts,
@@ -475,7 +482,7 @@ namespace ezp
 		}
 	}//LasBuilder::PostProcessAllColors
  
-	PointBuilder * PointBuilder::Get(){
+	PointBuilder * PointBuilder::GetLasBuilder(){
 		static PointBuilder *pRet  = new LasBuilderImpl();
 		return pRet;
 	}

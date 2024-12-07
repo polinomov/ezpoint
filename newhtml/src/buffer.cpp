@@ -364,7 +364,6 @@ namespace ezp
       float shf = (float)sh *0.5f;
       rp->m_visPoints= 0;
       for( int m = 0; m<chunks.size(); m++) {
-        //std::cout<<"ch "<<m<<" numv="<<chunks[m]->numToRender<<std::endl;
         if(chunks[m]->numToRender<=1) continue;
         FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
         __m128 xss = _mm_set1_ps(pV4->x);

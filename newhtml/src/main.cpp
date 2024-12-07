@@ -69,6 +69,7 @@ extern "C" {
       dstRect.h = gWinH;
       SDL_LockTexture( m_screenTexture, NULL, (void**)&pixels, &pitch );
       ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
+      SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
       SDL_UnlockTexture( m_screenTexture );
       SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
       SDL_RenderPresent(m_renderer);
@@ -144,10 +145,26 @@ extern "C" {
   }
 
 extern "C" {
+
+  static ezp::PointBuilder* GetFromFileType(uint32_t fType){
+    switch(fType){
+      case 0:
+        return ezp::PointBuilder::GetLasBuilder();
+      break;
+      case 1:
+        return NULL;
+      break;
+      case 2:
+        return ezp::PointBuilder::GetXyzTxtBuilder();
+      break;
+    }
+    return NULL;
+  }
+
   // Call from JS
   //Gets called when all files are loaded. Schedules postprocessing calls.
-  int PostProcessDataJS( int first, int last){
-    auto postProcColors = [](void){ 
+  int PostProcessDataJS( int fType, int param){
+    auto postProcColors = [fType](void){ 
       auto getVerts = [](uint32_t ndx){ 
         return ezp::Scene::Get()->GetVerts(ndx);
       };
@@ -156,9 +173,14 @@ extern "C" {
       };
       uint32_t mb =  ezp::Scene::Get()->GetNumMemBanks();
       bool isRgb = (ezp::UI::Get()->GetColorMode() ==  ezp::UI::ColorMode::UICOLOR_RGB);
-      ezp::PointBuilder::PostProcessAllColors(mb,isRgb, getVerts, getNumInBank);
-      ezp::Scene::Get()->SetCamera();
-			ezp::UI::Get()->SetRenderEvent(2);
+      ezp::PointBuilder *pPointBuilder = GetFromFileType(fType);
+      if(pPointBuilder != NULL){
+        pPointBuilder->PostProcessAllColors(mb,isRgb, getVerts, getNumInBank);
+      }
+      if(mb>0){
+        ezp::Scene::Get()->SetCamera();
+			  ezp::UI::Get()->SetRenderEvent(2);
+      }
     };
 
     for( int nn = 0; nn<ezp::Scene::Get()->GetNumMemBanks(); nn++){
@@ -183,9 +205,13 @@ extern "C" {
   // Call from JS
   // Consumes file data in chunks
   // Returns the size of the next chunk , 0 if done.
-  int LdLasCppJS(void* pData, int action, int ftype){
+  int LdLasCppJS(void* pData, int action, int fType, int fSize){
     int ret = 0;
-    ezp::PointBuilder *pLasBuilder = ezp::PointBuilder::Get();
+    ezp::PointBuilder *pLasBuilder =  GetFromFileType(fType);
+    if(pLasBuilder == NULL){
+      ezp::UI::Get()->ShowErrorMessage("Unknown file type " + std::to_string(fType));
+      return 0;
+    }
 
     auto allocVerts = [](uint32_t num){ 
       uint32_t ndx  = ezp::Scene::Get()->AllocVerts(num);
@@ -213,7 +239,8 @@ extern "C" {
     };
 
     if ( action == 0 ){// start loading new file
-      pLasBuilder->Reset();
+      std::cout<<"fsize=="<<fSize<< "fType="<<fType<<std::endl;
+      pLasBuilder->Reset(fSize);
       pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
     }
     ret = (int)pLasBuilder->SetChunkData((action == 0) ? NULL: pData);

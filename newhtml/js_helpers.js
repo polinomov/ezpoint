@@ -42,7 +42,7 @@ async function PostProcess() {
     });
 }
 
-function OnLoadLas(input) {
+function OnLoadLas(input,fType) {
     var fileNdx_ = 0;
     var numFiles_ = input.files.length;
     document.getElementById('GFG').innerHTML = 'Reading ... ' + numFiles_;
@@ -55,9 +55,11 @@ function OnLoadLas(input) {
     var readMemBlock = null;
     var chunkSz_ = 1024*1024;
     var currSz_ = 0;
+    var fType_ = fType;
    // var ext = input.files[fileNdx].name.split('.').pop();
     var totSz_ = input.files[fileNdx_].size; 
-    load_file_cb = Module.cwrap('LdLasCppJS', 'number', ['arrayPointer', 'number', 'number']);
+    load_file_cb = Module.cwrap('LdLasCppJS', 'number', ['arrayPointer', 'number', 'number','number']);
+    post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
     var s_action_chunk = Module._malloc(128);
     Module.HEAPU8.set(new TextEncoder().encode("datchunk"), s_action_chunk); 
  
@@ -67,7 +69,7 @@ function OnLoadLas(input) {
         var array = new Uint8Array(data);
         var res_ptr = Module._malloc(dtsize);
         Module.HEAPU8.set(array, res_ptr);  
-        chunkSz_ = load_file_cb(res_ptr, 1, dtsize); 
+        chunkSz_ = load_file_cb(res_ptr, 1, fType, totSz_); 
         Module._free(res_ptr);
         currSz_ +=  dtsize;
     };
@@ -76,20 +78,18 @@ function OnLoadLas(input) {
         if(chunkSz_=== 0){
             fileNdx_ = fileNdx_ + 1;
             if(fileNdx_ === numFiles_){
-               post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
-               post_proc_file_cb(0,0);
+                post_proc_file_cb(fType,0);
                return ;
              }
             else{
                 // Start reading new file
                 totSz_ = input.files[fileNdx_].size; 
                 currSz_ = 0;
-                chunkSz_ = load_file_cb(s_action_chunk, 0, 1); 
+                chunkSz_ = load_file_cb(s_action_chunk, 0, fType_,totSz_); 
             }
         }
         if(chunkSz_=== -1){
-            post_proc_file_cb = Module.cwrap('PostProcessDataJS', 'number', ['number', 'number']);
-            post_proc_file_cb(0,0);
+            post_proc_file_cb(fType,0);
             return ;
         }
         var rdp = Math.floor(100* currSz_/totSz_);
@@ -101,7 +101,7 @@ function OnLoadLas(input) {
         console.log('Error : ' + e.type);
     };
 
-     readMemBlock = function(_offset, length){
+    readMemBlock = function(_offset, length){
         var reader = new FileReader();
         reader.onload = readerOnLoad;
         reader.onloadend  = readerDoneLoad;
@@ -111,30 +111,15 @@ function OnLoadLas(input) {
     }
     
     // Start reading
-    chunkSz_ = load_file_cb(s_action_chunk, 0, 0); 
+    chunkSz_ = load_file_cb(s_action_chunk, 0, fType_, totSz_); 
     readMemBlock(currSz_, chunkSz_);  
 } //OnLoadLas
 
 
-
-async function LoadLasAsync(input){
-    const ppp = new Promise((aaa, rej) => {
-        console.log(" INSIDE PROMISE");
-        OnLoadLas(input);
-    });
-    return ppp;
-}
-
-function  doSomeLogging(){
-    console.log("---Do logging----");
-}
-
-function OnFileSelected(input,ftype) {
-    console.log("HERE_I_AM-1 " + ftype);
+function OnFileSelected(input,fType) {
     clear_scene_cb = Module.cwrap('ClearSceneJS', 'number', ['number']);
     clear_scene_cb(0);
-    OnLoadLas(input);
-    console.log("HERE_I_AM-2");
+    OnLoadLas(input,fType);
 } //OnFileSelected
 
 function OnSampleLoad(){

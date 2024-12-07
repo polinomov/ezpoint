@@ -28,6 +28,7 @@ namespace ezp
     virtual int GetPtSize() = 0;
     virtual int GetBudget() = 0;
     virtual void SetColorMode(ColorMode md) = 0;
+    virtual void ShowErrorMessage(const std::string &msg) = 0;
     virtual ColorMode GetColorMode() = 0;
     virtual void OnUIEvent(const char *pEvent, int val)  = 0;
     static UI *Get();
@@ -43,8 +44,6 @@ namespace ezp
     virtual void ReSet() = 0;
     virtual void SetPos(float *v) = 0;
     virtual void SetPos(float x, float y, float  z) = 0;
-    virtual void SetDir(float *v) = 0;
-    virtual void SetUp(float *v) = 0;
     virtual void SetWorldUpAxis(float x, float y, float  z) = 0;
     virtual void SetPivot(float x, float y, float  z)  = 0;
     virtual void RotRight( float val) = 0;

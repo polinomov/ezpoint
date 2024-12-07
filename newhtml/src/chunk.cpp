@@ -11,7 +11,6 @@
 namespace ezp {
 
 Chunk::Chunk() : numVerts(0),pVert(NULL),aux(0),flg(0),numToRender(0),reduction(1.0f){
-    //std::cout<<"---Chunk Ctor---"<<std::endl;
 }
 
 Chunk::~Chunk(){
@@ -21,15 +20,16 @@ Chunk::~Chunk(){
 void Chunk::Randomize(){
     FPoint4 *fp = (FPoint4*)pVert;
     srand(12345);
-    int numSw = 0;
     for( int i = 0; i<numVerts*2; i++){
         uint32_t r1 = rand()%numVerts;
         uint32_t r2 = rand()%numVerts;
         if((r1>=0)&&(r1<numVerts)&&(r2>=0)&&(r2<numVerts)){
             FPoint4 tmp = fp[r1];
+            FPoint4 pt = fp[r2];
+            //if(pt.z< tmp.z){
             fp[r1] = fp[r2];
             fp[r2] = tmp;
-            numSw++;
+            //}
         }
     }
 }
