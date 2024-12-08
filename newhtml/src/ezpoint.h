@@ -41,6 +41,7 @@ namespace ezp
     virtual void GetUp( float &x, float &y, float &z) = 0;
     virtual void GetRight( float &x, float &y, float &z) = 0;
     virtual void GetPivot( float &x, float &y, float &z)  = 0;
+    virtual float GetDistance() = 0;
     virtual void ReSet() = 0;
     virtual void SetPos(float *v) = 0;
     virtual void SetPos(float x, float y, float  z) = 0;

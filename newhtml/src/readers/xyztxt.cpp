@@ -7,6 +7,8 @@ namespace ezp
 	struct XyzTxtImpl: public PointBuilder{
 		uint32_t m_fSize;
 		uint32_t m_numPoints;
+		uint32_t m_numProc;
+		uint32_t m_allocNdx;
 		std::function<int (uint32_t n )> m_allocFunc;
 		std::function<const FPoint4 *(uint32_t)> m_getVertsFunc;
 		std::function<void( const std::string &msg)> m_onErrFunc;
@@ -24,7 +26,7 @@ namespace ezp
 			m_onInfoFunc = onInfo;
 		}
     
-		bool processLine(int lstart, int lend,const uint8_t *pT){
+		bool processLine(int lstart, int lend,const uint8_t *pT,int step){
 			int firstDigit = -1;
 			for(int i = lstart; i<=lend; i++){
 				if(( pT[i] == ' ') || (pT[i] == 0x9)){
@@ -36,21 +38,32 @@ namespace ezp
 				firstDigit = i;
 				break;			
 			}
+
 			if(firstDigit==-1){
 				return false;
 			}
-	    
+	    if(step == 0){
+				return true;
+			}
+			// step = 1
 			uint8_t tmp[256];
-			int cnt = 0;
+			int cnt = 0,fcnt = 0;
+			FPoint4 *pDst = (FPoint4*)m_getVertsFunc(m_allocNdx);
+			float xyz[3];
 			for(int i = firstDigit; i<=lend; i++){
-				if(( pT[i] == ' ') || (pT[i] == 0x9) || (pT[i] == ',') || (i==lend)){
+				bool isDelimiter  = (( pT[i] == ' ') || (pT[i] == 0x9) || (pT[i] == ','));
+				if(isDelimiter  || (i==lend)){
+					if((i==lend) && (!isDelimiter)){
+						tmp[cnt++] = pT[i];
+					}
 					if(cnt >0){
-						tmp[cnt] = 0;
+						tmp[cnt] = 0; 
 						float val;
 						int len;
-						int ret = sscanf((char*)tmp, "%f %n", &val, &len);
-						//float val = atof((char*)tmp);
-          	std::cout<<"val="<<val<<" len="<<len<<" cnt="<<cnt<<"; ";
+						sscanf((char*)tmp, "%f %n", &val, &len);
+						if(fcnt<3){
+							xyz[fcnt++] = val;
+						}
 						cnt = 0;
 					}
 					continue;
@@ -59,9 +72,15 @@ namespace ezp
 				if(cnt<254){
 					cnt++; 
 				}
-				//std::cout<<pT[i];
 			}
-			std::cout<<std::endl;
+			if(m_numProc < m_numPoints){
+				pDst[m_numProc].x = xyz[0];
+				pDst[m_numProc].y = xyz[1];
+				pDst[m_numProc].z = xyz[2];
+				pDst[m_numProc].col = 0xFFFFFFFF;
+			}
+			std::cout<<xyz[0]<<","<<xyz[1]<<","<<xyz[2]<<std::endl;
+      m_numProc++;
 			return true;
 		}
 
@@ -72,7 +91,7 @@ namespace ezp
       while(i < m_fSize){
 				if((pTxt[i]==0xD)||(pTxt[i]==0xA) ){
 					if((lstart != -1)&&(lend > lstart)){
-						if( processLine(lstart, lend, pTxt) ){
+						if( processLine(lstart, lend, pTxt,step) ){
 							if(step == 0){
 								m_numPoints++;
 							}
@@ -92,10 +111,13 @@ namespace ezp
 
 		uint32_t SetChunkData(void *pData){
 			if(pData == NULL){
-				std::cout<<"SetChunkData "<<m_fSize<<std::endl;
 				return m_fSize;
 			}
+			m_numPoints = 0;
+			m_numProc = 0;
+			//std::cout<<"process0-A"<<std::endl;
 			processData((uint8_t*)pData, 0);
+			//std::cout<<"process0-B"<<std::endl;
 			LasInfo inf;  
 			inf.numPoints = m_numPoints;
 			inf.hasRgb = 1;
@@ -103,7 +125,13 @@ namespace ezp
 			inf.description = "XYZ " + std::to_string(inf.numPoints ) + " points";
 			if(m_onInfoFunc(inf) != 0){
 				return -1;
-			}        		
+			}  
+			if(m_numPoints==0){
+				return 0;
+			}
+			m_allocNdx = m_allocFunc(m_numPoints);
+			std::cout<<"process1"<<std::endl;
+			processData((uint8_t*)pData, 1);      		
 			return 0;
 		}
 

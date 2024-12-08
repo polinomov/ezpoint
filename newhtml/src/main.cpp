@@ -69,7 +69,7 @@ extern "C" {
       dstRect.h = gWinH;
       SDL_LockTexture( m_screenTexture, NULL, (void**)&pixels, &pitch );
       ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
-      SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+      //SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
       SDL_UnlockTexture( m_screenTexture );
       SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
       SDL_RenderPresent(m_renderer);
@@ -325,9 +325,10 @@ extern "C" {
 
   int CameraMoveJS(int xval, int yval){
     ezp::Camera *pCam = ezp::Camera::Get();
-    float sx= (float)xval;
+    float dist = pCam->GetDistance()*0.0005f;
+    float sx= dist*(float)xval;
     pCam->MoveLeftOrRight(-sx);
-    float sy= (float)yval;
+    float sy= dist*(float)yval;
     pCam->MoveUpOrDown(-sy);
     gRenderEvent = 1;	
     return 0;
