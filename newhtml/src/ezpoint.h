@@ -78,6 +78,7 @@ namespace ezp
     virtual void OnTick() = 0;
     virtual void SetDesctiption( const std::string &decs) = 0;
     virtual std::string GetDesctiption( ) = 0;
+    virtual void ReScale() = 0;
     static Scene *Get();
   };
 

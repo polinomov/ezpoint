@@ -281,13 +281,15 @@ namespace ezp
       float pP[3],pD[3];
       pCam->GetPos(pP[0],pP[1],pP[2]);
       pCam->GetDir(pD[0],pD[1],pD[2]);
+      float zDist = pCam->GetDistance();
 
       uint32_t tbi = 0;
       const std::vector<Chunk*>& chunks = Scene::Get()->GetChunks();
       rp->m_totalRdPoints = 0;
       float sumAux = 0.0f;
-      float distMax = std::numeric_limits<float>::min();
+     // float distMax = std::numeric_limits<float>::min();
       float distMin = std::numeric_limits<float>::max();
+      float distMax = -distMin;
       float zTr = rp->m_sceneSize/sqrt((float)chunks.size());
       for( int m = 0; m<chunks.size(); m++) {
         Chunk* pCh= chunks[m];
@@ -363,6 +365,7 @@ namespace ezp
       float swf = (float)sw *0.5f;
       float shf = (float)sh *0.5f;
       rp->m_visPoints= 0;
+    //  std::cout<<"chsize"<<
       for( int m = 0; m<chunks.size(); m++) {
         if(chunks[m]->numToRender<=1) continue;
         FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
@@ -375,15 +378,17 @@ namespace ezp
         int addr_max = rp->m_canvasW*rp->m_canvasH;
         int numV = chunks[m]->numToRender;
         rp->m_visPoints+=numV-1;
+       // std::cout<<"numV="<<numV<<std::endl;
         for( int i = 0; i<numV-1; i++){  
+         // std::cout<<i<<" Rendering: "<<pV4->x<<";"<<pV4->y<<";"<<pV4->z<<std::endl;
           float res[4];
           MPROJ(a,b,c,d, xss,yss,zss,res);
           xss = _mm_set1_ps(pV4[1].x); 
           yss = _mm_set1_ps(pV4[1].y);
           zss = _mm_set1_ps(pV4[1].z);
-          if((res[2]>0.001f)){
+          if((res[2]>0.0f)){           
             int x = (int) (swf + res[0]/res[2] );
-            int y = (int) (shf + res[1]/res[2] );                             
+            int y = (int) (shf + res[1]/res[2] ); 
             int dst = x + y * canvas_w;
             uint64_t *pAddr = m_frbuff + dst;
             if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){

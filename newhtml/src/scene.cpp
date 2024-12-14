@@ -49,7 +49,7 @@ namespace ezp
 			m_allVerts.clear();
 			m_numAllVerts.clear();
 			m_box.xMin = m_box.yMin = m_box.zMin = std::numeric_limits<float>::max();
-			m_box.xMax = m_box.yMax = m_box.zMax = std::numeric_limits<float>::min();
+			m_box.xMax = m_box.yMax = m_box.zMax = -std::numeric_limits<float>::max();
 			m_totVerts = 0;	
 			std::queue<std::function<void( )>> empty;
 			std::swap( m_calls, empty );
@@ -85,7 +85,7 @@ namespace ezp
 			pos[2]= (m_box.zMax + m_box.zMin) *0.5f;
 			pCam->SetPivot(pos[0],pos[1],pos[2]);
 			float atanr = Renderer::Get()->GetAtanRatio();
-			pos[2] += 0.5f*atanr*std::max(dim[0],dim[1]);
+			pos[2] += 0.55f*atanr*std::max(dim[0],dim[1]);
 			pCam->ReSet();
 			pCam->SetPos(pos);
 			pCam->SetWorldUpAxis(0.0f,0.0f,1.0f);
@@ -148,14 +148,15 @@ namespace ezp
 			const FPoint4* pt = GetVerts(n);
 			int num = GetNumVerts(n);
 			FBdBox bd = chunker::getBdBox<FPoint4>(pt, 0, num-1);
+			chunker::ShowBdBox(bd);          
 			m_box.xMin  = std::min(m_box.xMin,bd.xMin);
 			m_box.yMin  = std::min(m_box.yMin,bd.yMin);
 			m_box.zMin  = std::min(m_box.zMin,bd.zMin);
 			m_box.xMax  = std::max(m_box.xMax,bd.xMax);
 			m_box.yMax  = std::max(m_box.yMax,bd.yMax);
 			m_box.zMax  = std::max(m_box.zMax,bd.zMax);
+		  chunker::ShowBdBox(m_box); 
 			chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} ); 
-			//chunker::ShowBdBox(m_box);          
 		}
 
 		 void AddToQueue(std::function<void( )> func){
@@ -176,6 +177,47 @@ namespace ezp
     std::string GetDesctiption( ){
 			return m_desc;
 	  }
+
+		void ReScale(){
+			if(m_totVerts==0){
+				return;
+			}
+			std::cout<<"---------RESCALE-------"<<std::endl;
+			FPoint4 *p0 = (FPoint4*)GetVerts(0);
+			float xMin = p0->x;
+			float yMin = p0->y;
+			float zMin = p0->z;
+			float xMax = p0->x;
+			float yMax = p0->y;
+			float zMax = p0->z;
+			for(uint32_t m = 0; m<GetNumMemBanks(); m++){
+				FPoint4 *pt = (FPoint4*)GetVerts(m);
+				for( uint32_t v = 0; v < GetNumVerts(m); v++){
+					xMin = std::min(xMin,pt[v].x);
+					yMin = std::min(yMin,pt[v].y);
+					zMin = std::min(zMin,pt[v].z);
+					xMax = std::max(xMax,pt[v].x);
+					yMax = std::max(yMax,pt[v].y);
+					zMax = std::max(zMax,pt[v].z);
+				}
+			}
+			std::cout<<xMin<<" "<<xMax<<"#"<<yMin<<" "<<yMax<<"#"<<zMin<<" "<<zMax<<std::endl;	
+			float sx = xMax - xMin;
+			float sy = yMax - yMin;
+			float sz = zMax - zMin;
+			std::cout<<"sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
+			float smax = std::max(sx,sy);
+			smax = std::max(smax,sz);
+      float prd = (smax>0.0f) ? 1000000.0f/smax : 1.0f;
+			for(uint32_t m = 0; m<GetNumMemBanks(); m++){
+				FPoint4 *pt = (FPoint4*)GetVerts(m);
+				for( uint32_t v = 0; v < GetNumVerts(m); v++){
+					pt[v].x = (pt[v].x - xMin)*prd;
+					pt[v].y = (pt[v].y - yMin)*prd;
+					pt[v].z = (pt[v].z - zMin)*prd;
+				}
+			}
+		}
 		
 		void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z,uint16_t col )
 		{
@@ -184,9 +226,9 @@ namespace ezp
 				float ry = -0.499f + (double)rand()/(double)RAND_MAX;
 				float rz = -0.499f + (double)rand()/(double)RAND_MAX;
 				float flen = rad/sqrt(rx*rx + ry*ry + rz*rz);
-				pt[i].x = ((float)x + rx*flen ) *100;
-				pt[i].y = ((float)y + ry*flen ) *100;
-				pt[i].z = ((float)z + rz*flen ) *100;
+				pt[i].x = -((float)x + rx*flen )*0.001f;
+				pt[i].y = -((float)y + ry*flen )*0.001f;
+				pt[i].z = -((float)z + rz*flen )*0.001f;
 				pt[i].col = col;
 			}
 		}

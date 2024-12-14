@@ -186,6 +186,9 @@ extern "C" {
     for( int nn = 0; nn<ezp::Scene::Get()->GetNumMemBanks(); nn++){
       auto call = [nn](void){
         ezp::UI::Get()->PrintMessage("Processing ..." + std::to_string(nn));
+        if(nn==0){
+          ezp::Scene::Get()->ReScale();
+        }
         ezp::Scene::Get()->processVertDataInt(nn);
       };
       ezp::Scene::Get()->AddToQueue(call);
@@ -282,7 +285,7 @@ extern "C" {
 
   int OnUIChangeJS(int el, int value){ 
     char *pRet =  emscripten_run_script_string("GetUIString()");
-    std::cout<<"UI:"<<pRet<<" val="<<value<<std::endl;
+   // std::cout<<"UI:"<<pRet<<" val="<<value<<std::endl;
     ezp::UI::Get()->OnUIEvent(pRet,value);
     return 0;
   }
@@ -325,10 +328,12 @@ extern "C" {
 
   int CameraMoveJS(int xval, int yval){
     ezp::Camera *pCam = ezp::Camera::Get();
-    float dist = pCam->GetDistance()*0.0005f;
-    float sx= dist*(float)xval;
+    float dist = pCam->GetDistance();
+    float atanr = ezp::Renderer::Get()->GetAtanRatio();
+    float physcr = (dist/atanr)*(1.0f/256.0f);
+    float sx= physcr*(float)xval;
     pCam->MoveLeftOrRight(-sx);
-    float sy= dist*(float)yval;
+    float sy= physcr*(float)yval;
     pCam->MoveUpOrDown(-sy);
     gRenderEvent = 1;	
     return 0;
