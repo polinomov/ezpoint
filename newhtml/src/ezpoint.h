@@ -16,7 +16,8 @@ namespace ezp
       UICOLOR_CLASS,
       UICOLOR_RGB,
       UICOLOR_HMAP,
-      UICOLOR_MIX
+      UICOLOR_MIX,
+      UI_NUM_ELEMENTS
     };
 
     virtual void PrintMessage( const char *pMsg) = 0;
@@ -30,6 +31,8 @@ namespace ezp
     virtual void SetColorMode(ColorMode md) = 0;
     virtual void ShowErrorMessage(const std::string &msg) = 0;
     virtual ColorMode GetColorMode() = 0;
+    virtual void SetElementState(ColorMode el, int state) = 0;
+    virtual int GetElementState(const char *pElName) = 0;
     virtual void OnUIEvent(const char *pEvent, int val)  = 0;
     static UI *Get();
   };

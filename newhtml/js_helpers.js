@@ -16,6 +16,7 @@ var gUIChangeCB;
 var gMouseMoveCB;
 var gMouseClickCB;
 var gIdChanged = "unknown"
+var gUIMessageCB;
 var gDisableRdb = 0;
 
 function callWasm1() {
@@ -96,7 +97,26 @@ function SetColorMode(){
 }
 
 function UpdateColorModeUI(){
-    console.log("-----UpdateColorModeUI ===========*");
+    const ids = ["colrgbId", "colintId", "colhtmId", "colclassId"];
+    var names_ptr = Module._malloc(16);
+    for (const element of ids) {
+        Module.HEAPU8.fill(0, names_ptr, names_ptr + 16);
+        Module.HEAPU8.set(new TextEncoder().encode(element),names_ptr); 
+        action = gUIMessageCB(names_ptr,0);
+        var el = document.getElementById(element);
+        if(action===0){
+            el.setAttribute("disabled", true);
+        }
+        if(action===1){
+            el.removeAttribute('disabled');
+        }
+        if(action===2){
+            el.removeAttribute('disabled');
+            el.checked = true;
+        }
+    }
+    Module._free(names_ptr);
+  
    // document.getElementById("colrgbId").checked = true;
    // var el = document.getElementById("colrgbId");
    // el.setAttribute("disabled", true);
@@ -160,7 +180,7 @@ class ProscessEventsClass {
     }
 
     onDbClick(e){
-        console.log("DBClick ruler "+ this.isRuler);
+        //console.log("DBClick ruler "+ this.isRuler);
         if(this.isRuler===1){
             OnTest(1);
         } else {
@@ -254,14 +274,6 @@ function setRuler(v){
     ProcessEvents.isRuler = (v === true) ? 1:0;
 }
 
-function onTestCheckClick(cb) {
-    ch_cb = Module.cwrap('OnDebugCheckBox', 'number', ['number']);
-    if (cb.checked) {
-        ch_cb(1);
-    } else {
-        ch_cb(0);
-    }
-}
 
 function OnTestButton() {
 
@@ -282,6 +294,7 @@ function OnStart() {
     gUIChangeCB = Module.cwrap('OnUIChangeJS', 'number', ['number', 'number']);
     gMouseMoveCB = Module.cwrap('MouseMoveJS', 'number', ['number', 'number']);
     gMouseClickCB =  Module.cwrap('MouseClickJS', 'number', ['number', 'number']);
+    gUIMessageCB =  Module.cwrap('UIMessageJS', 'number', ['arrayPointer', 'number']);
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas, false);
     window.addEventListener('keydown', (event) => { ProcessEvents.onKeyDown(event); }, false);

@@ -11,12 +11,22 @@ static void OutLine(const char *txt){
 		emscripten_run_script(strw);
 }
 
+extern "C" {
+	int UIMessageJS(void* pData, int param){
+		int ret =  ezp::UI::Get()->GetElementState((const char *)pData);
+		std::cout<<"Get Element State  "<<(char*)pData<<" "<<ret<<std::endl;
+		return ret;
+	}
+}
+
 namespace ezp 
 {
 	struct UIImpl : public UI
 	{
 		ColorMode m_colorMode;
+		int m_elStates[UI_NUM_ELEMENTS];
 		std::unordered_map<std::string, std::function<void(uint32_t val )>> m_strToCall;
+		std::unordered_map<std::string, int> m_strToElement;
 		UIImpl():m_colorMode(UICOLOR_INTENS){ 
 			m_strToCall["fovVal"]     = [](int val){Renderer::Get()->SetFov(val);};
 			m_strToCall["ptSize"]     = [](int val){Renderer::Get()->SetPointSize(val);};
@@ -32,6 +42,14 @@ namespace ezp
 			m_strToCall["camOrto"]    = [](int val){Scene::Get()->SetCameraOrto();};
 			m_strToCall["SampleId"]   = [](int val){Scene::Get()->GenerateSample();};
 			m_strToCall["ruler"]      = [](int val){Renderer::Get()->SetRuler(val);};
+			for(int i = 0; i<UI_NUM_ELEMENTS; i++){
+				m_elStates[i] = 0;
+			}
+			m_strToElement["colrgbId"]   = UICOLOR_RGB;
+			m_strToElement["colintId"]   = UICOLOR_INTENS;
+			m_strToElement["colhtmId"]   = UICOLOR_HMAP;
+			m_strToElement["colclassId"] = UICOLOR_CLASS;
+			m_strToElement["colmix"]     = UICOLOR_MIX;
 		}
 
 		void PrintMessage(const std::string &msg){
@@ -68,6 +86,10 @@ namespace ezp
 		
 		void SetColorMode(ColorMode md){
 			m_colorMode = md;
+			for(int i = 0; i<UI_NUM_ELEMENTS; i++){
+				if(m_elStates[i]==2) m_elStates[i] = 1;
+			}
+			m_elStates[md] = 2;
 		}
 
 		ColorMode GetColorMode(){
@@ -77,6 +99,18 @@ namespace ezp
 		void ShowErrorMessage(const std::string &msg){
       std::string m = std::string("alert(") + "\"" + msg + "\"" + std::string(")");
       emscripten_run_script(m.c_str());
+		}
+
+		void SetElementState(ColorMode el, int state){
+			m_elStates[el] = state;
+		}
+
+		int GetElementState(const char *pElName){
+			auto f_iter = m_strToElement.find(pElName);
+			if( f_iter != m_strToElement.end()){
+				return m_elStates[f_iter->second];
+			}
+			return 0;
 		}
 
 		void OnUIEvent(const char *pEvent, int val){

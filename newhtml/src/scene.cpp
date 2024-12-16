@@ -175,7 +175,7 @@ namespace ezp
 			m_desc = decs;
 		}
     std::string GetDesctiption( ){
-			return m_desc;
+			return m_desc + " points:" + std::to_string(m_totVerts);
 	  }
 
 		void ReScale(){

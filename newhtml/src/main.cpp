@@ -116,33 +116,7 @@ extern "C" {
     return 0;
   }
 
-  int FileBinDataJS(void* pData, int sz, int type) 
-  {
-    static char ts[1024];
-    unsigned char* p8 = (unsigned char*)pData;		
-    float* pF = (float*)pData;
-    int numFloats = sz/sizeof(float);
-     // sprintf(ts,"Done Reading sz= %d ",numFloats);
-    //OutLine(ts);
-    ezp::Scene *pSc = ezp::Scene::Get();
-     // pSc->SetFileImage(pData, sz, type);
-#if 0
-    int numVerts = numFloats/4;
-    float x_min = pF[0];
-   for(int k = 0;k<numVerts;k+=4){
-      //std::cout <<"here---------"<<std::endl;
-      float x_min = std::min(x_min,pF[k]);
-      sprintf(ts,"processing %d from %d",k,numVerts);
-      if(( k& 0xFFFF) ==0 ){
-         // OutLine(ts);
-        emscripten_sleep(1);
-      }
-      //break;
-    }
-#endif
-    //gAlwaysRender = 1;
-    return 0;
-  }
+
 
 extern "C" {
 
@@ -228,11 +202,25 @@ extern "C" {
       emscripten_run_script(m.c_str());
     };
     auto onInfo = [](const ezp::LasInfo &info){
+      auto ui = ezp::UI::Get();
       if(info.hasRgb){
-        ezp::UI::Get()->SetColorMode(ezp::UI::UICOLOR_RGB);
+        ui->SetColorMode(ezp::UI::UICOLOR_RGB);
+        ui->SetElementState(ezp::UI::UICOLOR_INTENS,1);
+        ui->SetElementState(ezp::UI::UICOLOR_RGB,2);
+        ui->SetElementState(ezp::UI::UICOLOR_CLASS,0);
       }else{
-        ezp::UI::Get()->SetColorMode(ezp::UI::UICOLOR_INTENS);
+        if(info.hasClass==1){
+          ui->SetColorMode(ezp::UI::UICOLOR_CLASS);
+          ui->SetElementState(ezp::UI::UICOLOR_CLASS,2);
+          ui->SetElementState(ezp::UI::UICOLOR_INTENS,1);
+        }else{
+          ui->SetColorMode(ezp::UI::UICOLOR_INTENS);
+          ui->SetElementState(ezp::UI::UICOLOR_CLASS,1);
+          ui->SetElementState(ezp::UI::UICOLOR_INTENS,2);
+        }
+        ui->SetElementState(ezp::UI::UICOLOR_RGB,0);
       }
+      ui->SetElementState(ezp::UI::UICOLOR_HMAP,1);
       ezp::Scene::Get()->SetDesctiption(info.description);
       uint32_t nextPointsNum = ezp::Scene::Get()->GetTotVerts() + info.numPoints;
       if(nextPointsNum > 250 *1000*1000){
@@ -243,6 +231,8 @@ extern "C" {
 
     if ( action == 0 ){// start loading new file
       std::cout<<"fsize=="<<fSize<< "fType="<<fType<<std::endl;
+      std::cout<<"data=="<<(char*)pData<<std::endl;
+      
       pLasBuilder->Reset(fSize);
       pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
     }

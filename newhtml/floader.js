@@ -36,7 +36,7 @@ function OnLoadFile(input,fType) {
           fileNdx_ = fileNdx_ + 1;
           if(fileNdx_ === numFiles_){
               post_proc_file_cb(fType,0);
-             return ;
+              return ;
            }
           else{
               // Start reading new file
