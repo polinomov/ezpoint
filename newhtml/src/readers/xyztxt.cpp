@@ -174,9 +174,9 @@ namespace ezp
 			//std::cout<<"process0-B"<<std::endl;
 			LasInfo inf;  
 			inf.numPoints = m_numPoints;
-			inf.hasRgb = 1;
+			inf.hasRgb = 0;
 			inf.hasClass  = 0;
-			inf.description = "XYZ ";// + std::to_string(inf.numPoints ) + " points";
+			inf.description = "XYZ ";
 			if(m_onInfoFunc(inf) != 0){
 				return -1;
 			}  
