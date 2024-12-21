@@ -24,7 +24,7 @@ namespace ezp
 		}
 
 		uint32_t AllocVerts( uint32_t num){
-			m_allVerts.push_back(new FPoint4[num]);
+			m_allVerts.push_back(new FPoint4[num+1]);
 			m_numAllVerts.push_back(num);
 			m_totVerts+=num;
 			return  m_allVerts.size()-1;
@@ -110,6 +110,11 @@ namespace ezp
 		}
 
 		void GetZMax(float &zmin, float &zmax){
+			if(m_allChunks.size() == 0){
+				zmin= 1.0f;
+				zmax = -1.0f;
+				return;
+			}
 			float pP[3],pD[3],x[8],y[8],z[8];
 			Camera *pCam = Camera::Get();
 			pCam->GetPos(pP[0],pP[1],pP[2]);
@@ -182,7 +187,8 @@ namespace ezp
 			if(m_totVerts==0){
 				return;
 			}
-			std::cout<<"---------RESCALE-------"<<std::endl;
+			//return;
+			//std::cout<<"---------RESCALE-------"<<std::endl;
 			FPoint4 *p0 = (FPoint4*)GetVerts(0);
 			float xMin = p0->x;
 			float yMin = p0->y;
@@ -208,7 +214,7 @@ namespace ezp
 			std::cout<<"sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
 			float smax = std::max(sx,sy);
 			smax = std::max(smax,sz);
-      float prd = (smax>0.0f) ? 1000000.0f/smax : 1.0f;
+      float prd = (smax>0.0f) ? 1.0f/smax : 1.0f;
 			for(uint32_t m = 0; m<GetNumMemBanks(); m++){
 				FPoint4 *pt = (FPoint4*)GetVerts(m);
 				for( uint32_t v = 0; v < GetNumVerts(m); v++){
@@ -249,6 +255,7 @@ namespace ezp
 				}
 			} 
 			UI::Get()->SetColorMode(UI::UICOLOR_RGB);
+			ReScale();
 			processVertDataInt(0);
 			SetCamera();
 			UI::Get()->SetRenderEvent(2);

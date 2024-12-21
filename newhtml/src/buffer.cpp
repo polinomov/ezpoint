@@ -227,10 +227,6 @@ namespace ezp
         pCam->SetPivot(pT->x,pT->y,pT->z);
         UI::Get()->SetRenderEvent(2);
       }
-      else{
-        printf("****\n");
-      }
- 
     }
 
     void BuildProjMatrix(int sw, int sh,float atanRatio ){
@@ -293,7 +289,7 @@ namespace ezp
       float zTr = rp->m_sceneSize/sqrt((float)chunks.size());
       for( int m = 0; m<chunks.size(); m++) {
         Chunk* pCh= chunks[m];
-        chunks[m]->numToRender = chunks[m]->numVerts-1;
+        chunks[m]->numToRender = chunks[m]->numVerts;
         FPoint4 bdd[8];
         bdd[0].x = pCh->xMin; bdd[0].y = pCh->yMin; bdd[0].z = pCh->zMin;
         bdd[1].x = pCh->xMax; bdd[1].y = pCh->yMin; bdd[1].z = pCh->zMin;
@@ -365,7 +361,6 @@ namespace ezp
       float swf = (float)sw *0.5f;
       float shf = (float)sh *0.5f;
       rp->m_visPoints= 0;
-    //  std::cout<<"chsize"<<
       for( int m = 0; m<chunks.size(); m++) {
         if(chunks[m]->numToRender<=1) continue;
         FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
@@ -379,7 +374,7 @@ namespace ezp
         int numV = chunks[m]->numToRender;
         rp->m_visPoints+=numV-1;
        // std::cout<<"numV="<<numV<<std::endl;
-        for( int i = 0; i<numV-1; i++){  
+        for( int i = 0; i<numV; i++){  
          // std::cout<<i<<" Rendering: "<<pV4->x<<";"<<pV4->y<<";"<<pV4->z<<std::endl;
           float res[4];
           MPROJ(a,b,c,d, xss,yss,zss,res);
@@ -393,7 +388,7 @@ namespace ezp
             uint64_t *pAddr = m_frbuff + dst;
             if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
               uint64_t zb = pAddr[0];
-              uint64_t zi = (((uint64_t)(res[2]*1024.0f))<<32) | pV4->col ;
+              uint64_t zi = (((uint64_t)(res[2]*1024.0f*1024.0f))<<32) | pV4->col ;
               uint64_t pr = (zi<zb)? -1L:0;
               uint64_t pr1 = ~pr;
               *pAddr = (zi & pr) + (zb & pr1);
@@ -407,27 +402,19 @@ namespace ezp
         } // verts in chunk
       }//chunks.size()
     }//RenderChunks
+   
 
-    void RenderRect(unsigned int *pBuff, int left, int top, int right, int bot,unsigned int col){
-      for (int y = top; y < bot; y++) {
-        for (int x = left; x < right; x++) {
-            int dst = x + y * m_canvasW;
-            pBuff[dst]  = col;
-        }
-      }
+    void cleanBuff(){
+      memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+      if((m_hasDbClick)||(m_rdPt)){
+        memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+      } 
     }
 
     void Render(unsigned int *pBuff, int winW, int winH,int evnum){
       static int val = 0;
       static FPoint4 pt4;
-      uint64_t addrd = (uint64_t)(&pt4);
-      uint64_t *p32 = (uint64_t*)m_frbuff;
-
-      memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
-      if((m_hasDbClick)||(m_rdPt)){
-        memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
-      }
-       
+      cleanBuff();
       BuildProjMatrix(winW,winH,  m_atanRatio);
       m_sceneSize = Scene::Get()->GetSize();
       Scene::Get()->GetZMax(m_zmin,m_zmax);
@@ -466,8 +453,6 @@ namespace ezp
       }
       // helpers
       if(m_measurement){
-        //HintString(" MEASURMENT MODE.Move mouse and click to select point.Use arrow to rotate camera. ",pBuff, winW, winH);
-        //RenderPoint(pBuff,  m_canvasW, m_canvasH, m_mouseX, m_mouseY);
         RenderHelper::Get()->Render(pBuff,  m_canvasW, m_canvasH,winW,winH);
       }
       if(m_showfr){
@@ -501,14 +486,14 @@ namespace ezp
           shift = 0;
       }
       uint64_t minZ[16];
-      for(int m = 0; m<M; m++) minZ[m] = -1;
       for (int y = 0; y < winH-M; y++) {
+        for(int m = 0; m<M; m++) minZ[m] = -1;
         for(int xt = 0; xt<M; xt++){
-          for(int yt = 0; yt<M; yt++){
+          for(int yt = y; yt<M+y; yt++){
             int ad = xt + yt * m_canvasW;
             if(m_frbuff[ad] <minZ[xt]) minZ[xt] = m_frbuff[ad];
           }
-        }
+        }       
         int cnt = 0;
         for (int x = 0,n = 0; x < winW-M; x++, n++){
           int dst = x + y * m_canvasW;
@@ -528,8 +513,7 @@ namespace ezp
             }
           }
           cnt++;
-          if(cnt>=M) cnt = 0;   
-          
+          if(cnt>=M) cnt = 0;           
           uint16_t cndx = (bz>>shift) & msk;  
           pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx];                 
         }

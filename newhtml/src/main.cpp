@@ -138,7 +138,7 @@ extern "C" {
   // Call from JS
   //Gets called when all files are loaded. Schedules postprocessing calls.
   int PostProcessDataJS( int fType, int param){
-    auto postProcColors = [fType](void){ 
+    auto postProcColorsFunc = [fType](void){ 
       auto getVerts = [](uint32_t ndx){ 
         return ezp::Scene::Get()->GetVerts(ndx);
       };
@@ -171,7 +171,7 @@ extern "C" {
       ezp::UI::Get()->PrintMessage("Processing colors...");
     };
     ezp::Scene::Get()->AddToQueue(postMessage);
-    ezp::Scene::Get()->AddToQueue(postProcColors);   
+    ezp::Scene::Get()->AddToQueue(postProcColorsFunc);   
     auto finMessage = [](void){
       ezp::UI::Get()->PrintMessage(ezp::Scene::Get()->GetDesctiption());
     };
@@ -230,8 +230,8 @@ extern "C" {
     };
 
     if ( action == 0 ){// start loading new file
-      std::cout<<"fsize=="<<fSize<< "fType="<<fType<<std::endl;
-      std::cout<<"data=="<<(char*)pData<<std::endl;
+      //std::cout<<"fsize=="<<fSize<< "fType="<<fType<<std::endl;
+      //std::cout<<"data=="<<(char*)pData<<std::endl;
       
       pLasBuilder->Reset(fSize);
       pLasBuilder->RegisterCallbacks(allocVerts,getVerts,onError,onInfo);
@@ -243,6 +243,7 @@ extern "C" {
   int ClearSceneJS(int param){
     ezp::RenderHelper::Get()->Reset();
     ezp::Scene::Get()->Clear();
+    ezp::UI::Get()->SetRenderEvent(1);
     return 0;
   }
 }
