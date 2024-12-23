@@ -45,13 +45,17 @@ namespace ezp
   double minX;
   double minY;
   double minZ;
-  //
-  uint64_t StartOfWave;
-  uint64_t StartFirtstExt;
-  int NumOfE;
-  uint64_t numOfPointRecords14;
-  uint64_t NumOfPointReturn;
   };
+  
+  #pragma pack (1)
+  struct LasHeader14{
+    uint64_t StartOfWave;
+    uint64_t StartFirtstExt;
+    int NumOfE;
+    uint64_t numOfPointRecords14;
+    uint64_t NumOfPointReturn;
+  };
+
 
   //point formats
   #pragma pack (1)
@@ -181,11 +185,14 @@ namespace ezp
       RD_NONE = 0,
       RD_SKIP,
       RD_HEARED,
+      RD_HEARED14,
       RD_VERTS
     };
     static const uint32_t sz16 = 256*256;
     uint32_t m_state;
     LasHeader m_hdr;
+    LasHeader14 m_hdr14;
+    uint32_t m_hdrSize;
     uint32_t  m_numPoints;
     uint32_t  m_procPoints;
     uint32_t  m_rdStep;
@@ -233,6 +240,7 @@ namespace ezp
       m_Imaxz  = std::numeric_limits<int>::min();
       m_rMin = m_gMin= m_bMin = 0xFFFF;
       m_rMax = m_gMax= m_bMax = 0;
+      m_hdrSize = 0;
       if(m_R16) delete [] m_R16;
       if(m_G16) delete [] m_G16;
       if(m_B16) delete [] m_B16;
@@ -256,14 +264,29 @@ namespace ezp
         m_state = RD_HEARED;
         return sizeof(LasHeader);
       }
-      if(m_state == RD_HEARED){
-        bool isGood = SetHeader(pData);
+      if((m_state == RD_HEARED)||(m_state == RD_HEARED14)){
+        uint8_t *p8  = (uint8_t*)pData;
+        if(m_state == RD_HEARED){
+          memcpy(&m_hdr,p8, sizeof(LasHeader));
+          int vMajor = (int)m_hdr.verMajor;
+          int vMinor = (int)m_hdr.verMinor;
+          m_hdrSize = sizeof(LasHeader);
+          if((vMajor==1)&&(vMinor==4)){
+            m_hdrSize += sizeof(LasHeader14);
+            m_state = RD_HEARED14;
+            return sizeof(LasHeader14);
+          }
+        }
+        if(m_state == RD_HEARED14){
+          memcpy(&m_hdr14, p8,sizeof(LasHeader14));
+        }
+        bool isGood = SetHeader();
         if(!isGood){
            return -1;
         }
-        if(m_hdr.pointOfst > sizeof(LasHeader)){
+        if(m_hdr.pointOfst > m_hdrSize){
           m_state = RD_SKIP;
-          return m_hdr.pointOfst - sizeof(LasHeader);
+          return m_hdr.pointOfst - m_hdrSize ;
         }
         else{
           m_state = RD_VERTS;
@@ -294,8 +317,7 @@ namespace ezp
       }
     }
     
-    bool SetHeader( void *pHdr ){
-      memcpy(&m_hdr,pHdr, sizeof(LasHeader));
+    bool SetHeader(){
       char magic[5] = {0,0,0,0,0};
       memcpy(magic,m_hdr.magic,4);
       if(strcmp(magic,"LASF")){
@@ -306,34 +328,24 @@ namespace ezp
       int vMinor = (int)m_hdr.verMinor;
       int ptFormat = (int)m_hdr.pointDataFormatId;
       int recLength = (int)m_hdr.poitDataRecordLength;
-      if((vMajor==1)&&(vMinor==1)){
-        m_numPoints = m_hdr.numOfPointRecords12;
-      }
-      if((vMajor==1)&&(vMinor==2)){
-        m_numPoints = m_hdr.numOfPointRecords12;
-      }
-      if((vMajor==1)&&(vMinor==3)){
+      if((vMajor==1)&&(vMinor<=3)){
         m_numPoints = m_hdr.numOfPointRecords12;
       }
       if((vMajor==1)&&(vMinor==4)){
-        m_numPoints = m_hdr.numOfPointRecords14;
+        m_numPoints = m_hdr14.numOfPointRecords14;
       }
       if(m_numPoints == 0){
-        if(m_onErrFunc) m_onErrFunc("Can not detect LAS version");
+        m_onErrFunc("Can not detect LAS version " + std::to_string(vMajor) + "." + std::to_string(vMinor) );
       }
-      if( m_allocFunc){
-       // m_allocNdx = m_allocFunc(m_numPoints);
-      }   
       m_hasClass = ptHasClass((int)m_hdr.pointDataFormatId); 
       m_hasRgb =  ptHasColor((int)m_hdr.pointDataFormatId);
-      //std::cout<<"=== LAS === verttype "<< (int)m_hdr.pointDataFormatId<<std::endl;
-      std::cout<<"=== LAS === "<<vMajor<<"."<<vMinor<<" points="<<m_numPoints<<" classs"<<m_hasClass<< " rgb"<< m_hasRgb<<std::endl; 
       LasInfo inf;  
       inf.numPoints = m_numPoints;
       inf.hasRgb = m_hasRgb;
       inf.hasClass  = m_hasClass;
       inf.description = "Las" + std::to_string(vMajor) + "." + std::to_string(vMinor) + " ";
-      inf.description += std::to_string(m_hdr.pointDataFormatId);
+      inf.description += std::to_string(m_hdr.pointDataFormatId) + " ";
+      inf.description += std::to_string(m_hdr.CretionYear);
       if(m_onInfoFunc(inf) != 0){
         return false;
       }      
@@ -351,8 +363,11 @@ namespace ezp
       uint8_t *pS  = (uint8_t*)pSrc;
       for( int i = m_procPoints; i< m_procPoints + numInSrc;i++,pS+=m_hdr.poitDataRecordLength){
         PointFormat1 *pf1 = (PointFormat1*)pS;
-        pDst[i].x = (float)(pf1->x )*float(m_hdr.xScale) + m_hdr.xOffset;
-        pDst[i].y = (float)(pf1->y )*float(m_hdr.yScale) + m_hdr.yOffset;
+        //pDst[i].x = (float)(pf1->x )*float(m_hdr.xScale) + m_hdr.xOffset;
+        //pDst[i].y = (float)(pf1->y )*float(m_hdr.yScale) + m_hdr.yOffset;
+        //pDst[i].z = (float)(pf1->z )*float(m_hdr.zScale) + m_hdr.zOffset; 
+        pDst[i].x = (float)(pf1->x )*float(m_hdr.zScale) + m_hdr.xOffset;
+        pDst[i].y = (float)(pf1->y )*float(m_hdr.zScale) + m_hdr.yOffset;
         pDst[i].z = (float)(pf1->z )*float(m_hdr.zScale) + m_hdr.zOffset; 
         m_Iminx  = std::min(m_Iminx,pf1->x);
         m_Iminy  = std::min(m_Iminy,pf1->y);

@@ -17,6 +17,8 @@ namespace ezp
 		float m_size;
 		std::queue<std::function<void( )>> m_calls;
 		std::string m_desc;
+		float m_prd;
+		float m_xMin,m_yMin,m_zMin;
  
 		SceneImpl(){
 			m_size = 1.0f;
@@ -54,6 +56,8 @@ namespace ezp
 			std::queue<std::function<void( )>> empty;
 			std::swap( m_calls, empty );
 			m_desc = "";
+			m_prd = 1.0f;
+			m_xMin=m_yMin=m_zMin= 0.0f;
 		}
 
 		const FPoint4 *GetVerts(uint32_t n){
@@ -188,7 +192,7 @@ namespace ezp
 				return;
 			}
 			//return;
-			//std::cout<<"---------RESCALE-------"<<std::endl;
+			std::cout<<"---------RESCALE-------"<<std::endl;
 			FPoint4 *p0 = (FPoint4*)GetVerts(0);
 			float xMin = p0->x;
 			float yMin = p0->y;
