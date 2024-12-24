@@ -105,7 +105,7 @@ namespace ezp
         m_palHMap[i] = (b|(g<<8)|(r<<16));
       }
       for( int i = 0; i<256; i++){
-        m_palGray[i] = i | (i<<8) | (i<<16) | (i<<24);
+        m_palGray[255-i] = i | (i<<8) | (i<<16) | (i<<24);
         m_palClass[i] = 0xFFFFFFFF;
       }
       m_palHMap[0] = 0xFF0000;
@@ -485,6 +485,9 @@ namespace ezp
           msk = 0xFFF;
           shift = 0;
       }
+      pUPal = m_palGray;
+      msk =  0xFF;
+      shift = 0;
       uint64_t minZ[16];
       for (int y = 0; y < winH-M; y++) {
         for(int m = 0; m<M; m++) minZ[m] = -1;
@@ -507,15 +510,31 @@ namespace ezp
           }
           minZ[cnt] = zm;
           uint64_t bz = minZ[0];
-          for(int m = 0; m<M; m++){
+          for(int m = 1; m < M; m++){
             if(minZ[m]<bz){
               bz = minZ[m];
             }
           }
           cnt++;
-          if(cnt>=M) cnt = 0;           
-          uint16_t cndx = (bz>>shift) & msk;  
-          pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx];                 
+          if(cnt>=M) cnt = 0;  
+         // uint32_t ptz0  = (bz>>32) - (m_frbuff[dst]>>32);
+          
+          uint16_t cndx = 255; //(bz>>shift) & msk;  
+         // if(m_frbuff[dst] != -1L){
+         // if(1){
+              cndx =  ((m_frbuff[dst]>>32) - (bz>>32))>>4;
+              if(cndx> 255 ) cndx = 255;
+             // cndx = 255- cndx;
+              if( cndx < 1) cndx = 1;
+        //  }
+         // else
+         // {
+           // cndx = 250;
+        //  }
+          pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx];  
+         // }else{
+        //    pBuff[dst] = 0xFF;
+        //  }               
         }
       } 
     }
