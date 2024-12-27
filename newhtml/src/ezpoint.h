@@ -82,6 +82,7 @@ namespace ezp
     virtual void SetDesctiption( const std::string &decs) = 0;
     virtual std::string GetDesctiption( ) = 0;
     virtual void ReScale() = 0;
+    virtual uint32_t *GetClut() = 0;
     static Scene *Get();
   };
 

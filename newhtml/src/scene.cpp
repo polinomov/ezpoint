@@ -19,10 +19,13 @@ namespace ezp
 		std::string m_desc;
 		float m_prd;
 		float m_xMin,m_yMin,m_zMin;
+		uint32_t *m_pclut;
  
 		SceneImpl(){
 			m_size = 1.0f;
 			m_totVerts = 0;
+			m_pclut = new uint32_t[256*256];
+			BuildClut();
 		}
 
 		uint32_t AllocVerts( uint32_t num){
@@ -192,7 +195,7 @@ namespace ezp
 				return;
 			}
 			//return;
-			std::cout<<"---------RESCALE-------"<<std::endl;
+			//std::cout<<"---------RESCALE-------"<<std::endl;
 			FPoint4 *p0 = (FPoint4*)GetVerts(0);
 			float xMin = p0->x;
 			float yMin = p0->y;
@@ -211,11 +214,11 @@ namespace ezp
 					zMax = std::max(zMax,pt[v].z);
 				}
 			}
-			std::cout<<xMin<<" "<<xMax<<"#"<<yMin<<" "<<yMax<<"#"<<zMin<<" "<<zMax<<std::endl;	
+			//std::cout<<xMin<<" "<<xMax<<"#"<<yMin<<" "<<yMax<<"#"<<zMin<<" "<<zMax<<std::endl;	
 			float sx = xMax - xMin;
 			float sy = yMax - yMin;
 			float sz = zMax - zMin;
-			std::cout<<"sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
+			//std::cout<<"sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
 			float smax = std::max(sx,sy);
 			smax = std::max(smax,sz);
       float prd = (smax>0.0f) ? 1.0f/smax : 1.0f;
@@ -227,6 +230,49 @@ namespace ezp
 					pt[v].z = (pt[v].z - zMin)*prd;
 				}
 			}
+		}
+
+		uint32_t* BuildClut(){
+			static bool hasClut = false;
+			float step = (1.0f/15.0f);
+			int ndx  = 0;
+			for( int r = 0; r<16; r++){
+				for( int g = 0; g<16; g++){
+					float rf = (float)r*step;
+					float gf = (float)g*step;
+          float vf = rf*rf + gf*gf;
+					float bf = (vf<1.0f)? sqrt(1.0f - vf) : 0.0f;
+					float s = 1.0f;
+					if((rf>=0.0) && (rf>=gf) && (rf>=bf)){
+						s = 1.0f/rf;
+					}
+					if((gf>=0.0) && (gf>=rf) && (gf>=bf)){
+						s = 1.0f/gf;
+					}
+					if((bf>=0.0) && (bf>=rf) && (bf>=gf)){
+						s = 1.0f/bf;
+					}
+					rf*=s;
+					gf*=s;
+					bf*=s;
+					for(int t = 0; t<256; t++){
+						float prd = 1.0f - (float)t/255.0f;
+						uint8_t ri = (uint8_t) (rf * 255.0f * prd);
+						uint8_t gi = (uint8_t) (gf * 255.0f * prd);
+						uint8_t bi = (uint8_t) (bf * 255.0f * prd);
+						m_pclut[ndx+t] = (ri<<16) | (gi<<8) | (bi);
+					}
+					ndx+=256;
+				}
+			}
+			for(int k = 0; k<256*256; k+=256){
+				printf("%x\n",m_pclut[k] );
+			}
+      return NULL;
+		}
+
+		uint32_t *GetClut(){
+			return m_pclut;
 		}
 		
 		void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z,uint16_t col )

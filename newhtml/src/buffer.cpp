@@ -53,6 +53,7 @@ namespace ezp
     uint32_t m_palClass[256];
     uint32_t m_UniPal[16][256];
     uint32_t m_pal16[256*256];
+    uint32_t *m_pclut;
     int m_sceneSize;
     float m_zmax;
     float m_zmin;
@@ -91,6 +92,7 @@ namespace ezp
       m_pointSize = pUI->GetPtSize();
       m_budget = pUI->GetBudget();
       SetFov(pUI->GetFov());
+      m_pclut = ezp::Scene::Get()->GetClut();
 
       for( int i = 0; i<256*16; i++){
         float ang1 = (float)i * 3.1415f/(256.0f*16.0f);
@@ -105,7 +107,7 @@ namespace ezp
         m_palHMap[i] = (b|(g<<8)|(r<<16));
       }
       for( int i = 0; i<256; i++){
-        m_palGray[i] = i | (i<<8) | (i<<16) | (i<<24);
+        m_palGray[255-i] = i | (i<<8) | (i<<16) | (i<<24);
         m_palClass[i] = 0xFFFFFFFF;
       }
       m_palHMap[0] = 0xFF0000;
@@ -115,7 +117,7 @@ namespace ezp
       m_palClass[3] = 0xFF008000; //low v
       m_palClass[4] = 0xFF00A000; //med v
       m_palClass[5] = 0xFF20FF20; // high v
-      m_palClass[6] = 0xFFFF0000; // building
+      m_palClass[6] = 0xFFFF4040; // building
       m_palClass[7] = 0xFF808080; //Noise
       m_palClass[8] = 0xFF808080; //Model Key
       m_palClass[9] = 0xFF0000FF; // Water
@@ -129,7 +131,7 @@ namespace ezp
           float rf = rr*prd;
           float gf = gg*prd;
           float bf = bb*prd;
-          m_UniPal[i][k] = (uint8_t)rf | (((uint8_t)gf)<<8) | (((uint8_t)bf)<<16);;
+          m_UniPal[i][255-k] = (uint8_t)rf | (((uint8_t)gf)<<8) | (((uint8_t)bf)<<16);;
          }
       }
       buildPal16();
@@ -462,6 +464,88 @@ namespace ezp
 
     /* Post process. Apply point size*/
     template <unsigned int M>
+    void XERR2(unsigned int *pBuff, int winW, int winH){
+      uint32_t *pUPal,msk,shift;
+      switch(UI::Get()->GetColorMode()){
+        case UI::UICOLOR_HMAP :
+          pUPal = (uint32_t*)m_palHMap;
+          msk = 0xFFF;
+          shift = 16;
+        break;
+        case UI::UICOLOR_INTENS:
+          pUPal = (uint32_t*)m_UniPal;
+          msk = 0xFF;
+          shift = 0;
+        break;
+        case UI::UICOLOR_RGB:
+          pUPal = (uint32_t*)m_pal16;
+          msk = 0xFFFF;
+          shift = 0;
+        break;
+        default:
+          pUPal = (uint32_t*)m_UniPal;
+          msk = 0xFFF;
+          shift = 0;
+      }
+      uint64_t minZ[16];
+      for (int y = 1; y < winH-M; y++) {
+        for(int m = 0; m<M; m++) minZ[m] = -1;
+        for(int xt = 0; xt<M; xt++){
+          for(int yt = y; yt<M+y; yt++){
+            int ad = xt + yt * m_canvasW;
+            if(m_frbuff[ad] <minZ[xt]) minZ[xt] = m_frbuff[ad];
+          }
+        }       
+        int cnt = 0;
+        for (int x = 1,n = 0; x < winW-M; x++, n++){
+          int dst = x + y * m_canvasW;
+          uint64_t zm = -1L;
+          int ad = x + M-1 + y * m_canvasW;
+          for(int yt = y; yt<M+y; yt++){
+            if(m_frbuff[ad] < zm) {
+              zm = m_frbuff[ad];
+            }
+            ad+=m_canvasW;
+          }
+          minZ[cnt] = zm;
+          uint64_t bz = minZ[0];
+          for(int m = 1; m<M; m++){
+            if(minZ[m]<bz){
+              bz = minZ[m];
+            }
+          }
+          cnt++;
+          if(cnt>=M) cnt = 0;           
+          //uint16_t cndx = (bz>>shift) & msk;  
+          //pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx]; 
+#if 1          
+          m_frbuff[dst]  = bz; 
+          uint32_t uv = m_frbuff[dst-m_canvasW]>>32L;          
+          uint32_t lv = m_frbuff[dst-1]>>32L; 
+          uint32_t mv = bz>>32L;
+          uint32_t divx = (uv>mv)? uv-mv: mv-uv;
+          uint32_t divy = (lv>mv)? lv-mv: mv-lv;
+          uint32_t divm  = std::max( divx, divy)>>3;
+          if(divm>255 ) divm = 255;
+          uint32_t cl  = (bz>>8) & 0xF;
+          int32_t val = (255 - (int32_t) (bz &0xFF))/2 +  (int32_t)divm ;
+          if(val<=0) val = 0;
+          if(val>255) val = 255;
+          pBuff[dst] = (bz==-1L)?  m_bkcolor : m_UniPal[cl][val];
+         // pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[cl*256 + val];
+          //pBuff[dst] = (bz==-1L)?  m_bkcolor : m_pclut[cl*256 + val];
+         // pBuff[dst] = (bz==-1L)?  m_bkcolor : 0x8080FF;
+         // pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_palGray[divm];
+ #endif 
+         // uint32_t cl = (bz>>8) & 0xF;
+         // pBuff[dst] = (bz==-1L)?  m_bkcolor :m_UniPal[cl][128];
+
+                 
+        }
+      } 
+    }
+
+     template <unsigned int M>
     void XERR1(unsigned int *pBuff, int winW, int winH){
       uint32_t *pUPal,msk,shift;
       switch(UI::Get()->GetColorMode()){
@@ -519,6 +603,7 @@ namespace ezp
         }
       } 
     }
+
 
     void DbgShowFrameRate( int num_rnd,uint32_t rndMs){
       static unsigned char cnt = 0,nn =0;
