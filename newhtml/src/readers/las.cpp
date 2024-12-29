@@ -149,12 +149,15 @@ namespace ezp
     return false;
   }
 
-  uint32_t ptGetClass( int ptf,void *pt){
+  uint8_t ptGetClass( int ptf,void *pt){
     if((ptf==7)||(ptf==6)){
       PointFormat6 *pt6 = (PointFormat6*)pt;
       Point6Flags flg = pt6->flg;
       uint8_t c2 = pt6->classification;
-      return  c2;
+      if(c2>16){
+        //printf("c2=%d\n", c2);
+      }
+      return  c2 & 0xF;
     }
     return 0;
   }
@@ -406,16 +409,20 @@ namespace ezp
     }
 
     void PostProcessColors(){
-      int shift_rgb = 3;
+      int shift_rgb = 0;
       if( ((m_rMax - m_rMin)>256) || ((m_gMax - m_gMin))>256  || ((m_bMax - m_bMin))>256 ){
-        shift_rgb  = 11;
+        shift_rgb  = 8;
       }
       FPoint4 *pDst = (FPoint4*) m_getVertsFunc(m_allocNdx);
+      float prd = (5.0f/255.0f);
       for(int i=0; i<m_numPoints; i++){
-        uint32_t rr = ((m_R16[i]>>shift_rgb) & 0x1f)<<10;
-        uint32_t gg = ((m_G16[i]>>shift_rgb) & 0x1f)<<5;
-        uint32_t bb = ((m_B16[i]>>shift_rgb) & 0x1f);
-        pDst[i].col = rr | gg | bb;
+        uint32_t rr = (uint32_t)(((float)(m_R16[i]>>shift_rgb))*prd);
+        uint32_t gg = (uint32_t)(((float)(m_G16[i]>>shift_rgb))*prd); 
+        uint32_t bb = (uint32_t)(((float)(m_B16[i]>>shift_rgb))*prd); 
+        if(rr>5) rr = 5;
+        if(gg>5) gg = 5;
+        if(bb>5) bb = 5;
+        pDst[i].col = (bb + gg*6 + rr*36)*256;
       }
     }
 
@@ -488,11 +495,12 @@ namespace ezp
         uint16_t intensity  = pt[v].col & 0xFFFF;
         uint8_t cls = (pt[v].col >>16) & 0xFF;;
         if(!hasRgb){
-          pt[v].col  = (uint8_t)gHist[intensity];
-          pt[v].col |= (cls<<8);
+          pt[v].col  = (255- (uint8_t)gHist[intensity])/2;
+          pt[v].col |=  (5 + 5*6 + 5*36)*256;
         }
         pt[v].col &= hColMsk;
         pt[v].col |= (hcol<<16);
+        //pt[v].col = 157*256 ; ///////////////////
       }
     }
   }//LasBuilder::PostProcessAllColors

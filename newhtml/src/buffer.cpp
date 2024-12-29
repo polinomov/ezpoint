@@ -390,7 +390,7 @@ namespace ezp
             uint64_t *pAddr = m_frbuff + dst;
             if(( x>0) && ( x<sw) && ( y>0) && (y<sh)){
               uint64_t zb = pAddr[0];
-              uint64_t zi = (((uint64_t)(res[2]*1024.0f*1024.0f))<<32) | pV4->col ;
+              uint64_t zi = (((uint64_t)(res[2]*1024.0f*1024.0f))<<32)  | pV4->col ;
               uint64_t pr = (zi<zb)? -1L:0;
               uint64_t pr1 = ~pr;
               *pAddr = (zi & pr) + (zb & pr1);
@@ -464,29 +464,35 @@ namespace ezp
 
     /* Post process. Apply point size*/
     template <unsigned int M>
-    void XERR2(unsigned int *pBuff, int winW, int winH){
+    void XERR1(unsigned int *pBuff, int winW, int winH){
       uint32_t *pUPal,msk,shift;
+      uint32_t lt = 1;
       switch(UI::Get()->GetColorMode()){
         case UI::UICOLOR_HMAP :
           pUPal = (uint32_t*)m_palHMap;
           msk = 0xFFF;
           shift = 16;
+          lt = 0;
         break;
         case UI::UICOLOR_INTENS:
           pUPal = (uint32_t*)m_UniPal;
           msk = 0xFF;
           shift = 0;
+          lt = 1;
         break;
         case UI::UICOLOR_RGB:
           pUPal = (uint32_t*)m_pal16;
           msk = 0xFFFF;
           shift = 0;
+          lt = 1;
         break;
         default:
           pUPal = (uint32_t*)m_UniPal;
           msk = 0xFFF;
           shift = 0;
+          lt = 1;
       }
+      int tstp = (m_measurement)? 1:0;
       uint64_t minZ[16];
       for (int y = 1; y < winH-M; y++) {
         for(int m = 0; m<M; m++) minZ[m] = -1;
@@ -518,35 +524,33 @@ namespace ezp
           if(cnt>=M) cnt = 0;           
           //uint16_t cndx = (bz>>shift) & msk;  
           //pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx]; 
-#if 1          
+#if 1         
           m_frbuff[dst]  = bz; 
+          if (bz==-1L) {
+            pBuff[dst] =  m_bkcolor;
+            continue;
+          }
           uint32_t uv = m_frbuff[dst-m_canvasW]>>32L;          
           uint32_t lv = m_frbuff[dst-1]>>32L; 
           uint32_t mv = bz>>32L;
+          float fxa = 0.07f*(1024.0f *1024.0f)/(float) mv;
           uint32_t divx = (uv>mv)? uv-mv: mv-uv;
           uint32_t divy = (lv>mv)? lv-mv: mv-lv;
-          uint32_t divm  = std::max( divx, divy)>>3;
-          if(divm>255 ) divm = 255;
-          uint32_t cl  = (bz>>8) & 0xF;
-          int32_t val = (255 - (int32_t) (bz &0xFF))/2 +  (int32_t)divm ;
+          uint32_t divf  = (float)((std::max( divx, divy))) * fxa;
+          int32_t val =  lt*(bz &0xFF) +  (int32_t)divf ;
           if(val<=0) val = 0;
           if(val>255) val = 255;
-          pBuff[dst] = (bz==-1L)?  m_bkcolor : m_UniPal[cl][val];
-         // pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[cl*256 + val];
-          //pBuff[dst] = (bz==-1L)?  m_bkcolor : m_pclut[cl*256 + val];
-         // pBuff[dst] = (bz==-1L)?  m_bkcolor : 0x8080FF;
-         // pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_palGray[divm];
- #endif 
-         // uint32_t cl = (bz>>8) & 0xF;
-         // pBuff[dst] = (bz==-1L)?  m_bkcolor :m_UniPal[cl][128];
-
-                 
+         // pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[(bz&0xFF00) + val];
+          pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[(5 + 5*6 + 5*36)*256 + val];
+  #else
+           pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[(5 + 5*6 + 5*36)*256];
+  #endif
         }
       } 
     }
 
      template <unsigned int M>
-    void XERR1(unsigned int *pBuff, int winW, int winH){
+    void XERR2(unsigned int *pBuff, int winW, int winH){
       uint32_t *pUPal,msk,shift;
       switch(UI::Get()->GetColorMode()){
         case UI::UICOLOR_HMAP :

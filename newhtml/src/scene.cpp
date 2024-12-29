@@ -221,7 +221,9 @@ namespace ezp
 			//std::cout<<"sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
 			float smax = std::max(sx,sy);
 			smax = std::max(smax,sz);
-      float prd = (smax>0.0f) ? 1.0f/smax : 1.0f;
+			float scprod = 1.0f;//sqrt((float)m_totVerts)/32000.0f;
+			//if(scprod<1.0f) scprod = 1.0f;
+      float prd = (smax>0.0f) ? scprod/smax : 1.0f;
 			for(uint32_t m = 0; m<GetNumMemBanks(); m++){
 				FPoint4 *pt = (FPoint4*)GetVerts(m);
 				for( uint32_t v = 0; v < GetNumVerts(m); v++){
@@ -234,37 +236,29 @@ namespace ezp
 
 		uint32_t* BuildClut(){
 			static bool hasClut = false;
-			float step = (1.0f/15.0f);
+			float step = (1.0f/5.0f);
 			int ndx  = 0;
-			for( int r = 0; r<16; r++){
-				for( int g = 0; g<16; g++){
-					float rf = (float)r*step;
-					float gf = (float)g*step;
-          float vf = rf*rf + gf*gf;
-					float bf = (vf<1.0f)? sqrt(1.0f - vf) : 0.0f;
-					float s = 1.0f;
-					if((rf>=0.0) && (rf>=gf) && (rf>=bf)){
-						s = 1.0f/rf;
+			for( int r = 0; r<6; r++){
+				for( int g = 0; g<6; g++){
+					for( int b = 0; b<6; b++){
+						float rf = (float)r*step;
+						float gf = (float)g*step;
+					  float bf = (float)b*step;
+						for(int t = 0; t<256; t++){
+							float prd = 1.0f*(1.0 -(float)t/300.0f);
+							if(prd<0.0f) prd = 0.0f;
+							uint32_t ri = (uint32_t) (rf * 255.0f * prd);
+							uint32_t gi = (uint32_t) (gf * 255.0f * prd);
+							uint32_t bi = (uint32_t) (bf * 255.0f * prd);
+							if(ri>255) ri = 255;
+							if(gi>255) gi = 255;
+							if(bi>255) bi = 255;
+							m_pclut[ndx+t] = (ri<<16) | (gi<<8) | (bi);
+						}
+						ndx+=256;
 					}
-					if((gf>=0.0) && (gf>=rf) && (gf>=bf)){
-						s = 1.0f/gf;
-					}
-					if((bf>=0.0) && (bf>=rf) && (bf>=gf)){
-						s = 1.0f/bf;
-					}
-					rf*=s;
-					gf*=s;
-					bf*=s;
-					for(int t = 0; t<256; t++){
-						float prd = 1.0f - (float)t/255.0f;
-						uint8_t ri = (uint8_t) (rf * 255.0f * prd);
-						uint8_t gi = (uint8_t) (gf * 255.0f * prd);
-						uint8_t bi = (uint8_t) (bf * 255.0f * prd);
-						m_pclut[ndx+t] = (ri<<16) | (gi<<8) | (bi);
-					}
-					ndx+=256;
 				}
-			}
+			}	
 			for(int k = 0; k<256*256; k+=256){
 				printf("%x\n",m_pclut[k] );
 			}
@@ -291,6 +285,7 @@ namespace ezp
 
 		void GenerateSample(){
 			Clear();
+			/*
 			uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
 			uint32_t totPoints = sx*sy*sfPoints;
 			UI::Get()->PrintMessage("Sample");
@@ -304,9 +299,27 @@ namespace ezp
 					pt += sfPoints;  
 				}
 			} 
-			UI::Get()->SetColorMode(UI::UICOLOR_RGB);
+			*/
+		  uint32_t sx = 1024*4, sy = 1024*4;
+			AllocVerts(sx*sy);
+			FPoint4* pt =(FPoint4*) GetVerts(0); 
+			uint32_t ndx = 0;
+			for( uint32_t x = 0; x<sx; x++){
+				for( uint32_t y = 0; y<sy; y++){
+					pt[ndx].x = (float)x;
+					pt[ndx].y = (float)y;
+					pt[ndx].z = (ndx==0)? 1.0f: 0.0f;
+					pt[ndx].col = (5 + 5*6 + 5*36)*256;
+					ndx++;
+				}
+			}
+			//UI::Get()->SetColorMode(UI::UICOLOR_RGB);
+		  UI::Get()->SetColorMode(UI::UICOLOR_INTENS);
+			std::cout<<"RESCALE"<<std::endl;
 			ReScale();
+			std::cout<<"processVertDataInt"<<std::endl;
 			processVertDataInt(0);
+			std::cout<<"SetCamera"<<std::endl;
 			SetCamera();
 			UI::Get()->SetRenderEvent(2);
 		}  
