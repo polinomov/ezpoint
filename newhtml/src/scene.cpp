@@ -237,7 +237,7 @@ namespace ezp
 		uint32_t* BuildClut(){
 			static bool hasClut = false;
 			float step = (1.0f/5.0f);
-			int ndx  = 0;
+			int ndx  = 256;
 			for( int r = 0; r<6; r++){
 				for( int g = 0; g<6; g++){
 					for( int b = 0; b<6; b++){
@@ -245,7 +245,8 @@ namespace ezp
 						float gf = (float)g*step;
 					  float bf = (float)b*step;
 						for(int t = 0; t<256; t++){
-							float prd = 1.0f*(1.0 -(float)t/300.0f);
+							float prd = 1.0f*(1.0 -(float)t/400.0f);
+							//prd = prd*prd;
 							if(prd<0.0f) prd = 0.0f;
 							uint32_t ri = (uint32_t) (rf * 255.0f * prd);
 							uint32_t gi = (uint32_t) (gf * 255.0f * prd);
@@ -259,8 +260,11 @@ namespace ezp
 					}
 				}
 			}	
+			for(int k = 0; k<256; k++){
+				m_pclut[k] = m_pclut[k+ ( 1+ 5 + 5*6 + 5*36)*256];
+			}
 			for(int k = 0; k<256*256; k+=256){
-				printf("%x\n",m_pclut[k] );
+				//printf("%x\n",m_pclut[k] );
 			}
       return NULL;
 		}

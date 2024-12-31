@@ -43,6 +43,7 @@ namespace ezp
     uint64_t *m_auxBuff;
     int m_canvasW, m_canvasH;
     float m_atanRatio;
+    float m_shadFactor;
     int m_budget;
     int m_visPoints = 0;
     int m_pointSize;
@@ -161,6 +162,8 @@ namespace ezp
 
     void  SetFov(int val){
       m_atanRatio = 1.0f/tan(0.5f* (float)val * 3.1415f/180.0f);
+      m_shadFactor =  m_atanRatio*0.025f*(1024.0f *1024.0f);
+     // std::cout<<"m_atanRatio=="<<m_atanRatio<<std::endl;
     }
 
     void  SetBudget(float val){
@@ -467,6 +470,8 @@ namespace ezp
     void XERR1(unsigned int *pBuff, int winW, int winH){
       uint32_t *pUPal,msk,shift;
       uint32_t lt = 1;
+      uint32_t palmsk = 0xFF00;
+      uint32_t valmsk = 0xFF;
       switch(UI::Get()->GetColorMode()){
         case UI::UICOLOR_HMAP :
           pUPal = (uint32_t*)m_palHMap;
@@ -485,6 +490,10 @@ namespace ezp
           msk = 0xFFFF;
           shift = 0;
           lt = 1;
+        break;
+        case UI::UICOLOR_MIX:
+          palmsk = 0;
+          valmsk = 0;
         break;
         default:
           pUPal = (uint32_t*)m_UniPal;
@@ -522,9 +531,7 @@ namespace ezp
           }
           cnt++;
           if(cnt>=M) cnt = 0;           
-          //uint16_t cndx = (bz>>shift) & msk;  
-          //pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx]; 
-#if 1         
+ #if 1         
           m_frbuff[dst]  = bz; 
           if (bz==-1L) {
             pBuff[dst] =  m_bkcolor;
@@ -533,15 +540,13 @@ namespace ezp
           uint32_t uv = m_frbuff[dst-m_canvasW]>>32L;          
           uint32_t lv = m_frbuff[dst-1]>>32L; 
           uint32_t mv = bz>>32L;
-          float fxa = 0.07f*(1024.0f *1024.0f)/(float) mv;
+          float fxa = m_shadFactor/(float) mv;
           uint32_t divx = (uv>mv)? uv-mv: mv-uv;
           uint32_t divy = (lv>mv)? lv-mv: mv-lv;
           uint32_t divf  = (float)((std::max( divx, divy))) * fxa;
-          int32_t val =  lt*(bz &0xFF) +  (int32_t)divf ;
-          if(val<=0) val = 0;
+          uint32_t val =  (bz & valmsk) +  (int32_t)divf ;
           if(val>255) val = 255;
-         // pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[(bz&0xFF00) + val];
-          pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[(5 + 5*6 + 5*36)*256 + val];
+          pBuff[dst] = m_pclut[(palmsk & bz) + val];
   #else
            pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[(5 + 5*6 + 5*36)*256];
   #endif

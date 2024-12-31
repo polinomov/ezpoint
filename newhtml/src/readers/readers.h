@@ -3,6 +3,8 @@
 #define _READERS_H
 #include <functional>
 #include "..\chunk.h"
+#define COLOR05(r_, g_, b_) (1 + b_ + g_*6 + r_*36)
+
 namespace ezp 
 {
     struct LasInfo{

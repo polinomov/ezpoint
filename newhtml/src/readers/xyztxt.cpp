@@ -200,7 +200,7 @@ namespace ezp
       std::function<const FPoint4 *(uint32_t ndx)> getVertsFunc,
       std::function<uint32_t (uint32_t ndx)> getNumFunc){
 	//		if(numMemBanks==0){
-				return;
+				//return;
 	//		}
 			FPoint4 *p0 = (FPoint4*)getVertsFunc(0);
 			float xMin = p0->x;
@@ -231,9 +231,7 @@ namespace ezp
 			for(uint32_t m = 0; m<numMemBanks; m++){
 				FPoint4 *pt = (FPoint4*)getVertsFunc(m);
 				for( uint32_t v = 0; v < getNumFunc(m); v++){
-					//pt[v].x = (pt[v].x - xMin) * prd;
-					//pt[v].y = (pt[v].y - yMin) * prd;
-					//pt[v].z = (pt[v].z - zMin) * prd;
+					pt[v].col = (COLOR05(5,5,5))*256;
 				}
 			}						
 		}

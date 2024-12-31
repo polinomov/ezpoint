@@ -150,6 +150,7 @@ namespace ezp
   }
 
   uint8_t ptGetClass( int ptf,void *pt){
+ 
     if((ptf==7)||(ptf==6)){
       PointFormat6 *pt6 = (PointFormat6*)pt;
       Point6Flags flg = pt6->flg;
@@ -157,7 +158,7 @@ namespace ezp
       if(c2>16){
         //printf("c2=%d\n", c2);
       }
-      return  c2 & 0xF;
+      return  c2 & 0xFF;
     }
     return 0;
   }
@@ -206,6 +207,7 @@ namespace ezp
     bool m_hasRgb;
     float m_hMin;
     float m_hMax;
+    uint8_t m_clcol[256];
     uint16_t *m_R16,*m_G16,*m_B16;
     int m_Iminx,m_Imaxx,m_Iminy,m_Imaxy,m_Iminz,m_Imaxz;
     uint16_t m_rMin,m_rMax,m_gMin, m_gMax,m_bMin, m_bMax;
@@ -216,6 +218,20 @@ namespace ezp
 
     LasBuilderImpl(){
       m_R16 = m_G16 = m_B16 = NULL;
+      uint8_t wite = COLOR05(5,5,5);
+      memset(m_clcol, wite, 256);
+      m_clcol[0] = COLOR05(5,5,5);
+      m_clcol[1] = COLOR05(2,5,1);
+      m_clcol[2] = COLOR05(5,5,1);
+      m_clcol[3] = COLOR05(1,5,1);
+      m_clcol[4] = COLOR05(2,5,2);
+      m_clcol[5] = COLOR05(3,5,3);
+      m_clcol[6] = COLOR05(5,3,3);
+      m_clcol[7] = COLOR05(5,5,0);
+      m_clcol[8] = COLOR05(5,5,5);
+      m_clcol[9] = COLOR05(0,0,5);
+      m_clcol[10] = COLOR05(5,5,5);
+      m_clcol[11] = COLOR05(5,5,5);
       Reset(0);
     }
 
@@ -422,7 +438,8 @@ namespace ezp
         if(rr>5) rr = 5;
         if(gg>5) gg = 5;
         if(bb>5) bb = 5;
-        pDst[i].col = (bb + gg*6 + rr*36)*256;
+        //pDst[i].col = (bb + gg*6 + rr*36)*256;
+        pDst[i].col = COLOR05(bb,gg,rr)*256;
       }
     }
 
@@ -496,10 +513,11 @@ namespace ezp
         uint8_t cls = (pt[v].col >>16) & 0xFF;;
         if(!hasRgb){
           pt[v].col  = (255- (uint8_t)gHist[intensity])/2;
-          pt[v].col |=  (5 + 5*6 + 5*36)*256;
+          pt[v].col |=  m_clcol[cls]*256;
         }
-        pt[v].col &= hColMsk;
-        pt[v].col |= (hcol<<16);
+        //pt[v].col = (5 + 5*6 + 5*36)*256;
+        //pt[v].col &= hColMsk;
+        //pt[v].col |= (hcol<<16);
         //pt[v].col = 157*256 ; ///////////////////
       }
     }
