@@ -468,38 +468,24 @@ namespace ezp
     /* Post process. Apply point size*/
     template <unsigned int M>
     void XERR1(unsigned int *pBuff, int winW, int winH){
-      uint32_t *pUPal,msk,shift;
-      uint32_t lt = 1;
       uint32_t palmsk = 0xFF00;
       uint32_t valmsk = 0xFF;
       switch(UI::Get()->GetColorMode()){
         case UI::UICOLOR_HMAP :
-          pUPal = (uint32_t*)m_palHMap;
-          msk = 0xFFF;
-          shift = 16;
-          lt = 0;
+        break;
+        case UI::UICOLOR_CLASS:
         break;
         case UI::UICOLOR_INTENS:
-          pUPal = (uint32_t*)m_UniPal;
-          msk = 0xFF;
-          shift = 0;
-          lt = 1;
+          palmsk = 0;
         break;
         case UI::UICOLOR_RGB:
-          pUPal = (uint32_t*)m_pal16;
-          msk = 0xFFFF;
-          shift = 0;
-          lt = 1;
         break;
         case UI::UICOLOR_MIX:
           palmsk = 0;
           valmsk = 0;
         break;
         default:
-          pUPal = (uint32_t*)m_UniPal;
-          msk = 0xFFF;
-          shift = 0;
-          lt = 1;
+        break;
       }
       int tstp = (m_measurement)? 1:0;
       uint64_t minZ[16];
@@ -531,7 +517,6 @@ namespace ezp
           }
           cnt++;
           if(cnt>=M) cnt = 0;           
- #if 1         
           m_frbuff[dst]  = bz; 
           if (bz==-1L) {
             pBuff[dst] =  m_bkcolor;
@@ -547,9 +532,6 @@ namespace ezp
           uint32_t val =  (bz & valmsk) +  (int32_t)divf ;
           if(val>255) val = 255;
           pBuff[dst] = m_pclut[(palmsk & bz) + val];
-  #else
-           pBuff[dst] = (bz==-1L)?  m_bkcolor :  m_pclut[(5 + 5*6 + 5*36)*256];
-  #endif
         }
       } 
     }

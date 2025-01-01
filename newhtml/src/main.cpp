@@ -220,7 +220,7 @@ extern "C" {
         }
         ui->SetElementState(ezp::UI::UICOLOR_RGB,0);
       }
-      ui->SetElementState(ezp::UI::UICOLOR_HMAP,1);
+      ui->SetElementState(ezp::UI::UICOLOR_HMAP,0);
       ezp::Scene::Get()->SetDesctiption(info.description);
       uint32_t nextPointsNum = ezp::Scene::Get()->GetTotVerts() + info.numPoints;
       if(nextPointsNum > 250 *1000*1000){
