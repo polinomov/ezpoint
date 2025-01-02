@@ -25,11 +25,10 @@ namespace ezp
 		float xMin,xMax,yMin,yMax,zMin,zMax;
 		int numVerts;
 		float *pVert;
-		uint32_t aux;
-        int32_t flg;
         float cx,cy,cz,sz;
         uint32_t numToRender;
-        FPoint4 proj;
+        uint32_t processed;
+        uint32_t numLod;
         float reduction;
  	};
 }

@@ -168,7 +168,7 @@ namespace ezp
 			m_box.yMax  = std::max(m_box.yMax,bd.yMax);
 			m_box.zMax  = std::max(m_box.zMax,bd.zMax);
 		  chunker::ShowBdBox(m_box); 
-			chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} ); 
+			chunker::doChunks<FPoint4>((FPoint4*)pt, 0, num-1, 4096*4,  [this](FPoint4*pt, int num){this->onChunk(pt,num);} ); 
 		}
 
 		 void AddToQueue(std::function<void( )> func){

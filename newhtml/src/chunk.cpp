@@ -10,7 +10,7 @@
 // http://ewebmap.ci.lubbock.tx.us/currentdata/LiDAR/2010/All_Return_LAS/86817242.las
 namespace ezp {
 
-Chunk::Chunk() : numVerts(0),pVert(NULL),aux(0),flg(0),numToRender(0),reduction(1.0f){
+Chunk::Chunk() : numVerts(0),pVert(NULL),numToRender(0),reduction(1.0f), processed(0){
 }
 
 Chunk::~Chunk(){

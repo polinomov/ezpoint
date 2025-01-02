@@ -69,7 +69,6 @@ extern "C" {
       dstRect.h = gWinH;
       SDL_LockTexture( m_screenTexture, NULL, (void**)&pixels, &pitch );
       ezp::Renderer::Get()->Render((uint32_t*)pixels, gWinW, gWinH,gRenderEvent);
-      //SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
       SDL_UnlockTexture( m_screenTexture );
       SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
       SDL_RenderPresent(m_renderer);
@@ -176,6 +175,7 @@ extern "C" {
       ezp::UI::Get()->PrintMessage(ezp::Scene::Get()->GetDesctiption());
     };
     ezp::Scene::Get()->AddToQueue(finMessage);
+    ezp::Renderer::Get()->OnCameraChange();
     return 0;
   }
   
@@ -308,11 +308,13 @@ extern "C" {
     if((lr !=0 ) || (td!=0)){
       gRenderEvent = 1;	
     }
+    ezp::Renderer::Get()->OnCameraChange();
     return 0;
   }
 
   int CameraMoveDbClickJS(int xval, int yval){
     ezp::Renderer::Get()->SetDbClickEvent( (uint32_t)xval, (uint32_t) yval-gMenuShift);
+    ezp::Renderer::Get()->OnCameraChange();
     gRenderEvent = 1;
     return 0;
   }
@@ -327,6 +329,7 @@ extern "C" {
     float sy= physcr*(float)yval;
     pCam->MoveUpOrDown(-sy);
     gRenderEvent = 1;	
+    ezp::Renderer::Get()->OnCameraChange();
     return 0;
   }
 

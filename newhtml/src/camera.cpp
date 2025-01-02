@@ -86,7 +86,7 @@ namespace ezp
       m_U[0] = 0.0f;
       m_U[1] = 1.0f;
       m_U[2] = 0.0f;
-      m_R[0] = 1.0f;
+      m_R[0] = -1.0f;
       m_R[1] = 0.0f;
       m_R[2] = 0.0f;			
     }
@@ -158,18 +158,18 @@ namespace ezp
     }
 
     void RotRight( float val){
-      RotAroudWorldUp(-val);
-    }
-
-    void RotLeft( float val){
       RotAroudWorldUp(val);
     }
 
+    void RotLeft( float val){
+      RotAroudWorldUp(-val);
+    }
+
     void RotUp( float val) {
-       RotAroudHor(val);
+       RotAroudHor(-val);
     }
     void RotDown( float val) {
-      RotAroudHor(-val);
+      RotAroudHor(val);
     }
 
     float GetDistance(){

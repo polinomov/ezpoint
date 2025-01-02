@@ -102,6 +102,7 @@ namespace ezp
     virtual void SetRuler(int val) =0;
     virtual void MouseMoveEvent( uint32_t x, uint32_t y) = 0;
     virtual void MouseClickEvent() = 0;
+    virtual void OnCameraChange() = 0;
     static Renderer* Get();
   };
 

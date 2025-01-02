@@ -41,6 +41,7 @@ namespace ezp
   {
     uint64_t *m_frbuff;
     uint64_t *m_auxBuff;
+    uint64_t *m_frb;
     int m_canvasW, m_canvasH;
     float m_atanRatio;
     float m_shadFactor;
@@ -49,10 +50,10 @@ namespace ezp
     int m_pointSize;
     int m_colorMode;
     uint32_t m_bkcolor;
-    uint32_t m_palGray[256];
+    //uint32_t m_palGray[256];
     uint32_t m_palHMap[256*16];
     uint32_t m_palClass[256];
-    uint32_t m_UniPal[16][256];
+    //uint32_t m_UniPal[16][256];
     uint32_t m_pal16[256*256];
     uint32_t *m_pclut;
     int m_sceneSize;
@@ -71,6 +72,7 @@ namespace ezp
     bool m_hasDbClick;
     uint32_t m_bdClickX;
     uint32_t m_bdClickY;
+    bool m_cameraChange;
     char m_outsrt[1024];
  
     void Init(int canvasW, int canvasH){
@@ -79,6 +81,7 @@ namespace ezp
       m_rdPt = 0;
       m_auxBuff = new uint64_t[canvasW *canvasH];
       m_frbuff  = new uint64_t[canvasW *canvasH + 128];
+      m_frb     = new uint64_t[canvasW *canvasH + 128];
       uint64_t addr = (uint64_t)m_frbuff;
       addr = (addr +128) &(~127);
       m_frbuff =(uint64_t*)addr;
@@ -94,64 +97,10 @@ namespace ezp
       m_budget = pUI->GetBudget();
       SetFov(pUI->GetFov());
       m_pclut = ezp::Scene::Get()->GetClut();
-
-      for( int i = 0; i<256*16; i++){
-        float ang1 = (float)i * 3.1415f/(256.0f*16.0f);
-        float ang2 = ang1 + 3.1415f/3.0f;
-        float ang3 = ang1 + 2.0f* 3.1415f/3.0f;
-        float rf =  cos(ang1);
-        float gf  = cos(ang2);
-        float bf  = cos(ang3);
-        uint8_t r = (uint8_t)(rf*rf * 255.0f);
-        uint8_t g = (uint8_t)(gf*gf * 255.0f);
-        uint8_t b = (uint8_t)(bf*bf * 255.0f);
-        m_palHMap[i] = (b|(g<<8)|(r<<16));
-      }
-      for( int i = 0; i<256; i++){
-        m_palGray[255-i] = i | (i<<8) | (i<<16) | (i<<24);
-        m_palClass[i] = 0xFFFFFFFF;
-      }
-      m_palHMap[0] = 0xFF0000;
-      m_palClass[0] = 0xFFFFFFFF;
-      m_palClass[1] = 0xFF00FF00;
-      m_palClass[2] = 0xFFFFFF00; //ground
-      m_palClass[3] = 0xFF008000; //low v
-      m_palClass[4] = 0xFF00A000; //med v
-      m_palClass[5] = 0xFF20FF20; // high v
-      m_palClass[6] = 0xFFFF4040; // building
-      m_palClass[7] = 0xFF808080; //Noise
-      m_palClass[8] = 0xFF808080; //Model Key
-      m_palClass[9] = 0xFF0000FF; // Water
-      for(int i =0; i<16; i++){
-        uint32_t cc = m_palClass[i];
-        float rr = (float)(cc&0xFF);
-        float gg = (float)((cc&0xFF00)>>8);
-        float bb = (float)((cc&0xFF0000)>>16);
-        for(int k = 0; k<256; k++){
-          float prd = (float)k/255.9f;
-          float rf = rr*prd;
-          float gf = gg*prd;
-          float bf = bb*prd;
-          m_UniPal[i][255-k] = (uint8_t)rf | (((uint8_t)gf)<<8) | (((uint8_t)bf)<<16);;
-         }
-      }
-      buildPal16();
       RenderHelper::Get()->Init();
+      m_cameraChange = true;
     }
-
-    void buildPal16(){
-      uint16_t msk1= 0x001f;
-      uint16_t msk2= 0x03E0;
-      uint16_t msk3= 0xF800;
-      printf(" msk %x %x %x\n", msk1,msk2,msk3);
-      for( uint32_t t = 0; t<256*256; t++){
-        uint8_t r = ((t & msk1)) *8 ;
-        uint8_t g = ((t & msk2)>>5) *8;
-        uint8_t b = ((t & msk3)>>10) *8 ;
-        m_pal16[t] = b | (g<<8) |(r<<16);
-      }
-    }
-     
+  
     void ShowFrameRate(bool val){
       m_showfr = val;
     }
@@ -163,15 +112,17 @@ namespace ezp
     void  SetFov(int val){
       m_atanRatio = 1.0f/tan(0.5f* (float)val * 3.1415f/180.0f);
       m_shadFactor =  m_atanRatio*0.025f*(1024.0f *1024.0f);
-     // std::cout<<"m_atanRatio=="<<m_atanRatio<<std::endl;
+      m_cameraChange = true;
     }
 
     void  SetBudget(float val){
       m_budget = val;
+      m_cameraChange = true;
     }
 
     void  SetPointSize(float val){
-       m_pointSize = (int)val;
+      m_pointSize = (int)val;
+      m_cameraChange = true;
     }
 
     void  SetBkColor( uint32_t val){
@@ -231,6 +182,7 @@ namespace ezp
         pCam->SetPos(pos.x + dx,pos.y + dy,pos.z + dz);
         pCam->SetPivot(pT->x,pT->y,pT->z);
         UI::Get()->SetRenderEvent(2);
+        m_cameraChange = true;
       }
     }
 
@@ -283,6 +235,7 @@ namespace ezp
       pCam->GetPos(pP[0],pP[1],pP[2]);
       pCam->GetDir(pD[0],pD[1],pD[2]);
       float zDist = pCam->GetDistance();
+      std::cout<<"RenderChunks "<<m_cameraChange<<std::endl;
 
       uint32_t tbi = 0;
       const std::vector<Chunk*>& chunks = Scene::Get()->GetChunks();
@@ -294,6 +247,20 @@ namespace ezp
       float zTr = rp->m_sceneSize/sqrt((float)chunks.size());
       for( int m = 0; m<chunks.size(); m++) {
         Chunk* pCh= chunks[m];
+        //
+        if(m_cameraChange){
+          chunks[m]->processed = 0;
+        } else{
+          chunks[m]->numToRender = 0;
+          if(chunks[m]->numVerts  > chunks[m]->processed){
+            chunks[m]->numToRender = chunks[m]->numLod;
+            if((chunks[m]->processed + chunks[m]->numToRender ) >= chunks[m]->numVerts){
+              chunks[m]->numToRender = chunks[m]->numVerts - chunks[m]->processed;
+            }
+          }
+          continue;
+        }
+        //
         chunks[m]->numToRender = chunks[m]->numVerts;
         FPoint4 bdd[8];
         bdd[0].x = pCh->xMin; bdd[0].y = pCh->yMin; bdd[0].z = pCh->zMin;
@@ -317,8 +284,9 @@ namespace ezp
             }
           }
           if(cntb==8){
-             pCh->numToRender = 0;
-             break; 
+            pCh->numToRender = 0;
+            pCh->processed = pCh->numVerts;
+            break; 
           }
         }
         rp->m_totalRdPoints+=pCh->numToRender;
@@ -334,7 +302,8 @@ namespace ezp
       if((distMax - distMin)<zTr)  distMax = distMin + zTr;
   
       //LOD
-      if(rp->m_renderAll == 0){
+      //if((rp->m_renderAll == 0)&&(m_cameraChange)){
+      if(m_cameraChange){
         float delta = distMax - distMin;
         float begin = 1.0f;
         float end =  pow(distMin/distMax,4);
@@ -353,6 +322,7 @@ namespace ezp
           if(pCh->numToRender<=0) continue;
           float nr = (float)pCh->numToRender * pprd * pCh->reduction;
           if( (uint32_t)nr <= pCh->numToRender)  pCh->numToRender = (uint32_t)nr;
+          pCh->numLod = pCh->numToRender;
         }
       }
       
@@ -368,7 +338,7 @@ namespace ezp
       rp->m_visPoints= 0;
       for( int m = 0; m<chunks.size(); m++) {
         if(chunks[m]->numToRender<=1) continue;
-        FPoint4 *pV4 = (FPoint4*)chunks[m]->pVert;
+        FPoint4 *pV4 = ((FPoint4*)chunks[m]->pVert) + chunks[m]->processed;
         __m128 xss = _mm_set1_ps(pV4->x);
         __m128 yss = _mm_set1_ps(pV4->y);
         __m128 zss = _mm_set1_ps(pV4->z);
@@ -377,10 +347,8 @@ namespace ezp
         const int canvas_w = rp->m_canvasW;
         int addr_max = rp->m_canvasW*rp->m_canvasH;
         int numV = chunks[m]->numToRender;
-        rp->m_visPoints+=numV-1;
-       // std::cout<<"numV="<<numV<<std::endl;
         for( int i = 0; i<numV; i++){  
-         // std::cout<<i<<" Rendering: "<<pV4->x<<";"<<pV4->y<<";"<<pV4->z<<std::endl;
+          rp->m_visPoints++; ///
           float res[4];
           MPROJ(a,b,c,d, xss,yss,zss,res);
           xss = _mm_set1_ps(pV4[1].x); 
@@ -405,12 +373,25 @@ namespace ezp
           }
           pV4++;
         } // verts in chunk
+        chunks[m]->processed += numV;
       }//chunks.size()
+      if(m_renderAll){
+        m_cameraChange = false;
+        if(rp->m_visPoints>0){
+          std::cout<<"Render Done"<<rp->m_visPoints<<std::endl;
+          ezp::UI::Get()->SetRenderEvent(2);
+        }
+      }
     }//RenderChunks
    
+    void OnCameraChange(){
+       m_cameraChange  = true;
+    }
 
     void cleanBuff(){
-      memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+      if(m_cameraChange){
+        memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+      }
       if((m_hasDbClick)||(m_rdPt)){
         memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
       } 
@@ -487,14 +468,16 @@ namespace ezp
         default:
         break;
       }
-      int tstp = (m_measurement)? 1:0;
+      memcpy( m_frb,m_frbuff,m_canvasW *m_canvasH*sizeof(uint64_t));
+      uint64_t *pb64 = m_frb;
+
       uint64_t minZ[16];
       for (int y = 1; y < winH-M; y++) {
         for(int m = 0; m<M; m++) minZ[m] = -1;
         for(int xt = 0; xt<M; xt++){
           for(int yt = y; yt<M+y; yt++){
             int ad = xt + yt * m_canvasW;
-            if(m_frbuff[ad] <minZ[xt]) minZ[xt] = m_frbuff[ad];
+            if(pb64[ad] <minZ[xt]) minZ[xt] = pb64[ad];
           }
         }       
         int cnt = 0;
@@ -503,8 +486,8 @@ namespace ezp
           uint64_t zm = -1L;
           int ad = x + M-1 + y * m_canvasW;
           for(int yt = y; yt<M+y; yt++){
-            if(m_frbuff[ad] < zm) {
-              zm = m_frbuff[ad];
+            if(pb64[ad] < zm) {
+              zm = pb64[ad];
             }
             ad+=m_canvasW;
           }
@@ -517,13 +500,13 @@ namespace ezp
           }
           cnt++;
           if(cnt>=M) cnt = 0;           
-          m_frbuff[dst]  = bz; 
+          pb64[dst]  = bz; 
           if (bz==-1L) {
             pBuff[dst] =  m_bkcolor;
             continue;
           }
-          uint32_t uv = m_frbuff[dst-m_canvasW]>>32L;          
-          uint32_t lv = m_frbuff[dst-1]>>32L; 
+          uint32_t uv = pb64[dst-m_canvasW]>>32L;          
+          uint32_t lv = pb64[dst-1]>>32L; 
           uint32_t mv = bz>>32L;
           float fxa = m_shadFactor/(float) mv;
           uint32_t divx = (uv>mv)? uv-mv: mv-uv;
@@ -535,66 +518,6 @@ namespace ezp
         }
       } 
     }
-
-     template <unsigned int M>
-    void XERR2(unsigned int *pBuff, int winW, int winH){
-      uint32_t *pUPal,msk,shift;
-      switch(UI::Get()->GetColorMode()){
-        case UI::UICOLOR_HMAP :
-          pUPal = (uint32_t*)m_palHMap;
-          msk = 0xFFF;
-          shift = 16;
-        break;
-        case UI::UICOLOR_INTENS:
-          pUPal = (uint32_t*)m_UniPal;
-          msk = 0xFF;
-          shift = 0;
-        break;
-        case UI::UICOLOR_RGB:
-          pUPal = (uint32_t*)m_pal16;
-          msk = 0xFFFF;
-          shift = 0;
-        break;
-        default:
-          pUPal = (uint32_t*)m_UniPal;
-          msk = 0xFFF;
-          shift = 0;
-      }
-      uint64_t minZ[16];
-      for (int y = 0; y < winH-M; y++) {
-        for(int m = 0; m<M; m++) minZ[m] = -1;
-        for(int xt = 0; xt<M; xt++){
-          for(int yt = y; yt<M+y; yt++){
-            int ad = xt + yt * m_canvasW;
-            if(m_frbuff[ad] <minZ[xt]) minZ[xt] = m_frbuff[ad];
-          }
-        }       
-        int cnt = 0;
-        for (int x = 0,n = 0; x < winW-M; x++, n++){
-          int dst = x + y * m_canvasW;
-          uint64_t zm = -1L;
-          int ad = x + M-1 + y * m_canvasW;
-          for(int yt = y; yt<M+y; yt++){
-            if(m_frbuff[ad] < zm) {
-              zm = m_frbuff[ad];
-            }
-            ad+=m_canvasW;
-          }
-          minZ[cnt] = zm;
-          uint64_t bz = minZ[0];
-          for(int m = 0; m<M; m++){
-            if(minZ[m]<bz){
-              bz = minZ[m];
-            }
-          }
-          cnt++;
-          if(cnt>=M) cnt = 0;           
-          uint16_t cndx = (bz>>shift) & msk;  
-          pBuff[dst] =  (bz==-1L)?  m_bkcolor : pUPal[cndx];                 
-        }
-      } 
-    }
-
 
     void DbgShowFrameRate( int num_rnd,uint32_t rndMs){
       static unsigned char cnt = 0,nn =0;
