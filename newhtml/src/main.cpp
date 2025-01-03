@@ -205,22 +205,24 @@ extern "C" {
       auto ui = ezp::UI::Get();
       if(info.hasRgb){
         ui->SetColorMode(ezp::UI::UICOLOR_RGB);
-        ui->SetElementState(ezp::UI::UICOLOR_INTENS,1);
-        ui->SetElementState(ezp::UI::UICOLOR_RGB,2);
+        ui->SetElementState(ezp::UI::UICOLOR_INTENS,0);
+        ui->SetElementState(ezp::UI::UICOLOR_RGB,1);
         ui->SetElementState(ezp::UI::UICOLOR_CLASS,0);
       }else{
         if(info.hasClass==1){
-          ui->SetColorMode(ezp::UI::UICOLOR_CLASS);
-          ui->SetElementState(ezp::UI::UICOLOR_CLASS,2);
+         // ui->SetColorMode(ezp::UI::UICOLOR_CLASS);
+          ui->SetElementState(ezp::UI::UICOLOR_CLASS,1);
           ui->SetElementState(ezp::UI::UICOLOR_INTENS,1);
         }else{
-          ui->SetColorMode(ezp::UI::UICOLOR_INTENS);
-          ui->SetElementState(ezp::UI::UICOLOR_CLASS,1);
-          ui->SetElementState(ezp::UI::UICOLOR_INTENS,2);
+          //ui->SetColorMode(ezp::UI::UICOLOR_INTENS);
+          ui->SetElementState(ezp::UI::UICOLOR_CLASS,0);
+          ui->SetElementState(ezp::UI::UICOLOR_INTENS,1);
         }
+        ui->SetColorMode(ezp::UI::UICOLOR_MIX);
         ui->SetElementState(ezp::UI::UICOLOR_RGB,0);
       }
       ui->SetElementState(ezp::UI::UICOLOR_HMAP,0);
+      ui->SetElementState(ezp::UI::UICOLOR_MIX,2);
       ezp::Scene::Get()->SetDesctiption(info.description);
       uint32_t nextPointsNum = ezp::Scene::Get()->GetTotVerts() + info.numPoints;
       if(nextPointsNum > 250 *1000*1000){

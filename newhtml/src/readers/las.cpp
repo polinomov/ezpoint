@@ -226,7 +226,7 @@ namespace ezp
       m_clcol[3] = COLOR05(1,5,1);
       m_clcol[4] = COLOR05(2,5,2);
       m_clcol[5] = COLOR05(3,5,3);
-      m_clcol[6] = COLOR05(5,3,3);
+      m_clcol[6] = COLOR05(5,1,1);
       m_clcol[7] = COLOR05(5,5,0);
       m_clcol[8] = COLOR05(5,5,5);
       m_clcol[9] = COLOR05(0,0,5);

@@ -165,6 +165,7 @@ namespace ezp
         m_measurement = false;
         m_rdPt =0;      
       }
+      m_cameraChange = true;
     }
 
     void MoveCameraOnDbClick(){
@@ -378,7 +379,7 @@ namespace ezp
       if(m_renderAll){
         m_cameraChange = false;
         if(rp->m_visPoints>0){
-          std::cout<<"Render Done"<<rp->m_visPoints<<std::endl;
+          //std::cout<<"Render Done"<<rp->m_visPoints<<std::endl;
           ezp::UI::Get()->SetRenderEvent(2);
         }
       }

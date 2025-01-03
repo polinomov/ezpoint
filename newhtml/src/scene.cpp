@@ -245,8 +245,7 @@ namespace ezp
 						float gf = (float)g*step;
 					  float bf = (float)b*step;
 						for(int t = 0; t<256; t++){
-							float prd = 1.0f*(1.0 -(float)t/400.0f);
-							//prd = prd*prd;
+							float prd = 1.8f * pow(4.0f, -(float)t/255.0f);
 							if(prd<0.0f) prd = 0.0f;
 							uint32_t ri = (uint32_t) (rf * 255.0f * prd);
 							uint32_t gi = (uint32_t) (gf * 255.0f * prd);
@@ -260,8 +259,11 @@ namespace ezp
 					}
 				}
 			}	
-			for(int k = 0; k<256; k++){
-				m_pclut[k] = m_pclut[k+ ( 1+ 5 + 5*6 + 5*36)*256];
+			for(int t = 0; t<256; t++){
+				float prd = pow(4.0f, -(float)t/255.0f);
+				uint32_t vi = (uint32_t) (255.0f * prd);
+				if(vi>255) vi = 255;
+				m_pclut[t] = (vi<<16) | (vi<<8) | (vi);
 			}
 			for(int k = 0; k<256*256; k+=256){
 				//printf("%x\n",m_pclut[k] );
@@ -289,7 +291,7 @@ namespace ezp
 
 		void GenerateSample(){
 			Clear();
-			/*
+			
 			uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
 			uint32_t totPoints = sx*sy*sfPoints;
 			UI::Get()->PrintMessage("Sample");
@@ -303,7 +305,8 @@ namespace ezp
 					pt += sfPoints;  
 				}
 			} 
-			*/
+			
+		/*
 		  uint32_t sx = 1024*4, sy = 1024*4;
 			AllocVerts(sx*sy);
 			FPoint4* pt =(FPoint4*) GetVerts(0); 
@@ -317,6 +320,7 @@ namespace ezp
 					ndx++;
 				}
 			}
+		*/	
 			//UI::Get()->SetColorMode(UI::UICOLOR_RGB);
 		  UI::Get()->SetColorMode(UI::UICOLOR_INTENS);
 			std::cout<<"RESCALE"<<std::endl;

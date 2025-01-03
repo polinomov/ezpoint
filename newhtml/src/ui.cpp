@@ -38,7 +38,9 @@ namespace ezp
       m_strToCall["colclassId"] = [](int val){UI::Get()->SetColorMode(UICOLOR_CLASS);};
       m_strToCall["colmix"]     = [](int val){UI::Get()->SetColorMode(UICOLOR_MIX);};
       m_strToCall["rdAll"]      = [](int val){Renderer::Get()->SetRenderAll((uint32_t)val);};
-      m_strToCall["camReset"]   = [](int val){Scene::Get()->SetCamera();};
+      m_strToCall["camReset"]   = [](int val){Scene::Get()->SetCamera();
+                                              Renderer::Get()->OnCameraChange();
+                                             };
       m_strToCall["camOrto"]    = [](int val){Scene::Get()->SetCameraOrto();};
       m_strToCall["SampleId"]   = [](int val){Scene::Get()->GenerateSample();};
       m_strToCall["ruler"]      = [](int val){Renderer::Get()->SetRuler(val);};
