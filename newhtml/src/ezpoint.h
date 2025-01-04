@@ -28,6 +28,7 @@ namespace ezp
     virtual int GetBkColor() = 0;
     virtual int GetPtSize() = 0;
     virtual int GetBudget() = 0;
+    virtual bool GetDrawAll() = 0;
     virtual void SetColorMode(ColorMode md) = 0;
     virtual void ShowErrorMessage(const std::string &msg) = 0;
     virtual ColorMode GetColorMode() = 0;
@@ -82,7 +83,10 @@ namespace ezp
     virtual void SetDesctiption( const std::string &decs) = 0;
     virtual std::string GetDesctiption( ) = 0;
     virtual void ReScale() = 0;
+    virtual void SetRgbProp(bool prop) = 0;
+    virtual bool GetRgbProp() = 0;
     virtual uint32_t *GetClut() = 0;
+    virtual uint32_t *GetHClut() = 0;
     static Scene *Get();
   };
 

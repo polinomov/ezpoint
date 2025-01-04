@@ -88,6 +88,15 @@ function GetFovValue(){
     return document.getElementById("fovVal").value; 
 }
 
+function GetDrawAll(){
+    rt = document.getElementById("rdAll").value; 
+    if(rt == "on"){
+        console.log("GetDrawAll" + rt);
+        return 1;
+    }
+    return 0;
+}
+
 function GetUIString(){
     return gIdChanged;
 }
@@ -97,7 +106,7 @@ function SetColorMode(){
 }
 
 function UpdateColorModeUI(){
-    const ids = ["colrgbId", "colintId", "colhtmId", "colclassId"];
+    const ids = ["colrgbId", "colintId", "colhtmId", "colclassId","colmix"];
     var names_ptr = Module._malloc(16);
     for (const element of ids) {
         Module.HEAPU8.fill(0, names_ptr, names_ptr + 16);
@@ -116,10 +125,6 @@ function UpdateColorModeUI(){
         }
     }
     Module._free(names_ptr);
-  
-   // document.getElementById("colrgbId").checked = true;
-   // var el = document.getElementById("colrgbId");
-   // el.setAttribute("disabled", true);
 }
 
 function OnUIEvent1(input){

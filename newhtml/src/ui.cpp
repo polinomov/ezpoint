@@ -82,6 +82,11 @@ namespace ezp
       return emscripten_run_script_int("GetPtSizeValue()");
     }
 
+    bool GetDrawAll(){
+      int rt  = emscripten_run_script_int("GetDrawAll()");
+      return (rt==1);
+    }
+
     int GetBudget(){
       return 100000*emscripten_run_script_int("GetBudgetValue()");
     }

@@ -19,13 +19,17 @@ namespace ezp
 		std::string m_desc;
 		float m_prd;
 		float m_xMin,m_yMin,m_zMin;
+		bool m_hasRgb;
 		uint32_t *m_pclut;
+ 		uint32_t *m_phclut;
  
 		SceneImpl(){
 			m_size = 1.0f;
 			m_totVerts = 0;
 			m_pclut = new uint32_t[256*256];
+		  m_phclut = new uint32_t[256*256];
 			BuildClut();
+		  BuildHClut();
 		}
 
 		uint32_t AllocVerts( uint32_t num){
@@ -61,6 +65,7 @@ namespace ezp
 			m_desc = "";
 			m_prd = 1.0f;
 			m_xMin=m_yMin=m_zMin= 0.0f;
+			m_hasRgb = false;
 		}
 
 		const FPoint4 *GetVerts(uint32_t n){
@@ -186,9 +191,19 @@ namespace ezp
 		void SetDesctiption( const std::string &decs){
 			m_desc = decs;
 		}
+
     std::string GetDesctiption( ){
 			return m_desc + " points:" + std::to_string(m_totVerts);
 	  }
+
+	  void SetRgbProp(bool prop){
+			m_hasRgb = prop;
+		}
+
+    bool GetRgbProp(){
+			return m_hasRgb;
+		}
+
 
 		void ReScale(){
 			if(m_totVerts==0){
@@ -258,21 +273,51 @@ namespace ezp
 						ndx+=256;
 					}
 				}
-			}	
+			}
+			// white	
 			for(int t = 0; t<256; t++){
 				float prd = pow(4.0f, -(float)t/255.0f);
 				uint32_t vi = (uint32_t) (255.0f * prd);
 				if(vi>255) vi = 255;
 				m_pclut[t] = (vi<<16) | (vi<<8) | (vi);
 			}
-			for(int k = 0; k<256*256; k+=256){
-				//printf("%x\n",m_pclut[k] );
-			}
       return NULL;
+		}
+
+		void BuildHClut(){			
+			float rf,gf,bf;
+			for(int ndx  = 0; ndx<256; ndx++){
+				if((ndx>=0) && (ndx<128)){
+					float np = (float)ndx/127.0f;
+					rf = np*255.0f;
+					gf = (1.0f-np) * 255.0f;
+					bf = 0.0f;
+				}
+				if((ndx>=128) && (ndx<256)){
+					float np = (float)(ndx-128)/127.0f;
+					rf =  255.0f;
+					gf =  np * 255.0f;
+					bf =  np * 255.0f;;
+				}
+				for(int t = 0; t<256; t++){
+					float prd = pow(4.0f, -(float)t/255.0f);
+					uint32_t ri = (uint32_t) (rf * prd);
+					if(ri>255) ri = 255;
+					uint32_t gi = (uint32_t) (gf * prd);
+					if(gi>255) gi = 255;
+					uint32_t bi = (uint32_t) (bf * prd);
+					if(bi>255) bi = 255;
+					m_phclut[t + ndx*256] = (ri<<16) | (gi<<8) | (bi);
+				}		
+			}
 		}
 
 		uint32_t *GetClut(){
 			return m_pclut;
+		}
+
+		uint32_t *GetHClut(){
+			return m_phclut;
 		}
 		
 		void Sphere(FPoint4* pt, int num, float rad, int x, int y, int z,uint16_t col )

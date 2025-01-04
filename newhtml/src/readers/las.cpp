@@ -438,7 +438,6 @@ namespace ezp
         if(rr>5) rr = 5;
         if(gg>5) gg = 5;
         if(bb>5) bb = 5;
-        //pDst[i].col = (bb + gg*6 + rr*36)*256;
         pDst[i].col = COLOR05(bb,gg,rr)*256;
       }
     }
@@ -451,7 +450,7 @@ namespace ezp
   
   };//struct LasBuilderImpl
 
-  static const  uint32_t hsz = 0xFFF;
+  static const  uint32_t hsz = 256;
   static const  uint32_t s16 = 256*256;
   static float hHist[hsz];
   static float gHist[s16];
@@ -482,7 +481,7 @@ namespace ezp
       FPoint4 *pt = (FPoint4*)getVerts(m);
       for( uint32_t v = 0; v < getNum(m); v++){
         int32_t h8 = (uint32_t)((pt[v].z - hMin) *  hDiff);
-        h8 &= 0xFFF;
+        h8 &= 0xFF;
         hHist[h8] += 1.0f;
       }
     }
@@ -508,17 +507,14 @@ namespace ezp
       FPoint4 *pt = (FPoint4*)getVerts(m);
       for( uint32_t v = 0; v < getNum(m); v++){
         uint32_t h8 = (uint32_t)((pt[v].z -  hMin) *  hDiff);
-        uint32_t hcol = (uint32_t)hHist[h8 & hsz];
+        uint32_t hcol = (uint32_t)hHist[h8 & 0xFF];
         uint16_t intensity  = pt[v].col & 0xFFFF;
         uint8_t cls = (pt[v].col >>16) & 0xFF;;
         if(!hasRgb){
           pt[v].col  = (255- (uint8_t)gHist[intensity])/2;
           pt[v].col |=  m_clcol[cls]*256;
         }
-        //pt[v].col = (5 + 5*6 + 5*36)*256;
-        //pt[v].col &= hColMsk;
-        //pt[v].col |= (hcol<<16);
-        //pt[v].col = 157*256 ; ///////////////////
+        pt[v].col |= (hcol<<24);
       }
     }
   }//LasBuilder::PostProcessAllColors

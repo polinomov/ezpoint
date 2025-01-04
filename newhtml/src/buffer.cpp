@@ -50,12 +50,8 @@ namespace ezp
     int m_pointSize;
     int m_colorMode;
     uint32_t m_bkcolor;
-    //uint32_t m_palGray[256];
-    uint32_t m_palHMap[256*16];
-    uint32_t m_palClass[256];
-    //uint32_t m_UniPal[16][256];
-    uint32_t m_pal16[256*256];
     uint32_t *m_pclut;
+    uint32_t *m_phclut;
     int m_sceneSize;
     float m_zmax;
     float m_zmin;
@@ -91,14 +87,20 @@ namespace ezp
       m_dbgFlf = false;
       m_zmax = m_zmin = 0.0f;
       m_hasDbClick = false;
+      SetUIVals();
+      m_pclut = ezp::Scene::Get()->GetClut();
+      m_phclut = ezp::Scene::Get()->GetHClut();
+      RenderHelper::Get()->Init();
+      m_cameraChange = true;
+    }
+
+    void SetUIVals(){
       ezp::UI *pUI = ezp::UI::Get();
       m_bkcolor = pUI->GetBkColor();
       m_pointSize = pUI->GetPtSize();
       m_budget = pUI->GetBudget();
-      SetFov(pUI->GetFov());
-      m_pclut = ezp::Scene::Get()->GetClut();
-      RenderHelper::Get()->Init();
-      m_cameraChange = true;
+      m_renderAll  = pUI->GetDrawAll();
+      SetFov(pUI->GetFov());  
     }
   
     void ShowFrameRate(bool val){
@@ -236,7 +238,7 @@ namespace ezp
       pCam->GetPos(pP[0],pP[1],pP[2]);
       pCam->GetDir(pD[0],pD[1],pD[2]);
       float zDist = pCam->GetDistance();
-      std::cout<<"RenderChunks "<<m_cameraChange<<std::endl;
+     // std::cout<<"RenderChunks "<<m_cameraChange<<std::endl;
 
       uint32_t tbi = 0;
       const std::vector<Chunk*>& chunks = Scene::Get()->GetChunks();
@@ -379,7 +381,6 @@ namespace ezp
       if(m_renderAll){
         m_cameraChange = false;
         if(rp->m_visPoints>0){
-          //std::cout<<"Render Done"<<rp->m_visPoints<<std::endl;
           ezp::UI::Get()->SetRenderEvent(2);
         }
       }
@@ -452,8 +453,13 @@ namespace ezp
     void XERR1(unsigned int *pBuff, int winW, int winH){
       uint32_t palmsk = 0xFF00;
       uint32_t valmsk = 0xFF;
+      uint32_t *pclut = m_pclut;
+      uint32_t bzshift = 0;
       switch(UI::Get()->GetColorMode()){
         case UI::UICOLOR_HMAP :
+          pclut =  m_phclut;
+          bzshift = 16;
+          valmsk = 0;
         break;
         case UI::UICOLOR_CLASS:
         break;
@@ -513,9 +519,10 @@ namespace ezp
           uint32_t divx = (uv>mv)? uv-mv: mv-uv;
           uint32_t divy = (lv>mv)? lv-mv: mv-lv;
           uint32_t divf  = (float)((std::max( divx, divy))) * fxa;
-          uint32_t val =  (bz & valmsk) +  (int32_t)divf ;
+          uint32_t bzs = bz>>bzshift;
+          uint32_t val =  (bzs & valmsk) +  (int32_t)divf ;
           if(val>255) val = 255;
-          pBuff[dst] = m_pclut[(palmsk & bz) + val];
+          pBuff[dst] = pclut[(palmsk & bzs) + val];
         }
       } 
     }
