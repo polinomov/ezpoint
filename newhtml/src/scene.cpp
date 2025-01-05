@@ -236,9 +236,8 @@ namespace ezp
 			//std::cout<<"sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
 			float smax = std::max(sx,sy);
 			smax = std::max(smax,sz);
-			float scprod = 1.0f;//sqrt((float)m_totVerts)/32000.0f;
-			//if(scprod<1.0f) scprod = 1.0f;
-      float prd = (smax>0.0f) ? scprod/smax : 1.0f;
+			float scprod = 1.0f;
+	    float prd = (smax>0.0f) ? scprod/smax : 1.0f;
 			for(uint32_t m = 0; m<GetNumMemBanks(); m++){
 				FPoint4 *pt = (FPoint4*)GetVerts(m);
 				for( uint32_t v = 0; v < GetNumVerts(m); v++){
@@ -248,7 +247,15 @@ namespace ezp
 				}
 			}
 		}
-
+    
+		FPoint4 UnScale( FPoint4 &pt){
+			FPoint4 ret;
+			ret.x = 0;
+			ret.y = 0;
+			ret.z = 0;
+			return ret;
+		}
+  
 		uint32_t* BuildClut(){
 			static bool hasClut = false;
 			float step = (1.0f/5.0f);
@@ -260,7 +267,7 @@ namespace ezp
 						float gf = (float)g*step;
 					  float bf = (float)b*step;
 						for(int t = 0; t<256; t++){
-							float prd = 1.8f * pow(4.0f, -(float)t/255.0f);
+							float prd = 1.5f * pow(4.0f, -(float)t/255.0f);
 							if(prd<0.0f) prd = 0.0f;
 							uint32_t ri = (uint32_t) (rf * 255.0f * prd);
 							uint32_t gi = (uint32_t) (gf * 255.0f * prd);
@@ -277,9 +284,10 @@ namespace ezp
 			// white	
 			for(int t = 0; t<256; t++){
 				float prd = pow(4.0f, -(float)t/255.0f);
-				uint32_t vi = (uint32_t) (255.0f * prd);
-				if(vi>255) vi = 255;
-				m_pclut[t] = (vi<<16) | (vi<<8) | (vi);
+				uint32_t ri =(uint32_t) (prd *255.0f);
+				uint32_t gi =(uint32_t) (prd *255.0f);
+				uint32_t bi =(uint32_t) (prd *255.0f);
+				m_pclut[t] = (ri<<16) | (gi<<8) | (bi);
 			}
       return NULL;
 		}
@@ -336,8 +344,8 @@ namespace ezp
 
 		void GenerateSample(){
 			Clear();
-			
-			uint32_t sx = 32, sy = 32, sfPoints = 1024*16;
+	#if 1	
+			uint32_t sx = 2, sy = 2, sfPoints = 1024*1024;
 			uint32_t totPoints = sx*sy*sfPoints;
 			UI::Get()->PrintMessage("Sample");
 			AllocVerts(totPoints);
@@ -349,9 +357,8 @@ namespace ezp
 					Sphere(pt, sfPoints, 0.4f, x, y, 0,rand()&0xFFFF);
 					pt += sfPoints;  
 				}
-			} 
-			
-		/*
+			} 			
+	  #else
 		  uint32_t sx = 1024*4, sy = 1024*4;
 			AllocVerts(sx*sy);
 			FPoint4* pt =(FPoint4*) GetVerts(0); 
@@ -365,9 +372,9 @@ namespace ezp
 					ndx++;
 				}
 			}
-		*/	
-			//UI::Get()->SetColorMode(UI::UICOLOR_RGB);
-		  UI::Get()->SetColorMode(UI::UICOLOR_INTENS);
+		#endif	
+			
+		  UI::Get()->SetColorMode(UI::UICOLOR_MIX);
 			std::cout<<"RESCALE"<<std::endl;
 			ReScale();
 			std::cout<<"processVertDataInt"<<std::endl;

@@ -83,6 +83,7 @@ namespace ezp
     virtual void SetDesctiption( const std::string &decs) = 0;
     virtual std::string GetDesctiption( ) = 0;
     virtual void ReScale() = 0;
+    virtual FPoint4 UnScale( FPoint4 &pt) = 0;
     virtual void SetRgbProp(bool prop) = 0;
     virtual bool GetRgbProp() = 0;
     virtual uint32_t *GetClut() = 0;

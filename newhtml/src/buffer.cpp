@@ -112,8 +112,20 @@ namespace ezp
     }
 
     void  SetFov(int val){
+      float atanPrev =  m_atanRatio;
       m_atanRatio = 1.0f/tan(0.5f* (float)val * 3.1415f/180.0f);
-      m_shadFactor =  m_atanRatio*0.025f*(1024.0f *1024.0f);
+      m_shadFactor = m_atanRatio*(1024.0f *1024.0f)/64.0f;
+      FPoint4 pos,piv;  
+      Camera *pCam = Camera::Get();
+      pCam->GetPivot(piv.x,piv.y,piv.z);
+      pCam->GetPos(pos.x,pos.y,pos.z);
+      float dst = pCam->GetDistance();
+      float dim = 2.0f*dst/atanPrev;
+      float distNew = 0.5f*m_atanRatio*dim;
+      float tx = distNew*(pos.x-piv.x)/dst;
+      float ty = distNew*(pos.y-piv.y)/dst;
+      float tz = distNew*(pos.z-piv.z)/dst;
+      pCam->SetPos(piv.x + tx, piv.y + ty, piv.z + tz );
       m_cameraChange = true;
     }
 
@@ -238,8 +250,6 @@ namespace ezp
       pCam->GetPos(pP[0],pP[1],pP[2]);
       pCam->GetDir(pD[0],pD[1],pD[2]);
       float zDist = pCam->GetDistance();
-     // std::cout<<"RenderChunks "<<m_cameraChange<<std::endl;
-
       uint32_t tbi = 0;
       const std::vector<Chunk*>& chunks = Scene::Get()->GetChunks();
       rp->m_totalRdPoints = 0;
@@ -392,11 +402,11 @@ namespace ezp
 
     void cleanBuff(){
       if(m_cameraChange){
-        memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+        memset(m_frbuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));     
+        if((m_hasDbClick)||(m_rdPt)){
+          memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
+        } 
       }
-      if((m_hasDbClick)||(m_rdPt)){
-        memset(m_auxBuff,0xFF,m_canvasW *m_canvasH*sizeof(uint64_t));
-      } 
     }
 
     void Render(unsigned int *pBuff, int winW, int winH,int evnum){

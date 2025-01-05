@@ -35,7 +35,7 @@ static uint32_t * getLine(uint8_t lt, uint8_t n){
   const uint8_t *pLn =  _fonts_terminus_8x14_iso8859_1_bitmaps + lt*fntH + n;
   for( int i = 0; i<8;i++){
     uint8_t msk = 1<<(7-i);
-    pRet[i] = (pLn[0] & msk) ? 0x0 : 0xFFFFFFFF;
+    pRet[i] = (pLn[0] & msk) ? 0x0 : 0xFFFFFF00;
   }
   return pRet;
 }
@@ -203,7 +203,7 @@ struct RenderHelperIml: public RenderHelper{
       int sx = (int)(prd * fx0 + (1.0f - prd) * fx1);
       int sy = (int)(prd * fy0 + (1.0f - prd) * fy1);
       uint32_t addr = sx + cW *sy;
-      pBuff[addr] = 0xFFFFFFFF;
+      pBuff[addr] = 0;
     }
     return true;
   }
@@ -270,7 +270,7 @@ struct RenderHelperIml: public RenderHelper{
     }
     if(m_hasPoint){
       char stmp[1024];
-      sprintf(stmp," PRESS M TO SELECT POINT ( x:%f  y:%f  z:%f ) ",m_currPoint.x,m_currPoint.y,m_currPoint.z);
+      sprintf(stmp," DOUBLE CLICK TO SELECT POINT ( x:%f  y:%f  z:%f ) ",m_currPoint.x,m_currPoint.y,m_currPoint.z);
       RenderString(stmp,3,2, pBuff,cW,cH);
       RenderString("PRESS Q TO UNDO",3,20, pBuff,cW,cH);
     }

@@ -104,16 +104,12 @@
       -->
       <input type="file" multiple class="file" id="attach_las"    style="display: none;" accept=".las" onchange="OnFileSelected(this,0)" />
       <input type="file" multiple class="file" id="attach_xyzbin" style="display: none;" accept=".xyz" onchange="OnFileSelected(this,1)" />
-      <input type="file" multiple class="file" id="attach_xyztxt" style="display: none;" accept=".xyz" onchange="OnFileSelected(this,2)" />
+      <input type="file" multiple class="file" id="attach_xyztxt" style="display: none;" accept=".xyz, .txt" onchange="OnFileSelected(this,2)" />
       <button class="dropbtn" id="fbtn" onclick="myFunction('fbtn','fileDropdown')">File</button>
       <div class="dropdown-content" id="fileDropdown">
         <button type="button"  
             onclick="document.getElementById('attach_las').click()"
             class="thebutton">Load Las
-        </button>
-        <button type="button"  
-            onclick="document.getElementById('attach_xyzbin').click()"
-            class="thebutton">Load XYZ (bin)
         </button>
         <button type="button"  
             onclick="document.getElementById('attach_xyztxt').click()"
