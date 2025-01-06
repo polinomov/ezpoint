@@ -22,6 +22,10 @@ namespace ezp
 		bool m_hasRgb;
 		uint32_t *m_pclut;
  		uint32_t *m_phclut;
+		float m_sfactor;
+ 	  float m_xmin;
+ 	  float m_ymin;
+ 	  float m_zmin;
  
 		SceneImpl(){
 			m_size = 1.0f;
@@ -66,6 +70,7 @@ namespace ezp
 			m_prd = 1.0f;
 			m_xMin=m_yMin=m_zMin= 0.0f;
 			m_hasRgb = false;
+			m_sfactor = 1.0f;
 		}
 
 		const FPoint4 *GetVerts(uint32_t n){
@@ -209,8 +214,6 @@ namespace ezp
 			if(m_totVerts==0){
 				return;
 			}
-			//return;
-			//std::cout<<"---------RESCALE-------"<<std::endl;
 			FPoint4 *p0 = (FPoint4*)GetVerts(0);
 			float xMin = p0->x;
 			float yMin = p0->y;
@@ -229,11 +232,9 @@ namespace ezp
 					zMax = std::max(zMax,pt[v].z);
 				}
 			}
-			//std::cout<<xMin<<" "<<xMax<<"#"<<yMin<<" "<<yMax<<"#"<<zMin<<" "<<zMax<<std::endl;	
 			float sx = xMax - xMin;
 			float sy = yMax - yMin;
 			float sz = zMax - zMin;
-			//std::cout<<"sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
 			float smax = std::max(sx,sy);
 			smax = std::max(smax,sz);
 			float scprod = 1.0f;
@@ -246,13 +247,17 @@ namespace ezp
 					pt[v].z = (pt[v].z - zMin)*prd;
 				}
 			}
+			m_sfactor = 1.0f/ prd;
+			m_xmin = xMin;
+			m_ymin = yMin;
+			m_zmin = zMin;
 		}
     
-		FPoint4 UnScale( FPoint4 &pt){
+		FPoint4 UnScale( const FPoint4 &pt){
 			FPoint4 ret;
-			ret.x = 0;
-			ret.y = 0;
-			ret.z = 0;
+			ret.x = pt.x * m_sfactor + m_xmin ;
+			ret.y = pt.y * m_sfactor + m_ymin;
+			ret.z = pt.z * m_sfactor + m_zmin;
 			return ret;
 		}
   

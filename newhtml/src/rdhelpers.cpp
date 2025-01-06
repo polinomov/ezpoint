@@ -62,9 +62,12 @@ struct Line{
 };
 
 static float GetDist(const FPoint4 &a, const FPoint4 &b){
-  float dx = a.x - b.x;
-  float dy = a.y - b.y;
-  float dz = a.z - b.z;
+  auto sc = Scene::Get();
+  FPoint4 ra = sc->UnScale(a);
+  FPoint4 rb = sc->UnScale(b);
+  float dx = ra.x - rb.x;
+  float dy = ra.y - rb.y;
+  float dz = ra.z - rb.z;
   return sqrt( dx*dx + dy*dy + dz*dz);
 }
 
@@ -270,7 +273,8 @@ struct RenderHelperIml: public RenderHelper{
     }
     if(m_hasPoint){
       char stmp[1024];
-      sprintf(stmp," DOUBLE CLICK TO SELECT POINT ( x:%f  y:%f  z:%f ) ",m_currPoint.x,m_currPoint.y,m_currPoint.z);
+      FPoint4 real = Scene::Get()->UnScale(m_currPoint);
+      sprintf(stmp," DOUBLE CLICK TO SELECT POINT ( x:%f  y:%f  z:%f ) ",real.x, real.y, real.z);
       RenderString(stmp,3,2, pBuff,cW,cH);
       RenderString("PRESS Q TO UNDO",3,20, pBuff,cW,cH);
     }
