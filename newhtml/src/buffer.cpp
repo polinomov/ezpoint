@@ -258,6 +258,7 @@ namespace ezp
       float distMin = std::numeric_limits<float>::max();
       float distMax = -distMin;
       float zTr = rp->m_sceneSize/sqrt((float)chunks.size());
+ 
       for( int m = 0; m<chunks.size(); m++) {
         Chunk* pCh= chunks[m];
         //
@@ -360,6 +361,7 @@ namespace ezp
         const int canvas_w = rp->m_canvasW;
         int addr_max = rp->m_canvasW*rp->m_canvasH;
         int numV = chunks[m]->numToRender;
+        //std::cout<<"numV="<<numV<<std::endl;
         for( int i = 0; i<numV; i++){  
           rp->m_visPoints++; ///
           float res[4];

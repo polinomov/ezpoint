@@ -54,6 +54,7 @@ extern "C" {
   */
   void MainLoop() {
     if((gRenderEvent>0) || ( gAlwaysRender==1)){
+      //std::cout<<"MainLoop render"<<std::endl;
       SDL_Rect srcRect, dstRect;
       unsigned char* pixels;
       int pitch;
@@ -73,6 +74,8 @@ extern "C" {
       SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
       SDL_RenderPresent(m_renderer);
       gRenderEvent--;
+    }else{
+      //std::cout<<"MainLoop no render"<<std::endl;
     }
     ezp::Scene::Get()->OnTick();
   }

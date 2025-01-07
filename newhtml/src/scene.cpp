@@ -26,6 +26,7 @@ namespace ezp
  	  float m_xmin;
  	  float m_ymin;
  	  float m_zmin;
+		bool m_cameraSet;
  
 		SceneImpl(){
 			m_size = 1.0f;
@@ -34,6 +35,7 @@ namespace ezp
 		  m_phclut = new uint32_t[256*256];
 			BuildClut();
 		  BuildHClut();
+			m_cameraSet = false;
 		}
 
 		uint32_t AllocVerts( uint32_t num){
@@ -71,6 +73,7 @@ namespace ezp
 			m_xMin=m_yMin=m_zMin= 0.0f;
 			m_hasRgb = false;
 			m_sfactor = 1.0f;
+			m_cameraSet = false;
 		}
 
 		const FPoint4 *GetVerts(uint32_t n){
@@ -110,6 +113,9 @@ namespace ezp
 			m_size = std::max(m_size,m_box.xMax-m_box.xMin);
 			m_size = std::max(m_size,m_box.yMax-m_box.yMin);
 			m_size = std::max(m_size,m_box.zMax-m_box.zMin);
+			pCam->RotUp(20.0f);
+			m_cameraSet = true;
+			ezp::UI::Get()->SetRenderEvent(2);  
 		}
 
 		void SetCameraOrto(){}
@@ -127,7 +133,7 @@ namespace ezp
 		}
 
 		void GetZMax(float &zmin, float &zmax){
-			if(m_allChunks.size() == 0){
+			if((m_allChunks.size() == 0)||(m_cameraSet==false)){
 				zmin= 1.0f;
 				zmax = -1.0f;
 				return;
@@ -298,27 +304,38 @@ namespace ezp
 		}
 
 		void BuildHClut(){			
-			float rf,gf,bf;
+			float cc[3];
+			float cola[3]  = {255.0f, 0.0f,   0.0f};
+			float colb[3]  = {0.0f,   255.0f, 0.0f};
+			float colc[3]  = {128.0f, 128.0f, 255.0f};
+			float cold[3]  = {200.0f, 200.0f, 0.0f};
+			float cole[3]  = {255.0f, 255.0f, 255.0f};
 			for(int ndx  = 0; ndx<256; ndx++){
-				if((ndx>=0) && (ndx<128)){
-					float np = (float)ndx/127.0f;
-					rf = np*255.0f;
-					gf = (1.0f-np) * 255.0f;
-					bf = 0.0f;
+		  	float ff = 1.0f;
+			  if((ndx>=0) && (ndx<64)){ 
+					float np = ff*(float)ndx/64.0f;
+					for(int k = 0; k<3; k++) {cc[k] = (1.0f-np)*cola[k] + np * colb[k];}
 				}
-				if((ndx>=128) && (ndx<256)){
-					float np = (float)(ndx-128)/127.0f;
-					rf =  255.0f;
-					gf =  np * 255.0f;
-					bf =  np * 255.0f;;
+			  if((ndx>=64) && (ndx<128)){ // 
+					float np = ff*(float)(ndx-64)/64.0f;
+					for(int k = 0; k<3; k++) {cc[k] = (1.0f-np)*colb[k] + np * colc[k];}
 				}
+			  if((ndx>=128) && (ndx<192)){ // 
+					float np = ff*(float)(ndx-128)/64.0f;
+					for(int k = 0; k<3; k++) {cc[k] = (1.0f-np)*colc[k] + np * cold[k];}
+				}
+			  if((ndx>=192) && (ndx<256)){ //
+					float np = ff*(float)(ndx-192)/64.0f;
+					for(int k = 0; k<3; k++) {cc[k] = (1.0f-np)*cold[k] + np * cole[k];}
+				}
+
 				for(int t = 0; t<256; t++){
 					float prd = pow(4.0f, -(float)t/255.0f);
-					uint32_t ri = (uint32_t) (rf * prd);
+					uint32_t ri = (uint32_t) (cc[0] * prd);
 					if(ri>255) ri = 255;
-					uint32_t gi = (uint32_t) (gf * prd);
+					uint32_t gi = (uint32_t) (cc[1] * prd);
 					if(gi>255) gi = 255;
-					uint32_t bi = (uint32_t) (bf * prd);
+					uint32_t bi = (uint32_t) (cc[2] * prd);
 					if(bi>255) bi = 255;
 					m_phclut[t + ndx*256] = (ri<<16) | (gi<<8) | (bi);
 				}		
@@ -380,11 +397,11 @@ namespace ezp
 		#endif	
 			
 		  UI::Get()->SetColorMode(UI::UICOLOR_MIX);
-			std::cout<<"RESCALE"<<std::endl;
+			//std::cout<<"RESCALE"<<std::endl;
 			ReScale();
-			std::cout<<"processVertDataInt"<<std::endl;
+			//std::cout<<"processVertDataInt"<<std::endl;
 			processVertDataInt(0);
-			std::cout<<"SetCamera"<<std::endl;
+			//std::cout<<"SetCamera"<<std::endl;
 			SetCamera();
 			UI::Get()->SetRenderEvent(2);
 		}  

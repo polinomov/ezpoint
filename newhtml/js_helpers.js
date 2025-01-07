@@ -30,6 +30,22 @@ function OnTest( v) {
     test_cb(v);
 }
 
+function loadFile(filePath) {
+    const req = new XMLHttpRequest();
+    req.open("GET", filePath, true);
+    req.responseType = "arraybuffer";
+    req.onload = (event) => {
+        const arrayBuffer = req.response;
+        if (arrayBuffer) {
+            console.log("A AM HERE" + arrayBuffer.byteLength);
+            const byteArray = new Uint8Array(arrayBuffer); 
+            byteArray.forEach((element, index) => {});
+            ReadBin(arrayBuffer, 0);
+        }
+    };
+    req.send(null);
+}
+
 function OnMouseMove(e) {
     gv.mouseX = e.offsetX;
     gv.mouseY = e.offsetY;
@@ -138,6 +154,10 @@ function OnUIEvent1(input){
     if( input.id == "ruler"){
         setRuler(document.getElementById(input.id).checked); 
     }
+    if( input.id == "SampleLasId"){
+        console.log("las id");
+        loadFile("data/sample.las");
+    }
     // gray out some UI elements
     if( input.id == "camOrto"){
         fovEl = document.getElementById("fovVal");
@@ -147,6 +167,7 @@ function OnUIEvent1(input){
             fovEl.removeAttribute('disabled');
         }
     }
+    /*
     if( input.id == "rdAll"){
         budgetEl = document.getElementById("budVal");
         if(document.getElementById(input.id).checked==true){
@@ -155,6 +176,7 @@ function OnUIEvent1(input){
             budgetEl.removeAttribute('disabled');
         }
     }
+    */
 }
 
 function OnBkhanged(input){

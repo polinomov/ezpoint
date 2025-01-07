@@ -285,6 +285,11 @@ namespace ezp
       }
       if((m_state == RD_HEARED)||(m_state == RD_HEARED14)){
         uint8_t *p8  = (uint8_t*)pData;
+        /*
+        for( int i =0; i<273; i++){
+          printf("%d\n",p8[i]);
+        }
+        */
         if(m_state == RD_HEARED){
           memcpy(&m_hdr,p8, sizeof(LasHeader));
           int vMajor = (int)m_hdr.verMajor;

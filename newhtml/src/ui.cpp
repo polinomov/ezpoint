@@ -67,6 +67,7 @@ namespace ezp
     }
 
     void SetRenderEvent(int num){
+      std::cout<<"SetRenderEvent "<<num<<std::endl;
       gRenderEvent = num;
     }
 

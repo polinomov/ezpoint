@@ -116,6 +116,11 @@
             class="thebutton">Load XYZ (ascii)
         </button>
         <button type="button" 
+            id="SampleLasId"  
+            onclick="OnUIEvent1(this)"
+            class="thebutton">Try Sample
+        </button>
+        <button type="button" 
             id="SampleId"  
             onclick="OnUIEvent1(this)"
             class="thebutton">Test
@@ -130,8 +135,10 @@
       <button class="dropbtn" id="camBtn" onclick="myFunction('camBtn','cameraDropdown')">Camera</button>
       <div class="dropdown-content" id="cameraDropdown">
         <button class="thebutton" id="camReset" onclick="OnUIEvent1(this)">Reset </button>
+        <!--
         <small  class="thetext1"  id="camOr"    onclick="OnUIEvent1(this)">Orthographic</small>
         <input type="checkbox"    id="camOrto"  onclick="OnUIEvent1(this)" title="Orthographic" id="camOrto" />
+        -->
       </div>
        <!-- colors -->
       <button class="dropbtn" id="ColorsId" onclick="myFunction('ColorsId','viewDropdown')">View</button>
