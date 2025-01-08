@@ -19,6 +19,7 @@ EXP_FUNC := $(EXP_FUNC),_UIMessageJS
 EXP_FUNC := $(EXP_FUNC),_PostProcessDataJS
 EXP_FUNC := $(EXP_FUNC),_MouseMoveJS
 EXP_FUNC := $(EXP_FUNC),_MouseClickJS
+EXP_FUNC := $(EXP_FUNC),_OnLoadEmbedJS
 
 EMFLAGS = -O3 \
 -s DISABLE_EXCEPTION_CATCHING=1 \
@@ -30,9 +31,9 @@ EMFLAGS = -O3 \
 -s MAXIMUM_MEMORY=4GB \
 -s ASSERTIONS \
 -s EXPORTED_FUNCTIONS=$(EXP_FUNC) \
--s EXPORTED_RUNTIME_METHODS=ccall,cwrap -std=c++17 -msimd128 -msse -msse2 -msse3 --bind -s FETCH=1 
+-s EXPORTED_RUNTIME_METHODS=ccall,cwrap -std=c++17 -msimd128 -msse -msse2 -msse3 --bind -s FETCH=1 \
 
 build: $(SOURCES)
-	$(EMCC) $(EMFLAGS) $(SOURCES) -o index.js
+	$(EMCC) $(EMFLAGS) $(SOURCES) -o index.js --preload-file data/sample.las
 
  

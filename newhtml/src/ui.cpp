@@ -14,7 +14,6 @@ static void OutLine(const char *txt){
 extern "C" {
   int UIMessageJS(void* pData, int param){
     int ret =  ezp::UI::Get()->GetElementState((const char *)pData);
-    std::cout<<"Get Element State  "<<(char*)pData<<" "<<ret<<std::endl;
     return ret;
   }
 }
@@ -67,7 +66,6 @@ namespace ezp
     }
 
     void SetRenderEvent(int num){
-      std::cout<<"SetRenderEvent "<<num<<std::endl;
       gRenderEvent = num;
     }
 

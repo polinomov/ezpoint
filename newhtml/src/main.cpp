@@ -8,6 +8,8 @@
 #include <emscripten.h>
 #include <stdio.h>
 #include <string.h>
+#include <dirent.h>
+  
 #include "readers\readers.h"
 
 
@@ -53,6 +55,7 @@ extern "C" {
   }
   */
   void MainLoop() {
+    static int n_call = 0;
     if((gRenderEvent>0) || ( gAlwaysRender==1)){
       //std::cout<<"MainLoop render"<<std::endl;
       SDL_Rect srcRect, dstRect;
@@ -74,9 +77,12 @@ extern "C" {
       SDL_RenderCopy(m_renderer, m_screenTexture, &srcRect, &dstRect);
       SDL_RenderPresent(m_renderer);
       gRenderEvent--;
-    }else{
-      //std::cout<<"MainLoop no render"<<std::endl;
-    }
+      if(n_call==0){ 
+       // emscripten_async_wget("https://www.example.com/image.png", "image.png", onload, onerror);
+      }
+      }else{
+        //std::cout<<"MainLoop no render"<<std::endl;
+      }
     ezp::Scene::Get()->OnTick();
   }
 
@@ -248,6 +254,41 @@ extern "C" {
     ezp::Scene::Get()->Clear();
     ezp::Renderer::Get()->OnCameraChange();
     ezp::UI::Get()->SetRenderEvent(2);
+    return 0;
+  }
+
+  void onload(void *arg) {
+    printf("File downloaded successfully!\n");
+  }
+
+  void onerror(void *arg) {
+    printf("Error downloading file!\n");
+  }
+
+  int OnLoadEmbedJS(int param){
+    FILE *file = fopen("data/sample.las", "rb");
+    if(file==NULL){
+      std::cout<<"FILE IS NULL"<<std::endl;
+    }
+    else{
+      int fType = 0;
+      fseek(file, 0, SEEK_END);
+      uint32_t fSize = ftell(file);
+      fseek(file, 0, SEEK_SET);
+      ClearSceneJS(0);
+      int chSz = LdLasCppJS(NULL, 0, fType, fSize);
+      for(;;){
+        uint8_t *pbuff = new uint8_t[chSz];
+        fread(pbuff, sizeof(uint8_t), chSz, file);
+        chSz = LdLasCppJS(pbuff, 1, fType, fSize);
+        delete []pbuff;
+        if(chSz==0){
+          break;
+        }
+      }
+      fclose(file);
+      PostProcessDataJS(fType,0);
+    }
     return 0;
   }
 }

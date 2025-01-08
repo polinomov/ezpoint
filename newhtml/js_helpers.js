@@ -29,7 +29,7 @@ function OnTest( v) {
     test_cb = Module.cwrap('OnTestJS', 'number', ['number']);
     test_cb(v);
 }
-
+/*
 function loadFile(filePath) {
     const req = new XMLHttpRequest();
     req.open("GET", filePath, true);
@@ -45,6 +45,7 @@ function loadFile(filePath) {
     };
     req.send(null);
 }
+*/
 
 function OnMouseMove(e) {
     gv.mouseX = e.offsetX;
@@ -156,7 +157,7 @@ function OnUIEvent1(input){
     }
     if( input.id == "SampleLasId"){
         console.log("las id");
-        loadFile("data/sample.las");
+        loadFile("./data/sample.las");
     }
     // gray out some UI elements
     if( input.id == "camOrto"){

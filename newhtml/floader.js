@@ -115,13 +115,16 @@ function ReadBin(data, fType){
             break;
         }
     }
-   // console.log("==== Post Proc ="); 
-    //post_proc_file_cb(fType,0);
 }
 
 function loadFile(filePath) {
+    eload_cd = Module.cwrap('OnLoadEmbedJS', 'number', ['number']);
+    eload_cd(0);
+    return;
+    /*
     const req = new XMLHttpRequest();
-    req.open("GET", filePath, true);
+    req.open("GET", 'http://cors.io/?https://gist.github.com/polinomov/93853af386df494673624d3f453dd642#file-sample-las', true);
+    //req.open("GET", filePath, true);
     req.responseType = "arraybuffer";
     req.onload = (event) => {
         const arrayBuffer = req.response;
@@ -135,8 +138,9 @@ function loadFile(filePath) {
         }
     };
     req.onprogress = () =>{
-       // console.log("LOADING", req.readyState);
+       console.log("LOADING", req.readyState);
     };
 
     req.send(null);
+    */
 }
