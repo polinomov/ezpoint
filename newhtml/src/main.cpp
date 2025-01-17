@@ -232,7 +232,7 @@ extern "C" {
       ui->SetColorMode(ezp::UI::UICOLOR_MIX);
       ezp::Scene::Get()->SetDesctiption(info.description);
       uint32_t nextPointsNum = ezp::Scene::Get()->GetTotVerts() + info.numPoints;
-      if(nextPointsNum > 250 *1000*1000){
+      if(nextPointsNum > 100 *1000*1000){
         return 1; 
       }
       return 0;
